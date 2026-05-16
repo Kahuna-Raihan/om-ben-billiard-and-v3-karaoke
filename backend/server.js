@@ -282,6 +282,30 @@ app.delete('/api/employees/:id', (req, res) => {
     writeDB(db);
     res.json({ success: true });
 });
+
+// --- ATTENDANCE API ---
+app.get('/api/attendance', (req, res) => res.json(readDB().attendance || []));
+app.post('/api/attendance', (req, res) => {
+    const db = readDB();
+    if (!db.attendance) db.attendance = [];
+    const newEntry = { 
+        id: Date.now(), 
+        ...req.body, 
+        timestamp: new Date().toISOString() 
+    };
+    db.attendance.push(newEntry);
+    writeDB(db);
+    res.json(newEntry);
+});
+app.post('/api/attendance/close-shift', (req, res) => {
+    const db = readDB();
+    const today = new Date().toISOString().split('T')[0];
+    // Optional: Only clear today or clear all. Usually reset means clear all logs for current view.
+    // Let's archive them or just filter them out for today.
+    db.attendance = db.attendance.filter(a => !a.timestamp.startsWith(today));
+    writeDB(db);
+    res.json({ success: true });
+});
 app.get('/api/users', (req, res) => res.json(readDB().users.map(u => ({ id: u.id, username: u.username, role: u.role, profilePic: u.profilePic }))));
 app.post('/api/users', (req, res) => {
     const db = readDB();
