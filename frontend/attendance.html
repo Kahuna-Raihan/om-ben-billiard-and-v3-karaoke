@@ -3,174 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Pegawai | Vini Vidi Vici Billiard</title>
+    <title>Absensi Karyawan | Om Ben Billiard</title>
     <link rel="stylesheet" href="assets/style.css">
     <style>
-        .attendance-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 2rem;
+        body {
+            background: radial-gradient(circle at bottom left, #1a1a2e, #0a0a12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
         }
-        @media (max-width: 768px) {
-            .attendance-grid { grid-template-columns: 1fr; }
+
+        .absensi-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: 30px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        .logo-absensi {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 10px var(--primary-color));
+        }
+
+        .staff-selector {
+            width: 100%;
+            padding: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            appearance: none;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .staff-selector option {
+            background: #0a0a12;
+            color: white;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .btn-absen {
+            padding: 1.5rem;
+            border-radius: 20px;
+            border: none;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-masuk {
+            background: linear-gradient(135deg, #00f3ff, #4facfe);
+            color: #000;
+            box-shadow: 0 10px 20px rgba(0,243,255,0.2);
+        }
+
+        .btn-pulang {
+            background: linear-gradient(135deg, #facd15, #f59e0b);
+            color: #000;
+            box-shadow: 0 10px 20px rgba(250,204,21,0.2);
+        }
+
+        .btn-absen:active {
+            transform: scale(0.95);
+        }
+
+        .status-msg {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            padding: 1rem;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .success { background: rgba(0,255,0,0.1); color: #4ade80; border: 1px solid rgba(0,255,0,0.2); }
+        .error { background: rgba(255,0,0,0.1); color: #f87171; border: 1px solid rgba(255,0,0,0.2); }
+
+        .clock-display {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            font-family: monospace;
+            color: var(--primary-color);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo-section">
-                <img src="assets/logo.png" alt="Logo" class="main-logo">
-                <div>
-                    <h1>OM BEN BILLIARD</h1>
-                    <p>X V3 KARAOKE Attendance</p>
-                </div>
-            </div>
-            <nav></nav>
-        </header>
+    <div class="absensi-card">
+        <img src="assets/logo.png" alt="Logo" class="logo-absensi">
+        <h1 style="font-family: var(--font-heading); margin-bottom: 0.5rem;">PRESENSI STAF</h1>
+        <p style="color: var(--text-dim); margin-bottom: 2rem; font-size: 0.8rem;">Silakan pilih nama dan tekan tombol sesuai waktu shift.</p>
 
-        <script src="assets/app.js"></script>
-        <script>renderNavbar('attendance');</script>
+        <div class="clock-display" id="live-clock">00:00:00</div>
+        <p id="live-date" style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 2rem;">Kamis, 1 Januari 1970</p>
 
-        <div class="attendance-grid">
-            <section>
-                <div class="stat-card" style="margin-bottom: 2rem;">
-                    <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Input Absensi</h2>
-                    <form id="attendance-form">
-                        <div class="form-group">
-                            <label>Pilih Pegawai</label>
-                            <select id="employee-id" required>
-                                <option value="">-- Pilih Nama --</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Tipe Absen</label>
-                            <select id="attendance-type" required>
-                                <option value="in">Masuk Shift</option>
-                                <option value="out">Keluar Shift</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Simpan Absensi</button>
-                    </form>
-                </div>
+        <select id="staff-select" class="staff-selector">
+            <option value="" disabled selected>-- PILIH NAMA ANDA --</option>
+        </select>
 
-                <div class="stat-card">
-                    <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Tambah Pegawai Baru</h2>
-                    <form id="add-employee-form">
-                        <div class="form-group">
-                            <label>Nama Pegawai</label>
-                            <input type="text" id="new-emp-name" required placeholder="Contoh: Budi">
-                        </div>
-                        <div class="form-group">
-                            <label>Peran / Role</label>
-                            <input type="text" id="new-emp-role" list="role-options" required placeholder="Pilih atau ketik peran baru">
-                            <datalist id="role-options">
-                                <option value="Kasir">
-                                <option value="Operator">
-                                <option value="Manager">
-                                <option value="Wasit">
-                                <option value="Kebersihan">
-                            </datalist>
-                        </div>
-                        <button type="submit" class="btn btn-outline" style="margin-top: 1rem;">Tambah Pegawai</button>
-                    </form>
-                </div>
-            </section>
+        <div class="btn-grid">
+            <button class="btn-absen btn-masuk" onclick="submitAbsen('in')">MASUK</button>
+            <button class="btn-absen btn-pulang" onclick="submitAbsen('out')">PULANG</button>
+        </div>
 
-            <section>
-                <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Kehadiran Hari Ini</h2>
-                <div style="background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--glass-border);">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr>
-                                <th style="padding: 1rem; text-align: left; background: rgba(255,255,255,0.05);">Waktu</th>
-                                <th style="padding: 1rem; text-align: left; background: rgba(255,255,255,0.05);">Nama</th>
-                                <th style="padding: 1rem; text-align: left; background: rgba(255,255,255,0.05);">Tipe</th>
-                            </tr>
-                        </thead>
-                        <tbody id="attendance-list">
-                            <!-- Attendance records -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+        <div id="status-msg" class="status-msg"></div>
+        
+        <div style="margin-top: 2rem;">
+            <a href="login.html" style="color: var(--text-dim); text-decoration: none; font-size: 0.75rem;">← Kembali ke Login</a>
         </div>
     </div>
 
+    <script src="assets/app.js"></script>
     <script>
+        // Update Clock
+        function updateClock() {
+            const now = getSyncedNow();
+            document.getElementById('live-clock').textContent = now.toLocaleTimeString('id-ID');
+            document.getElementById('live-date').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Load Employee List
         async function loadEmployees() {
-            const employees = await fetchData('/employees');
-            const select = document.getElementById('employee-id');
-            select.innerHTML = '<option value="">-- Pilih Nama --</option>'; // Reset options
-            employees.forEach(emp => {
-                const opt = document.createElement('option');
-                opt.value = emp.id;
-                opt.textContent = `${emp.name} (${emp.role})`;
-                select.appendChild(opt);
-            });
+            try {
+                const employees = await (await fetch('/api/employees')).json();
+                const select = document.getElementById('staff-select');
+                employees.sort((a,b) => a.name.localeCompare(b.name)).forEach(emp => {
+                    const opt = document.createElement('option');
+                    opt.value = emp.name;
+                    opt.textContent = emp.name + " (" + emp.role + ")";
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                showMsg('Gagal memuat daftar karyawan', 'error');
+            }
         }
 
-        async function loadAttendance() {
-            const data = await fetchData('/attendance');
-            const list = document.getElementById('attendance-list');
-            list.innerHTML = '';
+        async function submitAbsen(type) {
+            const name = document.getElementById('staff-select').value;
+            const msgDiv = document.getElementById('status-msg');
             
-            // Filter today
-            const today = new Date().toISOString().split('T')[0];
-            const filtered = data.filter(a => a.date === today).reverse();
-
-            if (filtered.length === 0) {
-                list.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2rem; color:var(--text-dim)">Belum ada absensi hari ini</td></tr>';
+            if (!name) {
+                showMsg('Pilih nama Anda terlebih dahulu!', 'error');
                 return;
             }
 
-            filtered.forEach(a => {
-                const row = document.createElement('tr');
-                row.style.borderBottom = '1px solid var(--glass-border)';
-                row.innerHTML = `
-                    <td style="padding: 1rem;">${new Date(a.timestamp).toLocaleTimeString()}</td>
-                    <td style="padding: 1rem;">${a.employeeName}</td>
-                    <td style="padding: 1rem;">
-                        <span style="color: ${a.type === 'in' ? 'var(--success)' : 'var(--accent-gold)'}">
-                            ${a.type === 'in' ? 'MASUK' : 'KELUAR'}
-                        </span>
-                    </td>
-                `;
-                list.appendChild(row);
-            });
+            try {
+                const response = await fetch('/api/attendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employeeName: name,
+                        type: type
+                    })
+                });
+                
+                if (response.ok) {
+                    showMsg(`Berhasil! Selamat ${type === 'in' ? 'Bekerja' : 'Istirahat'}, ${name}.`, 'success');
+                    document.getElementById('staff-select').value = "";
+                } else {
+                    showMsg('Terjadi kesalahan pada server.', 'error');
+                }
+            } catch (e) {
+                showMsg('Koneksi terputus.', 'error');
+            }
         }
 
-        document.getElementById('attendance-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const data = {
-                employeeId: document.getElementById('employee-id').value,
-                type: document.getElementById('attendance-type').value
-            };
-            
-            const res = await postData('/attendance', data);
-            if (res) {
-                alert('Absensi berhasil disimpan!');
-                loadAttendance();
-            }
-        };
-
-        document.getElementById('add-employee-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const data = {
-                name: document.getElementById('new-emp-name').value,
-                role: document.getElementById('new-emp-role').value
-            };
-            
-            const res = await postData('/employees', data);
-            if (res) {
-                alert('Pegawai baru berhasil ditambahkan!');
-                document.getElementById('add-employee-form').reset();
-                loadEmployees(); // Refresh the select list
-            }
-        };
+        function showMsg(text, type) {
+            const div = document.getElementById('status-msg');
+            div.textContent = text;
+            div.className = `status-msg ${type}`;
+            div.style.display = 'block';
+            setTimeout(() => div.style.display = 'none', 5000);
+        }
 
         loadEmployees();
-        loadAttendance();
     </script>
 </body>
 </html>
