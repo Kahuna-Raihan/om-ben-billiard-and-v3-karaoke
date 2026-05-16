@@ -46,7 +46,7 @@
                 <h2 style="font-family: var(--font-heading); margin: 0;">Rekapitulasi Barang Keluar/Masuk</h2>
                 <div style="display: flex; gap: 0.5rem;">
                     <button class="btn btn-outline" style="width: auto;" onclick="loadLogs()">↻ Refresh</button>
-                    <button class="btn btn-primary" style="width: auto;" onclick="window.print()">🖨️ Cetak Laporan</button>
+                    <button class="btn btn-primary" style="width: auto;" onclick="printStockReport()">🖨️ Cetak Laporan</button>
                 </div>
             </div>
 
@@ -132,6 +132,36 @@
             });
 
             renderLogs(filtered);
+        }
+
+        function printStockReport() {
+            const tableHtml = document.querySelector('.admin-table-container').outerHTML;
+            const printWin = window.open('', '_blank');
+            printWin.document.write(`
+                <html>
+                <head>
+                    <title>Laporan Stok Barang</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; }
+                        h1, h2 { text-align: center; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .log-in { color: green; }
+                        .log-out { color: red; }
+                    </style>
+                </head>
+                <body>
+                    <h1>OM BEN BILLIARD X V3 KARAOKE</h1>
+                    <h2>Laporan Keluar/Masuk Barang</h2>
+                    ${tableHtml}
+                    <script>
+                        window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
+                    </script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
         }
 
         // Auto Refresh every 1 minute

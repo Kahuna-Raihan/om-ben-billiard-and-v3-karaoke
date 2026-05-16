@@ -84,7 +84,7 @@
 
         <div class="report-header">
             <h2 style="font-family: var(--font-heading);">Laporan Pemasukan</h2>
-            <button class="btn btn-outline no-print" style="width: auto;" onclick="window.print()">Cetak Laporan</button>
+            <button class="btn btn-outline no-print" style="width: auto;" onclick="printReport()">Cetak Laporan</button>
         </div>
 
         <section class="filter-section no-print" style="flex-wrap: wrap;">
@@ -343,6 +343,40 @@
                     alert('Gagal menghapus transaksi.');
                 }
             }
+        }
+
+        function printReport() {
+            const title = document.getElementById('report-title').textContent;
+            const total = document.getElementById('total-revenue').textContent;
+            const tableHtml = document.querySelector('.admin-table-container').outerHTML;
+            
+            const printWin = window.open('', '_blank');
+            printWin.document.write(`
+                <html>
+                <head>
+                    <title>Laporan Keuangan</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; }
+                        h1 { text-align: center; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .total-section { margin-top: 20px; font-size: 1.2rem; font-weight: bold; text-align: right; }
+                        .no-print { display: none; }
+                    </style>
+                </head>
+                <body>
+                    <h1>OM BEN BILLIARD X V3 KARAOKE</h1>
+                    <h2>${title}</h2>
+                    ${tableHtml}
+                    <div class="total-section">TOTAL PENDAPATAN: ${total}</div>
+                    <script>
+                        window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
+                    </script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
         }
 
         loadReport();

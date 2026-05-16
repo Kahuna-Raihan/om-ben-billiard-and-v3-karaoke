@@ -10,13 +10,10 @@ async function syncTime() {
         const end = Date.now();
         const latency = (end - start) / 2;
         serverTimeOffset = (serverTime + latency) - end;
-        console.log('Time synced. Offset:', serverTimeOffset, 'ms');
-    } catch (e) {
-        console.error('Time sync failed', e);
-    }
+    } catch (e) {}
 }
 syncTime();
-setInterval(syncTime, 60000); // Sync every minute
+setInterval(syncTime, 60000);
 
 function getSyncedNow() {
     return new Date(Date.now() + serverTimeOffset);
@@ -24,227 +21,146 @@ function getSyncedNow() {
 
 // --- AUTH GUARD ---
 if (!window.location.href.includes('login.html')) {
-    const role = localStorage.getItem('auth_role');
-    if (!role) {
-        window.location.href = 'login.html';
-    }
+    if (!localStorage.getItem('auth_role')) window.location.href = 'login.html';
 }
 
 function logout() {
-    localStorage.removeItem('auth_role');
-    localStorage.removeItem('auth_user');
-    localStorage.removeItem('auth_profile_pic');
+    localStorage.clear();
     window.location.href = 'login.html';
 }
 
-const formatRupiah = (number) => {
-    if (number === undefined || number === null) return 'Rp -';
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        maximumFractionDigits: 0
-    }).format(number);
+const formatRupiah = (n) => {
+    if (n === undefined || n === null) return 'Rp -';
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 };
 
-const formatTime = (isoString) => {
-    if (!isoString) return '--:--';
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return '--:--';
-    return date.toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+const formatTime = (iso) => {
+    if (!iso) return '--:--';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '--:--' : d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 };
 
-const calculateTimeDiff = (startTimeISO) => {
-    if (!startTimeISO) return { hours: 0, minutes: 0, seconds: 0, formatted: '00:00:00' };
-    const start = new Date(startTimeISO);
-    const now = getSyncedNow();
-    const diffMs = Math.max(0, now.getTime() - start.getTime());
-    
-    const hours = Math.floor(diffMs / 3600000);
-    const minutes = Math.floor((diffMs % 3600000) / 60000);
-    const seconds = Math.floor((diffMs % 60000) / 1000);
-    
-    return {
-        hours,
-        minutes,
-        seconds,
-        totalMinutes: Math.floor(diffMs / 60000),
-        formatted: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-    };
+const calculateTimeDiff = (startISO) => {
+    const start = new Date(startISO);
+    const diff = Math.max(0, getSyncedNow() - start);
+    const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
+    return { h, m, s, formatted: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` };
 };
 
-const calculateCountdown = (endTimeISO) => {
-    if (!endTimeISO) return { hours: 0, minutes: 0, seconds: 0, isExpired: true, formatted: '00:00:00' };
-    const end = new Date(endTimeISO);
-    const now = getSyncedNow();
-    const diffMs = Math.max(0, end.getTime() - now.getTime());
-    
-    const hours = Math.floor(diffMs / 3600000);
-    const minutes = Math.floor((diffMs % 3600000) / 60000);
-    const seconds = Math.floor((diffMs % 60000) / 1000);
-    
-    return {
-        hours,
-        minutes,
-        seconds,
-        isExpired: diffMs <= 0,
-        formatted: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-    };
+const calculateCountdown = (endISO) => {
+    const end = new Date(endISO);
+    const diff = Math.max(0, end - getSyncedNow());
+    const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
+    return { h, m, s, isExpired: diff <= 0, formatted: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` };
 };
 
-async function fetchData(endpoint) {
-    try {
-        const response = await fetch(`${API_BASE}${endpoint}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        return await response.json();
-    } catch (error) {
-        console.error(`Error fetching ${endpoint}:`, error);
-        return [];
-    }
-}
+async function fetchData(ep) { try { return await (await fetch(`${API_BASE}${ep}`)).json(); } catch(e){ return []; } }
+async function postData(ep, data) { try { return await (await fetch(`${API_BASE}${ep}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })).json(); } catch(e){ return null; } }
+async function deleteData(ep) { try { return await (await fetch(`${API_BASE}${ep}`, { method: 'DELETE' })).json(); } catch(e){ return null; } }
 
-async function postData(endpoint, data) {
-    try {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        return await response.json();
-    } catch (error) {
-        console.error(`Error posting ${endpoint}:`, error);
-        return null;
-    }
-}
-
-async function deleteData(endpoint) {
-    try {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-            method: 'DELETE'
-        });
-        return await response.json();
-    } catch (error) {
-        console.error(`Error deleting ${endpoint}:`, error);
-        return null;
-    }
-}
-
-function renderNavbar(activePage) {
+function renderNavbar(active) {
     const role = localStorage.getItem('auth_role');
-    const username = localStorage.getItem('auth_user') || 'User';
+    const user = localStorage.getItem('auth_user') || 'User';
     const nav = document.querySelector('nav');
     if (!nav) return;
 
-    let navHtml = '<ul>';
-    
+    let html = '<ul>';
     if (role === 'admin') {
-        navHtml += `
+        html += `
             <li class="nav-label">ADMIN PANEL:</li>
-            <li><a href="admin.html" class="${activePage === 'admin' ? 'active-admin' : ''}">🍔 Menu F&B</a></li>
-            <li><a href="karaoke-settings.html" class="${activePage === 'karaoke-settings' ? 'active-admin' : ''}">🎤 Ruangan</a></li>
-            <li><a href="rental.html" class="${activePage === 'rental' ? 'active-admin' : ''}">🎱 Meja</a></li>
+            <li><a href="admin.html" class="${active === 'admin' ? 'active-admin' : ''}">🍔 Menu</a></li>
+            <li><a href="karaoke-settings.html" class="${active === 'karaoke-settings' ? 'active-admin' : ''}">🎤 Ruang</a></li>
+            <li><a href="rental.html" class="${active === 'rental' ? 'active-admin' : ''}">🎱 Meja</a></li>
             <li class="nav-divider"></li>
-            <li><a href="monitoring.html" class="${activePage === 'monitoring' ? 'active-admin' : ''}" style="color:var(--primary-color)">📡 LIVE MONITOR</a></li>
-            <li><a href="cctv.html" class="${activePage === 'cctv' ? 'active-admin' : ''}" style="color:var(--primary-color)">📹 CCTV</a></li>
-            <li><a href="stock-history.html" class="${activePage === 'stock-history' ? 'active-admin' : ''}" style="color:var(--secondary-color)">📦 STOK</a></li>
-            <li><a href="finance.html" class="${activePage === 'finance' ? 'active-admin' : ''}">📊 LAPORAN</a></li>
-            <li><a href="attendance-admin.html" class="${activePage === 'attendance-admin' ? 'active-admin' : ''}">👥 STAF</a></li>
+            <li><a href="monitoring.html" class="${active === 'monitoring' ? 'active-admin' : ''}" style="color:var(--primary-color)">📡 LIVE</a></li>
+            <li><a href="cctv.html" class="${active === 'cctv' ? 'active-admin' : ''}" style="color:var(--primary-color)">📹 CCTV</a></li>
+            <li><a href="stock-history.html" class="${active === 'stock-history' ? 'active-admin' : ''}" style="color:var(--secondary-color)">📦 STOK</a></li>
+            <li><a href="finance.html" class="${active === 'finance' ? 'active-admin' : ''}">📊 LAPORAN</a></li>
+            <li><a href="attendance-admin.html" class="${active === 'attendance-admin' ? 'active-admin' : ''}">👥 STAF</a></li>
         `;
     } else {
-        navHtml += `
+        html += `
             <li class="nav-label">KASIR:</li>
-            <li><a href="index.html" class="${activePage === 'billiard' ? 'active' : ''}">Billiard</a></li>
-            <li><a href="karaoke.html" class="${activePage === 'karaoke' ? 'active' : ''}">Karaoke</a></li>
-            <li><a href="pos.html" class="${activePage === 'pos' ? 'active' : ''}">F&B</a></li>
-            <li><a href="attendance.html" class="${activePage === 'attendance' ? 'active' : ''}">Absensi</a></li>
+            <li><a href="index.html" class="${active === 'billiard' ? 'active' : ''}">Billiard</a></li>
+            <li><a href="karaoke.html" class="${active === 'karaoke' ? 'active' : ''}">Karaoke</a></li>
+            <li><a href="pos.html" class="${active === 'pos' ? 'active' : ''}">F&B</a></li>
         `;
     }
-
-    navHtml += `
-        <li class="nav-divider"></li>
+    html += `
         <li style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
-            ${role === 'admin' ? `<a href="users-admin.html" class="${activePage === 'users-admin' ? 'active-admin' : ''}" style="color: var(--primary-color); font-size: 0.8rem;">⚙️ Manajemen User</a>` : ''}
-            <a href="profile.html" class="${activePage === 'profile' ? 'active' : ''}" style="color: var(--secondary-color); display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-                <img src="${localStorage.getItem('auth_profile_pic') || 'assets/logo.png'}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--primary-color);">
-                <span>${username}</span>
+            ${role === 'admin' ? `<a href="users-admin.html" class="${active === 'users-admin' ? 'active-admin' : ''}" style="color: var(--primary-color); font-size: 0.8rem;">⚙️ User</a>` : ''}
+            <a href="profile.html" class="${active === 'profile' ? 'active' : ''}" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: white;">
+                <img src="${localStorage.getItem('auth_profile_pic') || 'assets/logo.png'}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--primary-color);">
+                <span>${user}</span>
             </a>
-            <a href="#" onclick="logout()" style="color: var(--danger); font-size: 0.8rem; border: 1px solid rgba(231,76,60,0.2); padding: 4px 10px; border-radius: 8px;">Logout</a>
+            <a href="#" onclick="logout()" style="color: var(--danger); font-size: 0.8rem;">Logout</a>
         </li>
     </ul>`;
-    
-    nav.innerHTML = navHtml;
+    nav.innerHTML = html;
 }
 
+// --- NEW ROBUST PRINT SYSTEM ---
 function printReceipt(data) {
-    if (!data) return;
-    const printWindow = document.createElement('div');
-    printWindow.className = 'thermal-receipt';
+    if (!data) return alert('Data struk tidak tersedia!');
     
+    const printWindow = window.open('', '_blank', 'width=300,height=600');
     const now = getSyncedNow();
-    const dateStr = now.toLocaleDateString('id-ID');
-    const timeStr = now.toLocaleTimeString('id-ID');
-
+    
     let itemsHtml = '';
-    if (data.type === 'billiard' || data.type === 'karaoke' || data.tableName) {
+    if (data.tableName) {
         itemsHtml = `
-            <div class="item-row">
-                <span>Sewa ${data.tableName || 'Ruangan'}</span>
-                <span>${formatRupiah(data.tableAmount || data.amount)}</span>
-            </div>
-            <div class="item-row">
-                <p>Durasi: ${data.durationMinutes || 0} menit</p>
-            </div>
+            <div class="row"><span>Sewa ${data.tableName}</span> <span>${formatRupiah(data.tableAmount || data.amount)}</span></div>
+            <div class="row"><small>Durasi: ${data.durationMinutes || 0} Menit</small></div>
         `;
         if (data.orders && data.orders.length > 0) {
             itemsHtml += '<div class="divider"></div>';
-            data.orders.forEach(item => {
-                itemsHtml += `
-                    <div class="item-row">
-                        <span>${item.name} x${item.qty || item.quantity}</span>
-                        <span>${formatRupiah(item.subtotal)}</span>
-                    </div>
-                `;
+            data.orders.forEach(o => {
+                itemsHtml += `<div class="row"><span>${o.name} x${o.qty}</span> <span>${formatRupiah(o.subtotal)}</span></div>`;
             });
         }
-    } else if (data.orders || data.items) {
-        const items = data.orders || data.items;
-        items.forEach(item => {
-            itemsHtml += `
-                <div class="item-row">
-                    <span>${item.name} x${item.qty || item.quantity}</span>
-                    <span>${formatRupiah(item.subtotal || (item.price * item.quantity))}</span>
-                </div>
-            `;
+    } else if (data.orders) {
+        data.orders.forEach(o => {
+            itemsHtml += `<div class="row"><span>${o.name} x${o.qty || o.quantity}</span> <span>${formatRupiah(o.subtotal)}</span></div>`;
         });
     }
 
-    printWindow.innerHTML = `
-        <div style="text-align:center; margin-bottom: 2mm;">
-            <h2 style="margin:0; font-size: 14pt;">OM BEN BILLIARD</h2>
-            <p style="margin:0; font-size: 10pt;">X V3 KARAOKE</p>
-        </div>
-        <div class="divider"></div>
-        <p>No: TR-${Date.now().toString().slice(-6)}</p>
-        <p>Tgl: ${dateStr} ${timeStr}</p>
-        <p>Kasir: ${localStorage.getItem('auth_user') || 'Staff'}</p>
-        <p>Plgn: ${data.customerName || 'Customer'}</p>
-        <div class="divider"></div>
-        ${itemsHtml}
-        <div class="divider"></div>
-        <div class="total-row">
-            <span>TOTAL</span>
-            <span>${formatRupiah(data.amount || data.totalAmount)}</span>
-        </div>
-        <div class="divider"></div>
-        <div class="footer">
-            <p>Terima Kasih Atas Kunjungan Anda</p>
-            <p>Selamat Datang Kembali!</p>
-        </div>
-    `;
-
-    document.body.appendChild(printWindow);
-    window.print();
-    document.body.removeChild(printWindow);
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Struk Pembayaran</title>
+            <style>
+                @page { margin: 0; size: 58mm auto; }
+                body { font-family: 'Courier New', monospace; padding: 5mm; width: 48mm; font-size: 11px; line-height: 1.4; }
+                .text-center { text-align: center; }
+                .divider { border-top: 1px dashed #000; margin: 5px 0; }
+                .row { display: flex; justify-content: space-between; }
+                .bold { font-weight: bold; }
+                .total { font-size: 14px; margin-top: 5px; border-top: 1px solid #000; padding-top: 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="text-center">
+                <h2 style="margin:0; font-size:16px;">OM BEN BILLIARD</h2>
+                <p style="margin:2px 0;">X V3 KARAOKE</p>
+                <p style="font-size:9px;">${now.toLocaleString('id-ID')}</p>
+            </div>
+            <div class="divider"></div>
+            <div class="row"><span>Kasir:</span> <span>${localStorage.getItem('auth_user')}</span></div>
+            <div class="row"><span>Pelanggan:</span> <span>${data.customerName || 'Customer'}</span></div>
+            <div class="divider"></div>
+            ${itemsHtml}
+            <div class="divider"></div>
+            <div class="row bold total"><span>TOTAL</span> <span>${formatRupiah(data.amount || data.totalAmount)}</span></div>
+            <div class="divider"></div>
+            <div class="text-center" style="margin-top:10px;">
+                <p>Terima Kasih!</p>
+                <p>Selamat Datang Kembali</p>
+            </div>
+            <script>
+                window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
+            </script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
 }
