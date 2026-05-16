@@ -158,18 +158,20 @@ app.post('/api/menu/:id/set-stock', (req, res) => {
     const item = db.menu.find(m => m.id == req.params.id);
     if (!item) return res.status(404).json({ error: 'Item not found' });
 
+    const addedQty = parseInt(stock);
     const oldStock = item.stock || 0;
-    const newStock = parseInt(stock);
-    item.stock = newStock;
+    
+    // User wants to "count from 0", meaning the input is the delta
+    item.stock = oldStock + addedQty;
 
-    // Log the change with more detail
+    // Log the change
     db.stockLogs.push({
         id: Date.now(),
         itemId: item.id,
         itemName: item.name,
-        type: newStock > oldStock ? 'in' : 'out',
-        delta: Math.abs(newStock - oldStock),
-        reason: `${reason || 'Update Manual'}: (${oldStock} -> ${newStock})`,
+        type: addedQty >= 0 ? 'in' : 'out',
+        delta: Math.abs(addedQty),
+        reason: `${reason || 'Update Manual'}: (Stok awal ${oldStock} + ${addedQty})`,
         user: user || 'Admin',
         timestamp: new Date().toISOString()
     });
