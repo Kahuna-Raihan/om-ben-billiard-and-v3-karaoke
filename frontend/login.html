@@ -87,10 +87,12 @@
                         window.location.href = 'index.html';
                     }
                 } else {
-                    document.getElementById('login-error').style.display = 'block';
+                    const errorEl = document.getElementById('login-error');
+                    errorEl.textContent = data.message || 'Username atau password salah!';
+                    errorEl.style.display = 'block';
                 }
             } catch (err) {
-                alert('Tidak dapat terhubung ke server');
+                alert('Tidak dapat terhubung ke server: ' + err.message);
             }
         };
     </script>

@@ -9,14 +9,26 @@ const models = require('./models');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// MongoDB Connection
+// Anti-Crash Handlers
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+
+// MongoDB Connection with Error Handling
 const MONGO_URL = process.env.MONGO_URL;
 if (MONGO_URL && !MONGO_URL.includes('Masukkan_URL')) {
-    mongoose.connect(MONGO_URL)
-        .then(() => console.log('Terhubung ke MongoDB'))
-        .catch(err => console.error('Gagal koneksi MongoDB:', err));
+    mongoose.connect(MONGO_URL, {
+        serverSelectionTimeoutMS: 5000 // Jangan nunggu kelamaan
+    })
+    .then(() => console.log('Terhubung ke MongoDB'))
+    .catch(err => {
+        console.error('CRITICAL: Gagal koneksi MongoDB:', err.message);
+    });
 } else {
-    console.warn('PERINGATAN: MONGO_URL tidak ditemukan di .env. Aplikasi mungkin tidak berjalan dengan benar.');
+    console.warn('PERINGATAN: MONGO_URL tidak ditemukan.');
 }
 
 app.use(cors());
@@ -387,13 +399,18 @@ app.get('/api/attendance', async (req, res) => {
 
 // --- AUTH API ---
 app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    const user = await models.User.findOne({ username, password });
-    
-    if (user) {
-        res.json({ success: true, role: user.role, username: user.username });
-    } else {
-        res.status(401).json({ success: false, message: 'Username atau password salah' });
+    try {
+        const { username, password } = req.body;
+        const user = await models.User.findOne({ username, password });
+        
+        if (user) {
+            res.json({ success: true, role: user.role, username: user.username });
+        } else {
+            res.status(401).json({ success: false, message: 'Username atau password salah' });
+        }
+    } catch (err) {
+        console.error('Login Error:', err.message);
+        res.status(500).json({ success: false, message: 'Database Error: ' + err.message });
     }
 });
 
