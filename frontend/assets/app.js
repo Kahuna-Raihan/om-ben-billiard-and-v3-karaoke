@@ -11,6 +11,7 @@ if (!window.location.href.includes('login.html')) {
 function logout() {
     localStorage.removeItem('auth_role');
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_profile_pic');
     window.location.href = 'login.html';
 }
 
@@ -146,7 +147,10 @@ function renderNavbar(activePage) {
         <li class="nav-divider"></li>
         <li style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
             ${role === 'admin' ? `<a href="users-admin.html" class="${activePage === 'users-admin' ? 'active-admin' : ''}" style="color: var(--primary-color); font-size: 0.8rem;">⚙️ Manajemen User</a>` : ''}
-            <a href="profile.html" class="${activePage === 'profile' ? 'active' : ''}" style="color: var(--secondary-color);">👤 ${username}</a>
+            <a href="profile.html" class="${activePage === 'profile' ? 'active' : ''}" style="color: var(--secondary-color); display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                <img src="${localStorage.getItem('auth_profile_pic') || 'assets/logo.png'}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--primary-color);">
+                <span>${username}</span>
+            </a>
             <a href="#" onclick="logout()" style="color: var(--danger); font-size: 0.8rem; border: 1px solid rgba(231,76,60,0.2); padding: 4px 10px; border-radius: 8px;">Logout</a>
         </li>
     </ul>`;

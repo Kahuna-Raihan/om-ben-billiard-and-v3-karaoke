@@ -48,8 +48,16 @@
 
         <div class="profile-container">
             <div class="profile-header">
+                <div style="position: relative; width: 120px; height: 120px; margin: 0 auto 1.5rem;">
+                    <img id="profile-preview" src="assets/logo.png" alt="Profile" 
+                         style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color); padding: 5px; background: rgba(255,255,255,0.05);">
+                    <label for="photo-upload" style="position: absolute; bottom: 5px; right: 5px; background: var(--primary-color); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                        <span style="font-size: 1.2rem; color: #1a1a2e;">📷</span>
+                    </label>
+                    <input type="file" id="photo-upload" hidden accept="image/*">
+                </div>
                 <h2>Pengaturan Profil</h2>
-                <p>Kelola username dan password akun Anda</p>
+                <p>Kelola foto, username, dan password Anda</p>
             </div>
 
             <form id="profile-form">
@@ -59,7 +67,7 @@
                 </div>
                 <div class="form-group">
                     <label>Password Baru</label>
-                    <input type="password" id="new-password" placeholder="Masukkan password baru (opsional)">
+                    <input type="password" id="new-password" placeholder="Biarkan kosong jika tidak ingin ganti">
                 </div>
                 <div class="form-group" style="margin-top: 2rem;">
                     <button type="submit" class="btn btn-primary" id="save-btn">Simpan Perubahan</button>
@@ -72,6 +80,33 @@
     <script>
         const oldUser = localStorage.getItem('auth_user');
         document.getElementById('new-username').value = oldUser;
+        
+        let base64Photo = null;
+
+        // Load existing photo if any
+        async function loadCurrentProfile() {
+            const users = await fetchData('/users');
+            const current = users.find(u => u.username === oldUser);
+            if (current && current.profilePic) {
+                document.getElementById('profile-preview').src = current.profilePic;
+                base64Photo = current.profilePic;
+            }
+        }
+        loadCurrentProfile();
+
+        // Photo Upload Handling
+        document.getElementById('photo-upload').onchange = function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const imgUrl = event.target.result;
+                    document.getElementById('profile-preview').src = imgUrl;
+                    base64Photo = imgUrl; // Base64 string
+                };
+                reader.readAsDataURL(file);
+            }
+        };
 
         document.getElementById('profile-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -88,22 +123,23 @@
                 const res = await putData('/users/update', {
                     oldUsername: oldUser,
                     newUsername: newUsername,
-                    newPassword: newPassword
+                    newPassword: newPassword,
+                    profilePic: base64Photo
                 });
                 
                 if (res && res.success) {
                     statusEl.style.color = 'var(--primary-color)';
-                    statusEl.textContent = 'Berhasil! Profil diperbarui. Mengalihkan...';
+                    statusEl.textContent = 'Berhasil! Profil diperbarui.';
                     
-                    // Update localStorage
-                    localStorage.setItem('auth_user', newUsername);
+                    localStorage.setItem('auth_user', res.username);
+                    if (res.profilePic) localStorage.setItem('auth_profile_pic', res.profilePic);
                     
                     setTimeout(() => {
                         window.location.reload();
-                    }, 1500);
+                    }, 1000);
                 } else {
                     statusEl.style.color = 'var(--danger)';
-                    statusEl.textContent = res.message;
+                    statusEl.textContent = res ? res.message : 'Gagal menyimpan.';
                     saveBtn.disabled = false;
                     saveBtn.textContent = 'Simpan Perubahan';
                 }

@@ -83,6 +83,7 @@
                 if (data.success) {
                     localStorage.setItem('auth_role', data.role);
                     localStorage.setItem('auth_user', data.username);
+                    if (data.profilePic) localStorage.setItem('auth_profile_pic', data.profilePic);
                     
                     if (data.role === 'admin') {
                         window.location.href = 'admin.html';

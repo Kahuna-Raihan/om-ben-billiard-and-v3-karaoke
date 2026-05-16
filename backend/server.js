@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 const DB_PATH = path.join(__dirname, 'data', 'db.json');
@@ -18,6 +18,7 @@ function readDB() {
     try {
         const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         if (!data.rooms) data.rooms = [];
+        if (!data.users) data.users = [];
         return data;
     } catch (err) {
         console.error('Error reading DB:', err);
@@ -41,7 +42,7 @@ app.post('/api/login', (req, res) => {
         const db = readDB();
         const user = db.users.find(u => u.username === username && u.password === password);
         if (user) {
-            res.json({ success: true, role: user.role, username: user.username });
+            res.json({ success: true, role: user.role, username: user.username, profilePic: user.profilePic });
         } else {
             res.status(401).json({ success: false, message: 'Username atau password salah' });
         }
@@ -58,6 +59,17 @@ app.post('/api/tables', (req, res) => {
     db.tables.push(newTable);
     writeDB(db);
     res.json(newTable);
+});
+app.put('/api/tables/:id', (req, res) => {
+    const db = readDB();
+    const idx = db.tables.findIndex(t => t.id == req.params.id);
+    if (idx !== -1) {
+        db.tables[idx] = { ...db.tables[idx], ...req.body };
+        writeDB(db);
+        res.json(db.tables[idx]);
+    } else {
+        res.status(404).json({ message: 'Table not found' });
+    }
 });
 app.delete('/api/tables/:id', (req, res) => {
     const db = readDB();
@@ -142,31 +154,17 @@ app.get('/api/sessions', (req, res) => res.json(readDB().sessions));
 app.post('/api/sessions/start', (req, res) => {
     const { tableId, customerName, type, durationMinutes } = req.body;
     const db = readDB();
-    
-    // Check in tables or rooms
     let item = db.tables.find(t => t.id == tableId);
     if (!item) item = db.rooms.find(r => r.id == tableId);
-    
     if (!item || item.status !== 'available') return res.status(400).json({ message: 'Target busy or not found' });
-
     const startTime = new Date();
     let endTime = null;
     if (type === 'duration' && durationMinutes) {
         endTime = new Date(startTime.getTime() + durationMinutes * 60000);
     }
-
     const newSession = {
-        id: Date.now(),
-        tableId,
-        tableName: item.name,
-        customerName,
-        type,
-        startTime,
-        endTime,
-        hourlyRate: item.hourlyRate,
-        orders: []
+        id: Date.now(), tableId, tableName: item.name, customerName, type, startTime, endTime, hourlyRate: item.hourlyRate, orders: []
     };
-
     db.sessions.push(newSession);
     item.status = 'occupied';
     writeDB(db);
@@ -178,7 +176,6 @@ app.post('/api/sessions/:id/order', (req, res) => {
     const db = readDB();
     const session = db.sessions.find(s => s.id == req.params.id);
     const menuItem = db.menu.find(m => m.id == menuId);
-
     if (session && menuItem) {
         const order = { menuId, name: menuItem.name, price: menuItem.price, qty: parseInt(qty), subtotal: menuItem.price * parseInt(qty) };
         if (!session.orders) session.orders = [];
@@ -195,33 +192,19 @@ app.post('/api/sessions/:id/stop', (req, res) => {
     const db = readDB();
     const sessionIdx = db.sessions.findIndex(s => s.id == req.params.id);
     if (sessionIdx === -1) return res.status(404).json({ message: 'Not found' });
-
     const session = db.sessions[sessionIdx];
     const stopTime = new Date();
     const durationMs = stopTime - new Date(session.startTime);
     const durationHours = durationMs / (1000 * 60 * 60);
     const tableAmount = Math.ceil(durationHours * session.hourlyRate);
     const ordersTotal = session.orders ? session.orders.reduce((acc, o) => acc + o.subtotal, 0) : 0;
-
     const transaction = {
-        id: Date.now(),
-        ...session,
-        endTime: stopTime,
-        durationMinutes: Math.round(durationMs / 60000),
-        tableAmount,
-        ordersAmount: ordersTotal,
-        amount: tableAmount + ordersTotal,
-        date: stopTime.toISOString().split('T')[0],
-        isArchived: false
+        id: Date.now(), ...session, endTime: stopTime, durationMinutes: Math.round(durationMs / 60000), tableAmount, ordersAmount: ordersTotal, amount: tableAmount + ordersTotal, date: stopTime.toISOString().split('T')[0], isArchived: false
     };
-
     db.transactions.push(transaction);
-    
-    // Reset status in tables or rooms
     let item = db.tables.find(t => t.id == session.tableId);
     if (!item) item = db.rooms.find(r => r.id == session.tableId);
     if (item) item.status = 'available';
-    
     db.sessions.splice(sessionIdx, 1);
     writeDB(db);
     res.json(transaction);
@@ -260,55 +243,6 @@ app.delete('/api/employees/:id', (req, res) => {
     writeDB(db);
     res.json({ success: true });
 });
-
-// --- USERS MANAGEMENT ---
-app.get('/api/users', (req, res) => {
-    const users = readDB().users.map(u => ({ id: u.id, username: u.username, role: u.role }));
-    res.json(users);
-});
-
-app.post('/api/users', (req, res) => {
-    const db = readDB();
-    const { username, password, role } = req.body;
-    
-    if (db.users.find(u => u.username === username)) {
-        return res.status(400).json({ success: false, message: 'Username sudah ada!' });
-    }
-
-    const newUser = {
-        id: Date.now(),
-        username,
-        password,
-        role: role || 'kasir'
-    };
-    db.users.push(newUser);
-    writeDB(db);
-    res.json({ success: true, user: { id: newUser.id, username: newUser.username, role: newUser.role } });
-});
-
-app.delete('/api/users/:id', (req, res) => {
-    const db = readDB();
-    const user = db.users.find(u => u.id == req.params.id);
-    if (user && user.username === 'om ben') {
-        return res.status(403).json({ message: 'User utama tidak bisa dihapus' });
-    }
-    db.users = db.users.filter(u => u.id != req.params.id);
-    writeDB(db);
-    res.json({ success: true });
-});
-
-app.put('/api/users/:id/password', (req, res) => {
-    const db = readDB();
-    const user = db.users.find(u => u.id == req.params.id);
-    if (user) {
-        user.password = req.body.newPassword;
-        writeDB(db);
-        res.json({ success: true });
-    } else {
-        res.status(404).json({ message: 'User not found' });
-    }
-});
-
 app.get('/api/attendance', (req, res) => res.json(readDB().attendance));
 app.post('/api/attendance', (req, res) => {
     const { employeeId, type } = req.body;
@@ -319,13 +253,53 @@ app.post('/api/attendance', (req, res) => {
     writeDB(db);
     res.json(record);
 });
-app.post('/api/attendance/close-shift', (req, res) => {
+
+// --- USERS MANAGEMENT ---
+app.get('/api/users', (req, res) => {
+    const users = readDB().users.map(u => ({ id: u.id, username: u.username, role: u.role, profilePic: u.profilePic }));
+    res.json(users);
+});
+app.post('/api/users', (req, res) => {
     const db = readDB();
-    const today = new Date().toISOString().split('T')[0];
-    const beforeCount = db.attendance.length;
-    db.attendance = db.attendance.filter(a => a.date !== today);
+    const { username, password, role } = req.body;
+    if (db.users.find(u => u.username === username)) return res.status(400).json({ success: false, message: 'Username sudah ada!' });
+    const newUser = { id: Date.now(), username, password, role: role || 'kasir' };
+    db.users.push(newUser);
     writeDB(db);
-    res.json({ success: true, deletedCount: beforeCount - db.attendance.length });
+    res.json({ success: true });
+});
+app.put('/api/users/update', (req, res) => {
+    const db = readDB();
+    const { oldUsername, newUsername, newPassword, profilePic } = req.body;
+    const user = db.users.find(u => u.username === oldUsername);
+    if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+    
+    if (newUsername && newUsername !== oldUsername) {
+        if (db.users.find(u => u.username === newUsername)) return res.status(400).json({ success: false, message: 'Username baru sudah dipakai' });
+        user.username = newUsername;
+    }
+    if (newPassword) user.password = newPassword;
+    if (profilePic) user.profilePic = profilePic;
+    
+    writeDB(db);
+    res.json({ success: true, username: user.username, profilePic: user.profilePic });
+});
+app.delete('/api/users/:id', (req, res) => {
+    const db = readDB();
+    const user = db.users.find(u => u.id == req.params.id);
+    if (user && user.username === 'om ben') return res.status(403).json({ message: 'User utama tidak bisa dihapus' });
+    db.users = db.users.filter(u => u.id != req.params.id);
+    writeDB(db);
+    res.json({ success: true });
+});
+app.put('/api/users/:id/password', (req, res) => {
+    const db = readDB();
+    const user = db.users.find(u => u.id == req.params.id);
+    if (user) {
+        user.password = req.body.newPassword;
+        writeDB(db);
+        res.json({ success: true });
+    } else res.status(404).json({ message: 'User not found' });
 });
 
 app.listen(PORT, () => {
