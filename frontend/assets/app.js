@@ -83,20 +83,22 @@ function renderNavbar(active) {
     } else {
         html += `
             <li class="nav-label">KASIR:</li>
-            <li><a href="index.html" class="${active === 'billiard' ? 'active' : ''}">Billiard</a></li>
-            <li><a href="karaoke.html" class="${active === 'karaoke' ? 'active' : ''}">Karaoke</a></li>
-            <li><a href="pos.html" class="${active === 'pos' ? 'active' : ''}">F&B</a></li>
+            <li><a href="index.html" class="${active === 'billiard' ? 'active' : ''}">🎱 Billiard</a></li>
+            <li><a href="karaoke.html" class="${active === 'karaoke' ? 'active' : ''}">🎤 Karaoke</a></li>
+            <li><a href="pos.html" class="${active === 'pos' ? 'active' : ''}">🍔 F&B</a></li>
             <li><a href="bookings.html" class="${active === 'bookings' ? 'active' : ''}" style="color: var(--accent-gold)">📅 Booking</a></li>
         `;
     }
+    
+    const profilePic = localStorage.getItem('auth_profile_pic') || 'assets/logo.png';
     html += `
-        <li style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
-            ${role === 'admin' ? `<a href="users-admin.html" class="${active === 'users-admin' ? 'active-admin' : ''}" style="color: var(--primary-color); font-size: 0.8rem;">⚙️ User</a>` : ''}
-            <a href="profile.html" class="${active === 'profile' ? 'active' : ''}" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: white;">
-                <img src="${localStorage.getItem('auth_profile_pic') || 'assets/logo.png'}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--primary-color);">
-                <span>${user}</span>
+        <li class="nav-user-section">
+            ${role === 'admin' ? `<a href="users-admin.html" class="${active === 'users-admin' ? 'active-admin' : ''}" style="color: var(--primary-color);">⚙️</a>` : ''}
+            <a href="profile.html" class="profile-link ${active === 'profile' ? 'active' : ''}">
+                <img src="${profilePic}" class="nav-avatar">
+                <span class="nav-username">${user}</span>
             </a>
-            <a href="#" onclick="logout()" style="color: var(--danger); font-size: 0.8rem;">Logout</a>
+            <button onclick="logout()" class="logout-btn">🚪</button>
         </li>
     </ul>`;
     nav.innerHTML = html;
