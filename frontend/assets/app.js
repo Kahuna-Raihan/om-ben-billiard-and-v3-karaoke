@@ -1,5 +1,27 @@
 const API_BASE = '/api';
 
+// --- TIME SYNC SYSTEM ---
+let serverTimeOffset = 0;
+async function syncTime() {
+    try {
+        const start = Date.now();
+        const response = await fetch(`${API_BASE}/time`);
+        const { serverTime } = await response.json();
+        const end = Date.now();
+        const latency = (end - start) / 2;
+        serverTimeOffset = (serverTime + latency) - end;
+        console.log('Time synced. Offset:', serverTimeOffset, 'ms');
+    } catch (e) {
+        console.error('Time sync failed', e);
+    }
+}
+syncTime();
+setInterval(syncTime, 60000); // Sync every minute
+
+function getSyncedNow() {
+    return new Date(Date.now() + serverTimeOffset);
+}
+
 // --- AUTH GUARD ---
 if (!window.location.href.includes('login.html')) {
     const role = localStorage.getItem('auth_role');
@@ -34,11 +56,10 @@ const formatTime = (isoString) => {
     });
 };
 
-// Stabilized Time Calculation
 const calculateTimeDiff = (startTimeISO) => {
     if (!startTimeISO) return { hours: 0, minutes: 0, seconds: 0, formatted: '00:00:00' };
     const start = new Date(startTimeISO);
-    const now = new Date();
+    const now = getSyncedNow();
     const diffMs = Math.max(0, now.getTime() - start.getTime());
     
     const hours = Math.floor(diffMs / 3600000);
@@ -49,6 +70,7 @@ const calculateTimeDiff = (startTimeISO) => {
         hours,
         minutes,
         seconds,
+        totalMinutes: Math.floor(diffMs / 60000),
         formatted: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
     };
 };
@@ -56,7 +78,7 @@ const calculateTimeDiff = (startTimeISO) => {
 const calculateCountdown = (endTimeISO) => {
     if (!endTimeISO) return { hours: 0, minutes: 0, seconds: 0, isExpired: true, formatted: '00:00:00' };
     const end = new Date(endTimeISO);
-    const now = new Date();
+    const now = getSyncedNow();
     const diffMs = Math.max(0, end.getTime() - now.getTime());
     
     const hours = Math.floor(diffMs / 3600000);
@@ -166,7 +188,7 @@ function printReceipt(data) {
     const printWindow = document.createElement('div');
     printWindow.className = 'thermal-receipt';
     
-    const now = new Date();
+    const now = getSyncedNow();
     const dateStr = now.toLocaleDateString('id-ID');
     const timeStr = now.toLocaleTimeString('id-ID');
 
@@ -186,14 +208,13 @@ function printReceipt(data) {
             data.orders.forEach(item => {
                 itemsHtml += `
                     <div class="item-row">
-                        <span>${item.name} x${item.qty}</span>
+                        <span>${item.name} x${item.qty || item.quantity}</span>
                         <span>${formatRupiah(item.subtotal)}</span>
                     </div>
                 `;
             });
         }
     } else if (data.orders || data.items) {
-        // F&B POS Receipt
         const items = data.orders || data.items;
         items.forEach(item => {
             itemsHtml += `

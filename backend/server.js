@@ -35,6 +35,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'frontend', 'login.html'));
 });
 
+// --- TIME SYNC API ---
+app.get('/api/time', (req, res) => {
+    res.json({ serverTime: Date.now() });
+});
+
 // --- AUTH API ---
 app.post('/api/login', (req, res) => {
     try {

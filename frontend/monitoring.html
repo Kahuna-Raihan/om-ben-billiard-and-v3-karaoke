@@ -111,6 +111,7 @@
                 updateMonitor();
             }
             document.getElementById('refresh-timer').textContent = timeLeft;
+            updateMonitor(); // Also update the small timers every second
         }, 1000);
 
         updateMonitor();
