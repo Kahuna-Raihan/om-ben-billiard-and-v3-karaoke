@@ -351,7 +351,7 @@
             const table = document.querySelector('.admin-table-container').cloneNode(true);
             
             const printWin = window.open('', '_blank');
-            printWin.document.write(`
+            const html = `
                 <html>
                 <head>
                     <title>Laporan Keuangan</title>
@@ -374,8 +374,8 @@
                         window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
                     <\/script>
                 </body>
-                </html>
-            `);
+                </html>`;
+            printWin.document.write(html);
             printWin.document.close();
         }
 
