@@ -269,6 +269,19 @@ app.post('/api/transactions/close-shift', (req, res) => {
 
 // --- EMPLOYEES & USERS ---
 app.get('/api/employees', (req, res) => res.json(readDB().employees));
+app.post('/api/employees', (req, res) => {
+    const db = readDB();
+    const newEmp = { id: Date.now(), ...req.body };
+    db.employees.push(newEmp);
+    writeDB(db);
+    res.json(newEmp);
+});
+app.delete('/api/employees/:id', (req, res) => {
+    const db = readDB();
+    db.employees = db.employees.filter(e => String(e.id) !== String(req.params.id));
+    writeDB(db);
+    res.json({ success: true });
+});
 app.get('/api/users', (req, res) => res.json(readDB().users.map(u => ({ id: u.id, username: u.username, role: u.role, profilePic: u.profilePic }))));
 app.post('/api/users', (req, res) => {
     const db = readDB();

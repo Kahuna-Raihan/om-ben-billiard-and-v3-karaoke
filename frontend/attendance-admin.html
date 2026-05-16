@@ -196,17 +196,19 @@
             }
         };
 
-        async function resetAttendance() {
-            if (confirm('PERINGATAN: Ini akan MENGHAPUS SEMUA data absensi (Masuk & Keluar) hari ini secara permanen. Lanjutkan?')) {
-                const res = await fetch(`/api/attendance/close-shift`, { method: 'POST' });
-                const result = await res.json();
-                if (result.success) {
-                    alert(`Berhasil mereset ${result.deletedCount} data absensi hari ini.`);
+        async function deleteEmployee(id) {
+            if (confirm('Hapus karyawan ini? Seluruh riwayat absensinya akan tetap ada namun nama tidak terdaftar lagi.')) {
+                const res = await deleteData(`/employees/${id}`);
+                if (res && res.success) {
                     loadData();
+                } else {
+                    alert('Gagal menghapus karyawan.');
                 }
             }
         }
 
+        // Auto Refresh every 30s
+        setInterval(loadData, 30000);
         loadData();
     </script>
 </body>
