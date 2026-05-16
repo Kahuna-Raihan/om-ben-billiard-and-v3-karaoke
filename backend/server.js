@@ -34,15 +34,16 @@ function writeDB(data) {
 }
 
 // Logger for Stock
-function logStock(db, itemName, type, delta, reason, user) {
+function logStock(db, itemName, type, delta, reason, user, category = 'Uncategorized') {
     const log = {
         id: Date.now(),
         itemName,
+        itemCategory: category,
         type, // 'in' or 'out'
         delta,
         reason,
         user: user || 'System',
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
     };
     if (!db.stockLogs) db.stockLogs = [];
     db.stockLogs.push(log);
@@ -169,6 +170,7 @@ app.post('/api/menu/:id/set-stock', (req, res) => {
         id: Date.now(),
         itemId: item.id,
         itemName: item.name,
+        itemCategory: item.category || 'Uncategorized',
         type: addedQty >= 0 ? 'in' : 'out',
         delta: Math.abs(addedQty),
         reason: `${reason || 'Update Manual'}: (Stok awal ${oldStock} + ${addedQty})`,
@@ -341,7 +343,7 @@ app.post('/api/transactions/pos', (req, res) => {
         const menuItem = db.menu.find(m => m.id == order.itemId);
         if (menuItem) {
             menuItem.stock = (menuItem.stock || 0) - order.quantity;
-            logStock(db, menuItem.name, 'out', order.quantity, 'F&B POS Direct Sale', user);
+            logStock(db, menuItem.name, 'out', order.quantity, 'F&B POS Direct Sale', user, menuItem.category);
         }
     });
 

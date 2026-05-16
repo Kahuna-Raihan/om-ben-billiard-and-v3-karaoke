@@ -112,6 +112,9 @@
                     <option value="in" style="color: black;">BARANG MASUK (+)</option>
                     <option value="out" style="color: black;">BARANG KELUAR (-)</option>
                 </select>
+                <select id="filter-category" onchange="filterLogs()" style="padding: 0.5rem 1rem; border-radius: 12px; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border);">
+                    <option value="all" style="color: black;">SEMUA KATEGORI</option>
+                </select>
                 <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border);">
                     <label style="font-size: 0.8rem; color: var(--text-dim); margin: 0;">Gabungkan data per hari?</label>
                     <input type="checkbox" id="group-toggle" onchange="filterLogs()" style="width: 20px; height: 20px; cursor: pointer;">
@@ -150,9 +153,26 @@
             const logs = await fetchData('/stock-logs');
             if (JSON.stringify(allLogs) !== JSON.stringify(logs)) {
                 allLogs = logs;
+                populateCategories(logs);
                 updateStats(logs);
                 renderLogs(logs);
             }
+        }
+
+        function populateCategories(logs) {
+            const dropdown = document.getElementById('filter-category');
+            const categories = [...new Set(logs.map(l => l.itemCategory).filter(Boolean))];
+            
+            const currentVal = dropdown.value;
+            dropdown.innerHTML = '<option value="all" style="color: black;">SEMUA KATEGORI</option>';
+            categories.sort().forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat.toUpperCase();
+                opt.style.color = 'black';
+                dropdown.appendChild(opt);
+            });
+            dropdown.value = currentVal;
         }
 
         async function deleteLog(id) {
@@ -267,13 +287,16 @@
         function filterLogs() {
             const searchTerm = document.getElementById('search-item').value.toLowerCase();
             const typeFilter = document.getElementById('filter-type').value;
+            const catFilter = document.getElementById('filter-category').value;
 
             const filtered = allLogs.filter(log => {
                 const matchesSearch = log.itemName.toLowerCase().includes(searchTerm);
                 const matchesType = typeFilter === 'all' || log.type === typeFilter;
-                return matchesSearch && matchesType;
+                const matchesCategory = catFilter === 'all' || log.itemCategory === catFilter;
+                return matchesSearch && matchesType && matchesCategory;
             });
 
+            updateStats(filtered);
             renderLogs(filtered);
         }
 
