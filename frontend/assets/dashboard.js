@@ -8,12 +8,10 @@ const startForm = document.getElementById('start-form');
 const rentalType = document.getElementById('rental-type');
 const durationGroup = document.getElementById('duration-group');
 
-// Initialize
 async function init() {
     await refreshData();
-    // Use requestAnimationFrame for smoother timer updates if needed, but setInterval is fine for 1s
     setInterval(updateTimers, 1000);
-    setInterval(refreshData, 15000); // Polling every 15s is enough if we have manual refresh
+    setInterval(refreshData, 10000); // REFRESH DATA SETIAP 10 DETIK
 }
 
 let menuItems = [];
@@ -23,7 +21,6 @@ async function refreshData() {
     activeSessions = await fetchData('/sessions');
     menuItems = await fetchData('/menu');
     
-    // Summary stats for today (from transactions)
     const todayStr = getSyncedNow().toISOString().split('T')[0];
     const allTransactions = await fetchData(`/transactions`);
     const todayTransactions = allTransactions.filter(t => t.date === todayStr);
@@ -63,13 +60,10 @@ function renderTables() {
                     <span>${session ? 'Penyewa: ' + session.customerName : 'Meja Kosong'}</span>
                     <span>${session ? 'Mulai: ' + formatTime(session.startTime) : '-'}</span>
                 </div>
-                ${session && session.orders && session.orders.length > 0 ? 
-                    `<div style="font-size: 0.85rem; color: var(--accent-gold); margin-top: 0.5rem;">+ ${session.orders.length} Pesanan F&B</div>` : ''
-                }
             </div>
             <div class="table-footer" style="display: flex; gap: 0.5rem;">
                 ${table.status === 'available' 
-                    ? `<button class="btn btn-primary" onclick="openStartModal(${table.id})">Mulai Sewa</button>`
+                    ? `<button class="btn btn-primary" onclick="openStartModal(${table.id})">Mulai Sewa Meja</button>`
                     : `<button class="btn btn-outline" style="flex: 1;" onclick="openOrderModal(${session.id})">Order F&B</button>
                        <button class="btn btn-outline" style="flex: 1;" onclick="openStopModal(${session.id}, ${table.id})">Selesaikan</button>`
                 }
@@ -80,7 +74,6 @@ function renderTables() {
     updateTimers();
 }
 
-// --- ALARM SYSTEM ---
 let audioCtx;
 function playAlarm() {
     if (!audioCtx) {
@@ -107,7 +100,6 @@ function updateTimers() {
             if (session.type === 'duration' && session.endTime) {
                 const countdown = calculateCountdown(session.endTime);
                 timerEl.textContent = countdown.formatted;
-                
                 if (countdown.isExpired) {
                     timerEl.style.color = 'var(--danger)';
                     timerEl.classList.add('pulse');
@@ -128,14 +120,12 @@ function updateTimers() {
     });
 }
 
-// Modal Logic
 function openStartModal(tableId) {
     document.getElementById('modal-table-id').value = tableId;
     startModal.style.display = 'flex';
 }
 
 let currentSessionForOrder = null;
-
 function openOrderModal(sessionId) {
     currentSessionForOrder = sessionId;
     const session = activeSessions.find(s => s.id == sessionId);
@@ -149,16 +139,10 @@ function openOrderModal(sessionId) {
     list.innerHTML = '';
     if (session.orders && session.orders.length > 0) {
         session.orders.forEach(o => {
-            list.innerHTML += `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)">
-                    <td style="padding: 0.5rem 0">${o.name}</td>
-                    <td style="padding: 0.5rem 0; text-align: center;">x${o.qty}</td>
-                    <td style="padding: 0.5rem 0; text-align: right; color: var(--accent-gold);">${formatRupiah(o.subtotal)}</td>
-                </tr>
-            `;
+            list.innerHTML += `<tr><td style="padding:0.5rem 0">${o.name}</td><td style="text-align:center">x${o.qty}</td><td style="text-align:right">${formatRupiah(o.subtotal)}</td></tr>`;
         });
     } else {
-        list.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1rem; color:var(--text-dim);">Belum ada pesanan</td></tr>';
+        list.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1rem;">Belum ada pesanan</td></tr>';
     }
     document.getElementById('order-modal').style.display = 'flex';
 }
@@ -168,11 +152,11 @@ async function addOrderToSession() {
     const qty = document.getElementById('menu-qty').value;
     if (!menuId) return;
 
-    const res = await postData(`/sessions/${currentSessionForOrder}/order`, {
-        menuId: menuId,
-        qty: parseInt(qty)
+    const res = await postData(`/sessions/${currentSessionForOrder}/order`, { 
+        menuId, 
+        qty,
+        user: localStorage.getItem('auth_user') 
     });
-
     if (res) {
         await refreshData();
         openOrderModal(currentSessionForOrder);
@@ -182,43 +166,30 @@ async function addOrderToSession() {
 document.getElementById('close-order-modal').onclick = () => document.getElementById('order-modal').style.display = 'none';
 
 let lastStopTransaction = null;
-
 async function openStopModal(sessionId, tableId) {
     const session = activeSessions.find(s => s.id == sessionId);
     const diff = calculateTimeDiff(session.startTime);
     
     const durationMs = getSyncedNow() - new Date(session.startTime);
-    const durationHours = durationMs / (1000 * 60 * 60);
-    const tableAmount = Math.ceil(durationHours * session.hourlyRate);
+    const tableAmount = Math.ceil((durationMs / 3600000) * session.hourlyRate);
     const ordersAmount = session.orders ? session.orders.reduce((acc, o) => acc + o.subtotal, 0) : 0;
     const totalAmount = tableAmount + ordersAmount;
 
-    const billDetails = document.getElementById('bill-details');
-    billDetails.innerHTML = `
-        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">
-            <span>Meja</span> <strong>${session.tableName}</strong>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">
-            <span>Penyewa</span> <strong>${session.customerName}</strong>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">
-            <span>Durasi</span> <strong>${diff.formatted}</strong>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">
-            <span>Biaya Sewa</span> <strong>${formatRupiah(tableAmount)}</strong>
-        </div>
-        ${ordersAmount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><span>F&B</span> <strong>${formatRupiah(ordersAmount)}</strong></div>` : ''}
+    document.getElementById('bill-details').innerHTML = `
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><span>Meja</span> <strong>${session.tableName}</strong></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><span>Penyewa</span> <strong>${session.customerName}</strong></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><span>Durasi</span> <strong>${diff.formatted}</strong></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><span>Biaya Sewa</span> <strong>${formatRupiah(tableAmount)}</strong></div>
+        ${ordersAmount > 0 ? `<div style="display:flex; justify-content:space-between;"><span>F&B</span> <strong>${formatRupiah(ordersAmount)}</strong></div>` : ''}
         <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:1rem 0">
-        <div style="display:flex; justify-content:space-between; font-size:1.2rem">
-            <span>Total</span> <strong style="color:var(--accent-gold)">${formatRupiah(totalAmount)}</strong>
-        </div>
+        <div style="display:flex; justify-content:space-between; font-size:1.2rem"><span>Total</span> <strong style="color:var(--accent-gold)">${formatRupiah(totalAmount)}</strong></div>
     `;
 
     document.getElementById('confirm-stop').onclick = async () => {
         const result = await postData(`/sessions/${sessionId}/stop`, {});
         if (result) {
             lastStopTransaction = result;
-            document.querySelector('#stop-modal h2').textContent = "Pembayaran Berhasil!";
+            document.querySelector('#stop-modal h2').textContent = "Berhasil!";
             document.getElementById('confirm-stop').style.display = 'none';
             document.getElementById('print-receipt-btn').style.display = 'block';
             refreshData();
@@ -233,7 +204,10 @@ async function openStopModal(sessionId, tableId) {
 }
 
 document.getElementById('close-modal').onclick = () => startModal.style.display = 'none';
-document.getElementById('close-stop-modal').onclick = () => stopModal.style.display = 'none';
+document.getElementById('close-stop-modal').onclick = () => {
+    stopModal.style.display = 'none';
+    refreshData();
+};
 
 rentalType.onchange = () => {
     durationGroup.style.display = rentalType.value === 'duration' ? 'block' : 'none';
@@ -245,7 +219,7 @@ startForm.onsubmit = async (e) => {
         tableId: document.getElementById('modal-table-id').value,
         customerName: document.getElementById('customer-name').value,
         type: rentalType.value,
-        durationMinutes: parseInt(document.getElementById('duration-minutes').value)
+        durationMinutes: parseInt(document.getElementById('duration-minutes').value) || 0
     };
     const result = await postData('/sessions/start', data);
     if (result) {

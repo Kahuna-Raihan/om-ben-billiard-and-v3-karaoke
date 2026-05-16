@@ -17,6 +17,12 @@
             border-radius: 12px;
             flex-wrap: wrap;
         }
+        @media print {
+            header, nav, .filter-bar, button { display: none !important; }
+            .admin-table-container { color: black !important; background: white !important; }
+            body { background: white !important; color: black !important; padding: 0 !important; }
+            .container { max-width: 100% !important; padding: 0 !important; width: 100% !important; }
+        }
     </style>
 </head>
 <body>
@@ -36,9 +42,12 @@
         <script>renderNavbar('stock-history');</script>
 
         <section>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                 <h2 style="font-family: var(--font-heading); margin: 0;">Rekapitulasi Barang Keluar/Masuk</h2>
-                <button class="btn btn-outline" style="width: auto;" onclick="loadLogs()">Refresh Data</button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-outline" style="width: auto;" onclick="loadLogs()">↻ Refresh</button>
+                    <button class="btn btn-primary" style="width: auto;" onclick="window.print()">🖨️ Cetak Laporan</button>
+                </div>
             </div>
 
             <div class="filter-bar">
@@ -52,21 +61,23 @@
                 </select>
             </div>
 
-            <table class="admin-table-container">
-                <thead>
-                    <tr>
-                        <th>Waktu</th>
-                        <th>Nama Barang</th>
-                        <th>Tipe</th>
-                        <th>Jumlah</th>
-                        <th>Keterangan / Alasan</th>
-                        <th>Oleh</th>
-                    </tr>
-                </thead>
-                <tbody id="log-body">
-                    <!-- Logs injected here -->
-                </tbody>
-            </table>
+            <div id="print-area">
+                <table class="admin-table-container">
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Nama Barang</th>
+                            <th>Tipe</th>
+                            <th>Jumlah</th>
+                            <th>Keterangan / Alasan</th>
+                            <th>Oleh</th>
+                        </tr>
+                    </thead>
+                    <tbody id="log-body">
+                        <!-- Logs injected here -->
+                    </tbody>
+                </table>
+            </div>
         </section>
     </div>
 
@@ -123,6 +134,8 @@
             renderLogs(filtered);
         }
 
+        // Auto Refresh every 1 minute
+        setInterval(loadLogs, 60000);
         loadLogs();
     </script>
 </body>

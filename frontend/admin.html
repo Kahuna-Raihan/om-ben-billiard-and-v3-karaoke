@@ -16,7 +16,7 @@
                 width: 100% !important;
             }
             .admin-table-container th:nth-child(1), 
-            .admin-table-container td:nth-child(1) { display: none; } /* Hide category column on mobile */
+            .admin-table-container td:nth-child(1) { display: none; }
         }
     </style>
 </head>
@@ -190,11 +190,21 @@
 
         async function deleteMenu(id) {
             if(confirm('Hapus menu ini?')) {
-                const res = await fetch(`${API_BASE}/menu/${id}`, { method: 'DELETE' });
-                if (res.ok) loadMenu();
+                // FORCE DELETE WITH CORRECT URL
+                const response = await fetch(`${API_BASE}/menu/${id}`, { 
+                    method: 'DELETE'
+                });
+                const resData = await response.json();
+                if (resData.success) {
+                    loadMenu();
+                } else {
+                    alert('Gagal menghapus menu. Silakan coba lagi.');
+                }
             }
         }
 
+        // Auto Refresh Admin Menu every 30s
+        setInterval(loadMenu, 30000);
         loadMenu();
     </script>
 </body>

@@ -11,7 +11,7 @@ const durationGroup = document.getElementById('duration-group');
 async function init() {
     await refreshData();
     setInterval(updateTimers, 1000);
-    setInterval(refreshData, 15000);
+    setInterval(refreshData, 10000); // REFRESH DATA SETIAP 10 DETIK
 }
 
 let menuItems = [];
@@ -63,7 +63,7 @@ function renderRooms() {
             </div>
             <div class="table-footer" style="display: flex; gap: 0.5rem;">
                 ${room.status === 'available' 
-                    ? `<button class="btn btn-primary" onclick="openStartModal(${room.id})">Mulai Sewa</button>`
+                    ? `<button class="btn btn-primary" onclick="openStartModal(${room.id})">Mulai Sewa Ruangan</button>`
                     : `<button class="btn btn-outline" style="flex: 1;" onclick="openOrderModal(${session.id})">Order F&B</button>
                        <button class="btn btn-outline" style="flex: 1;" onclick="openStopModal(${session.id}, ${room.id})">Selesaikan</button>`
                 }
@@ -109,7 +109,7 @@ function openOrderModal(sessionId) {
     const select = document.getElementById('menu-select');
     select.innerHTML = '';
     menuItems.forEach(m => {
-        select.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+        select.innerHTML += `<option value="${m.id}">${m.name} - ${formatRupiah(m.price)}</option>`;
     });
 
     const list = document.getElementById('session-orders-list');
@@ -127,7 +127,11 @@ function openOrderModal(sessionId) {
 async function addOrderToSession() {
     const menuId = document.getElementById('menu-select').value;
     const qty = document.getElementById('menu-qty').value;
-    const res = await postData(`/sessions/${currentSessionForOrder}/order`, { menuId, qty });
+    const res = await postData(`/sessions/${currentSessionForOrder}/order`, { 
+        menuId, 
+        qty,
+        user: localStorage.getItem('auth_user') 
+    });
     if (res) {
         await refreshData();
         openOrderModal(currentSessionForOrder);
@@ -170,7 +174,10 @@ async function openStopModal(sessionId, roomId) {
 }
 
 document.getElementById('close-modal').onclick = () => startModal.style.display = 'none';
-document.getElementById('close-stop-modal').onclick = () => stopModal.style.display = 'none';
+document.getElementById('close-stop-modal').onclick = () => {
+    stopModal.style.display = 'none';
+    refreshData();
+};
 
 rentalType.onchange = () => {
     durationGroup.style.display = rentalType.value === 'duration' ? 'block' : 'none';
@@ -182,7 +189,7 @@ startForm.onsubmit = async (e) => {
         tableId: document.getElementById('modal-table-id').value,
         customerName: document.getElementById('customer-name').value,
         type: rentalType.value,
-        durationMinutes: parseInt(document.getElementById('duration-minutes').value)
+        durationMinutes: parseInt(document.getElementById('duration-minutes').value) || 0
     };
     const result = await postData('/sessions/start', data);
     if (result) {
