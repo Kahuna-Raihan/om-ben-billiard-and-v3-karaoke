@@ -208,13 +208,13 @@
                 <head>
                     <title>Laporan Stok Barang</title>
                     <style>
-                        body { font-family: sans-serif; padding: 40px; color: black; line-height: 1.6; }
+                        body { font-family: sans-serif; padding: 40px; color: black; background: white !important; line-height: 1.6; }
                         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px; }
-                        .header h1 { margin: 0; font-size: 24px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        th, td { border: 1px solid #000; padding: 10px; text-align: left; font-size: 11px; }
-                        th { background-color: #f0f0f0; text-transform: uppercase; }
-                        .footer { margin-top: 50px; display: flex; justify-content: space-between; }
+                        .header h1 { margin: 0; font-size: 24px; color: black !important; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid black !important; }
+                        th, td { border: 1px solid black !important; padding: 10px; text-align: left; font-size: 11px; color: black !important; background: transparent !important; }
+                        th { background-color: #f0f0f0 !important; text-transform: uppercase; }
+                        .footer { margin-top: 50px; display: flex; justify-content: space-between; color: black !important; }
                         .sig-box { width: 200px; text-align: center; }
                         .sig-space { height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px; }
                     </style>
@@ -225,7 +225,7 @@
                         <p>Jl. Raya Utama No. 123, Kota Billiard</p>
                         <h3>LAPORAN MUTASI STOK BARANG</h3>
                     </div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 10px; color: black !important;">
                         <span>Periode: <strong>Semua Waktu</strong></span>
                         <span>Dicetak: <strong>${new Date().toLocaleString('id-ID')}</strong></span>
                     </div>
