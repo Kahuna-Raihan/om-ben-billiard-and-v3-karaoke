@@ -1,4 +1,7 @@
 require('dotenv').config();
+if (typeof global.crypto === 'undefined') {
+    global.crypto = require('crypto');
+}
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
