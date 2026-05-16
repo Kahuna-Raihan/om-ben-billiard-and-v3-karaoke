@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Elite Management | Admin Om Ben</title>
+    <title>Elite Staff Dashboard | Admin Om Ben</title>
     <link rel="stylesheet" href="assets/style.css">
     <style>
         :root {
@@ -12,6 +12,7 @@
             --neon-blue: #00f3ff;
             --neon-gold: #facd15;
             --deep-dark: #0a0a12;
+            --premium-pink: #ff007a;
         }
 
         body {
@@ -20,38 +21,31 @@
 
         .stats-overview {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 2rem;
         }
 
         .stat-card-premium {
             background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
             border: 1px solid var(--glass-border);
-            padding: 1.5rem;
+            padding: 1.2rem;
             border-radius: 20px;
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
         }
 
-        .stat-card-premium:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(0,243,255,0.1);
-        }
-
-        .stat-card-premium i {
-            font-size: 2.5rem;
-            opacity: 0.1;
-            position: absolute;
-            right: 1rem;
-            bottom: 0.5rem;
+        .stat-card-premium.active-emp {
+            border-color: var(--neon-blue);
+            background: rgba(0,243,255,0.05);
+            box-shadow: 0 0 20px rgba(0,243,255,0.1);
         }
 
         .stat-card-premium .val {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 800;
-            margin: 0.5rem 0;
+            margin: 0.3rem 0;
             background: linear-gradient(to right, #fff, var(--text-dim));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -59,14 +53,14 @@
 
         .stat-card-premium .label {
             color: var(--text-dim);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .admin-grid-lux {
             display: grid;
-            grid-template-columns: 380px 1fr;
+            grid-template-columns: 400px 1fr;
             gap: 2rem;
         }
 
@@ -88,25 +82,20 @@
             border-spacing: 0 8px;
         }
 
-        .lux-table th {
-            padding: 1rem;
-            text-align: left;
-            color: var(--text-dim);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
         .lux-table tr td {
-            padding: 1.2rem 1rem;
+            padding: 1rem;
             background: rgba(255,255,255,0.01);
             transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .lux-table tr.selected td {
+            background: rgba(0,243,255,0.08);
+            border-color: var(--neon-blue);
         }
 
         .lux-table tr:hover td {
             background: rgba(255,255,255,0.04);
-            transform: scale(1.005);
         }
 
         .lux-table tr td:first-child { border-radius: 12px 0 0 12px; border-left: 1px solid var(--glass-border); }
@@ -115,49 +104,64 @@
 
         .type-badge {
             font-size: 0.65rem;
-            padding: 4px 10px;
-            border-radius: 50px;
+            padding: 3px 8px;
+            border-radius: 4px;
             font-weight: 700;
-            text-transform: uppercase;
         }
 
-        .badge-in { background: rgba(0,243,255,0.1); color: var(--neon-blue); border: 1px solid rgba(0,243,255,0.2); }
-        .badge-out { background: rgba(250,204,21,0.1); color: var(--neon-gold); border: 1px solid rgba(250,204,21,0.2); }
+        .badge-in { background: rgba(0,243,255,0.1); color: var(--neon-blue); }
+        .badge-out { background: rgba(250,204,21,0.1); color: var(--neon-gold); }
 
         .btn-lux {
             background: linear-gradient(135deg, var(--primary-color), #4facfe);
             color: white;
             border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 12px;
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-lux:hover {
-            filter: brightness(1.2);
-            box-shadow: 0 0 20px rgba(0,243,255,0.3);
+            transition: 0.3s;
         }
 
         .scroll-container {
-            max-height: 550px;
+            max-height: 500px;
             overflow-y: auto;
-            padding-right: 5px;
         }
 
-        .scroll-container::-webkit-scrollbar { width: 4px; }
-        .scroll-container::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+        .emp-card-mini {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .emp-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(45deg, var(--neon-blue), var(--primary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        #personal-stats {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0,243,255,0.03);
+            border-radius: 15px;
+            border: 1px dashed var(--neon-blue);
+        }
 
         @media print {
             .no-print { display: none !important; }
             body { background: white !important; color: black !important; }
-            .panel-lux { border: none !important; background: transparent !important; box-shadow: none !important; }
-            .lux-table tr td { border: 1px solid #eee !important; background: transparent !important; color: black !important; }
-            .lux-table th { color: black !important; border-bottom: 2px solid #000 !important; }
+            .panel-lux { border: none !important; background: transparent !important; }
         }
     </style>
 </head>
@@ -168,7 +172,7 @@
                 <img src="assets/logo.png" alt="Logo" class="main-logo">
                 <div>
                     <h1>OM BEN BILLIARD</h1>
-                    <p>X V3 KARAOKE Staff Management</p>
+                    <p>X V3 KARAOKE Staff Analytics</p>
                 </div>
             </div>
             <nav></nav>
@@ -179,64 +183,67 @@
 
         <div class="stats-overview no-print">
             <div class="stat-card-premium">
-                <div class="label">Total Karyawan</div>
+                <div class="label">Total Staf</div>
                 <div class="val" id="stat-total-emp">0</div>
-                <div style="font-size: 0.7rem; color: var(--text-dim);">Terdaftar aktif</div>
             </div>
             <div class="stat-card-premium">
                 <div class="label">Hadir Hari Ini</div>
-                <div class="val" id="stat-present-today" style="background: linear-gradient(to right, var(--neon-blue), #fff); -webkit-background-clip: text;">0</div>
-                <div style="font-size: 0.7rem; color: var(--text-dim);">Shift aktif</div>
+                <div class="val" id="stat-present-today">0</div>
             </div>
-            <div class="stat-card-premium">
-                <div class="label">Sistem Status</div>
-                <div class="val" style="font-size: 1.2rem; color: var(--success);">● ONLINE</div>
-                <div style="font-size: 0.7rem; color: var(--text-dim);">Refresh: 1s</div>
-            </div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-            <div>
-                <h2 style="font-family: var(--font-heading); font-size: 2rem; margin: 0;">Elite Staff Panel</h2>
-                <p style="color: var(--text-dim); margin-top: 5px;">Manajemen kehadiran & database karyawan</p>
-            </div>
-            <div style="display: flex; gap: 1rem;" class="no-print">
-                <button class="btn btn-outline" style="width: auto; border-radius: 12px; color: var(--danger);" onclick="resetAttendance()">Reset Absensi</button>
-                <button class="btn-lux" onclick="printStaffReport()">
-                    <span>🖨️</span> Cetak Laporan
-                </button>
+            <div class="stat-card-premium" id="personal-active-card" style="display: none;">
+                <div class="label">Fokus Staf</div>
+                <div class="val" id="fokus-name" style="font-size: 1rem; background: linear-gradient(to right, var(--neon-blue), #fff); -webkit-background-clip: text;">-</div>
+                <button class="btn" style="padding: 0; font-size: 0.6rem; color: var(--danger);" onclick="clearFilter()">✖ Batalkan Fokus</button>
             </div>
         </div>
 
         <div class="admin-grid-lux">
-            <!-- Left Side: Directory -->
+            <!-- Left: Directory -->
             <div class="panel-lux">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                    <h3 style="margin: 0; font-size: 1rem; color: var(--neon-blue);">DIRECTORY</h3>
-                    <button class="btn btn-primary no-print" style="width: auto; height: 35px; border-radius: 10px; font-size: 0.8rem;" onclick="openAddEmpModal()">+ NEW STAFF</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0; font-size: 0.9rem; color: var(--neon-blue); letter-spacing: 1px;">DATABASE KARYAWAN</h3>
+                    <button class="btn-lux no-print" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="openAddEmpModal()">+ ADD</button>
                 </div>
+                
                 <div class="scroll-container">
                     <table class="lux-table">
                         <tbody id="employee-list"></tbody>
                     </table>
                 </div>
+
+                <!-- Personal Stats Panel -->
+                <div id="personal-stats" class="no-print">
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.6rem; color: var(--text-dim);">MASUK (BLN INI)</div>
+                        <div id="p-total-in" style="font-weight: 800; color: var(--neon-blue);">0</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.6rem; color: var(--text-dim);">TERAKHIR ABSEN</div>
+                        <div id="p-last-date" style="font-weight: 800; font-size: 0.6rem;">-</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.6rem; color: var(--text-dim);">RASIO HADIR</div>
+                        <div id="p-ratio" style="font-weight: 800; color: var(--neon-gold);">0%</div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Right Side: History -->
+            <!-- Right: Logs -->
             <div class="panel-lux">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                    <h3 style="margin: 0; font-size: 1rem; color: var(--neon-gold);" id="attendance-title">ATTENDANCE LOGS</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h3 style="margin: 0; font-size: 1rem; color: var(--neon-gold);" id="attendance-title">SEMUA RIWAYAT</h3>
                     <div style="display: flex; gap: 0.5rem;" class="no-print">
-                        <button class="btn btn-outline" style="width: auto; font-size: 0.7rem; padding: 5px 12px; border-radius: 8px;" onclick="setFilter('today')">HARI INI</button>
-                        <button class="btn btn-outline" style="width: auto; font-size: 0.7rem; padding: 5px 12px; border-radius: 8px;" onclick="setFilter('week')">MINGGU INI</button>
-                        <button class="btn btn-outline" style="width: auto; font-size: 0.7rem; padding: 5px 12px; border-radius: 8px;" onclick="setFilter('month')">BULAN INI</button>
+                        <button class="btn btn-outline" style="width: auto; font-size: 0.7rem; padding: 4px 10px;" onclick="setFilter('today')">HARI INI</button>
+                        <button class="btn btn-outline" style="width: auto; font-size: 0.7rem; padding: 4px 10px;" onclick="setFilter('week')">MINGGU</button>
+                        <button class="btn btn-outline" style="width: auto; font-size: 0.7rem; padding: 4px 10px;" onclick="setFilter('month')">BULAN</button>
+                        <button class="btn-lux" style="font-size: 0.7rem; padding: 4px 10px;" onclick="printStaffReport()">PRINT REKAP</button>
                     </div>
                 </div>
                 <div class="scroll-container">
                     <table class="lux-table">
                         <thead>
                             <tr>
-                                <th>WAKTU</th>
+                                <th>TANGGAL & WAKTU</th>
                                 <th>NAMA KARYAWAN</th>
                                 <th style="text-align: center;">STATUS</th>
                             </tr>
@@ -248,25 +255,25 @@
         </div>
     </div>
 
-    <!-- Modal Premium -->
+    <!-- Modal Registrasi -->
     <div class="modal" id="emp-modal">
-        <div class="modal-content" style="background: var(--deep-dark); border: 1px solid var(--glass-border); border-radius: 30px; padding: 2.5rem;">
-            <h2 style="margin-bottom: 2rem; font-family: var(--font-heading); color: var(--neon-blue);">Registrasi Staf Baru</h2>
+        <div class="modal-content" style="background: var(--deep-dark); border: 1px solid var(--glass-border); border-radius: 20px;">
+            <h2 style="margin-bottom: 1.5rem; color: var(--neon-blue);">Tambah Staf Baru</h2>
             <form id="emp-form">
                 <div class="form-group">
-                    <label style="color: var(--text-dim); font-size: 0.8rem;">Nama Lengkap</label>
-                    <input type="text" id="emp-name" required style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; color: white;">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="emp-name" required>
                 </div>
                 <div class="form-group">
-                    <label style="color: var(--text-dim); font-size: 0.8rem;">Peran Strategis</label>
-                    <input type="text" id="emp-role" list="role-options" required style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; color: white;">
+                    <label>Jabatan</label>
+                    <input type="text" id="emp-role" list="role-options" required>
                     <datalist id="role-options">
-                        <option value="Kasir Elite"><option value="Operator Senior"><option value="Floor Manager"><option value="Security"><option value="Lc Professional">
+                        <option value="Kasir Elite"><option value="Operator Senior"><option value="Manager"><option value="Wasit"><option value="Lc Professional">
                     </datalist>
                 </div>
-                <div style="display: flex; gap: 1rem; margin-top: 3rem;">
-                    <button type="button" class="btn btn-outline" onclick="document.getElementById('emp-modal').style.display='none'" style="border-radius: 12px; padding: 1rem;">BATAL</button>
-                    <button type="submit" class="btn-lux" style="flex: 1; justify-content: center;">KONFIRMASI DATA</button>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('emp-modal').style.display='none'">BATAL</button>
+                    <button type="submit" class="btn-lux" style="flex: 1;">SIMPAN</button>
                 </div>
             </form>
         </div>
@@ -276,6 +283,7 @@
         let allEmployees = [];
         let allAttendance = [];
         let currentFilter = 'all';
+        let selectedEmployee = null;
 
         async function loadData() {
             allEmployees = await fetchData('/employees');
@@ -298,18 +306,64 @@
             const list = document.getElementById('employee-list');
             list.innerHTML = '';
             allEmployees.forEach(emp => {
+                const isSelected = selectedEmployee === emp.name;
                 const row = document.createElement('tr');
+                if (isSelected) row.className = 'selected';
+                row.onclick = () => selectEmployee(emp.name);
                 row.innerHTML = `
                     <td>
-                        <div style="font-weight: 700; color: #fff;">${emp.name}</div>
-                        <div style="font-size: 0.7rem; color: var(--neon-blue); text-transform: uppercase;">${emp.role}</div>
+                        <div class="emp-card-mini">
+                            <div class="emp-avatar">${emp.name.charAt(0)}</div>
+                            <div>
+                                <div style="font-weight: 700; color: #fff;">${emp.name}</div>
+                                <div style="font-size: 0.65rem; color: var(--text-dim);">${emp.role}</div>
+                            </div>
+                        </div>
                     </td>
                     <td style="text-align: right;">
-                        <button class="btn btn-outline" style="width: auto; padding: 5px 10px; font-size: 0.65rem; border-radius: 8px; color: var(--danger); opacity: 0.6;" onclick="deleteEmployee('${emp.id}')">Hapus</button>
+                        <button class="btn" style="color: var(--danger); font-size: 0.6rem; padding: 4px;" onclick="event.stopPropagation(); deleteEmployee('${emp.id}')">Hapus</button>
                     </td>
                 `;
                 list.appendChild(row);
             });
+        }
+
+        function selectEmployee(name) {
+            selectedEmployee = name;
+            document.getElementById('personal-active-card').style.display = 'block';
+            document.getElementById('fokus-name').textContent = name;
+            document.getElementById('personal-stats').style.display = 'grid';
+            
+            updatePersonalStats(name);
+            renderEmployees();
+            renderAttendance();
+        }
+
+        function clearFilter() {
+            selectedEmployee = null;
+            document.getElementById('personal-active-card').style.display = 'none';
+            document.getElementById('personal-stats').style.display = 'none';
+            renderEmployees();
+            renderAttendance();
+        }
+
+        function updatePersonalStats(name) {
+            const now = getSyncedNow();
+            const monthStr = now.toISOString().slice(0, 7);
+            const userLogs = allAttendance.filter(a => a.employeeName === name);
+            const monthInLogs = userLogs.filter(a => a.timestamp.startsWith(monthStr) && a.type === 'in');
+            
+            document.getElementById('p-total-in').textContent = monthInLogs.length;
+            
+            if (userLogs.length > 0) {
+                const lastLog = new Date(userLogs[0].timestamp);
+                document.getElementById('p-last-date').textContent = lastLog.toLocaleDateString('id-ID');
+            } else {
+                document.getElementById('p-last-date').textContent = '-';
+            }
+
+            const ratio = Math.min(100, Math.round((monthInLogs.length / 25) * 100)); // Target 25 hari kerja
+            document.getElementById('p-ratio').textContent = ratio + '%';
         }
 
         function setFilter(f) {
@@ -325,20 +379,27 @@
             let filtered = [...allAttendance];
             const now = getSyncedNow();
             
+            // Employee Filter First
+            if (selectedEmployee) {
+                filtered = filtered.filter(a => a.employeeName === selectedEmployee);
+                title.textContent = `REKAP: ${selectedEmployee.toUpperCase()}`;
+            } else {
+                title.textContent = "SEMUA RIWAYAT";
+            }
+            
+            // Time Filter Second
             if (currentFilter === 'today') {
                 const todayStr = now.toISOString().split('T')[0];
-                filtered = allAttendance.filter(a => a.timestamp.startsWith(todayStr));
-                title.textContent = "LOGS: HARI INI";
+                filtered = filtered.filter(a => a.timestamp.startsWith(todayStr));
+                title.textContent += " (HARI INI)";
             } else if (currentFilter === 'week') {
                 const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                filtered = allAttendance.filter(a => new Date(a.timestamp) >= weekAgo);
-                title.textContent = "LOGS: 7 HARI TERAKHIR";
+                filtered = filtered.filter(a => new Date(a.timestamp) >= weekAgo);
+                title.textContent += " (7 HARI)";
             } else if (currentFilter === 'month') {
                 const monthStr = now.toISOString().slice(0, 7);
-                filtered = allAttendance.filter(a => a.timestamp.startsWith(monthStr));
-                title.textContent = "LOGS: BULAN INI";
-            } else {
-                title.textContent = "ATTENDANCE LOGS";
+                filtered = filtered.filter(a => a.timestamp.startsWith(monthStr));
+                title.textContent += " (BULAN INI)";
             }
 
             filtered.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach(a => {
@@ -347,12 +408,12 @@
                 row.innerHTML = `
                     <td>
                         <div style="font-weight: 600;">${date.toLocaleDateString('id-ID')}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-dim);">${date.toLocaleTimeString('id-ID')}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-dim);">${date.toLocaleTimeString('id-ID')}</div>
                     </td>
-                    <td style="font-weight: 500;">${a.employeeName}</td>
+                    <td style="font-weight: 600;">${a.employeeName}</td>
                     <td style="text-align: center;">
                         <span class="type-badge ${a.type === 'in' ? 'badge-in' : 'badge-out'}">
-                            ${a.type === 'in' ? 'Masuk' : 'Keluar'}
+                            ${a.type === 'in' ? 'MASUK' : 'KELUAR'}
                         </span>
                     </td>
                 `;
@@ -361,7 +422,7 @@
         }
 
         async function deleteEmployee(id) {
-            if (confirm('Hapus data karyawan ini dari database?')) {
+            if (confirm('Hapus karyawan ini dari sistem?')) {
                 const res = await deleteData(`/employees/${id}`);
                 if (res && res.success) loadData();
             }
@@ -385,7 +446,7 @@
         };
 
         async function resetAttendance() {
-            if (confirm('PERINGATAN: Hapus seluruh data absensi hari ini?')) {
+            if (confirm('Reset absensi hari ini?')) {
                 const res = await postData('/attendance/close-shift', {});
                 if (res) loadData();
             }
@@ -397,29 +458,20 @@
             const html = `
                 <html>
                 <head>
-                    <title>Rekap Absensi Elite</title>
+                    <title>Laporan Absensi Staf</title>
                     <style>
-                        body { font-family: sans-serif; padding: 40px; color: #000; background: #fff; }
-                        h1, h2 { text-align: center; margin-bottom: 10px; }
+                        body { font-family: sans-serif; padding: 40px; }
+                        h1, h2 { text-align: center; }
                         table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-                        th, td { border: 1px solid #000; padding: 12px; text-align: left; }
-                        th { background: #f0f0f0; font-weight: bold; }
-                        .type-badge { font-weight: bold; }
+                        th, td { border: 1px solid #000; padding: 10px; text-align: left; }
+                        th { background: #f0f0f0; }
                     </style>
                 </head>
                 <body>
-                    <h1 style="border-bottom: 2px solid #000; padding-bottom: 10px;">OM BEN BILLIARD X V3 KARAOKE</h1>
-                    <h2>LAPORAN REKAPITULASI ABSENSI STAF</h2>
-                    <p style="text-align: center;">Periode: ${document.getElementById('attendance-title').textContent}</p>
-                    <p style="text-align: right;">Dicetak: ${new Date().toLocaleString('id-ID')}</p>
+                    <h1>OM BEN BILLIARD X V3 KARAOKE</h1>
+                    <h2>${document.getElementById('attendance-title').textContent}</h2>
+                    <p style="text-align:right">Dicetak: ${new Date().toLocaleString('id-ID')}</p>
                     ${table.outerHTML}
-                    <div style="margin-top: 50px; display: flex; justify-content: flex-end;">
-                        <div style="text-align: center; width: 200px;">
-                            <p>Admin Operational</p>
-                            <br><br><br>
-                            <p>( ________________ )</p>
-                        </div>
-                    </div>
                     <script>
                         window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
                     <\/script>
@@ -429,7 +481,7 @@
             printWin.document.close();
         }
 
-        setInterval(loadData, 1000); // REFRESH TIAP DETIK SESUAI PERMINTAAN
+        setInterval(loadData, 1000);
         loadData();
     </script>
 </body>
