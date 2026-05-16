@@ -1,6 +1,12 @@
 require('dotenv').config();
+// Robust Polyfill for Crypto (Required for MongoDB Driver on older Node versions)
+const crypto = require('crypto');
 if (typeof global.crypto === 'undefined') {
-    global.crypto = require('crypto');
+    Object.defineProperty(global, 'crypto', {
+        value: crypto.webcrypto || crypto,
+        writable: false,
+        configurable: true
+    });
 }
 const express = require('express');
 const cors = require('cors');
