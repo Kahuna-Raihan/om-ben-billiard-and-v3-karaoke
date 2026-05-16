@@ -127,6 +127,7 @@
                             <th>Qty</th>
                             <th>Keterangan / Alasan</th>
                             <th>Admin</th>
+                            <th class="no-print" style="text-align: right;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="log-body">
@@ -150,6 +151,15 @@
                 allLogs = logs;
                 updateStats(logs);
                 renderLogs(logs);
+            }
+        }
+
+        async function deleteLog(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus catatan riwayat stok ini?')) {
+                const res = await deleteData(`/stock-logs/${id}`);
+                if (res && res.success) {
+                    loadLogs();
+                }
             }
         }
 
@@ -218,6 +228,7 @@
                         </td>
                         <td data-label="Keterangan"><span style="font-size: 0.85rem; color: var(--text-dim);">Hasil gabungan ${log.count} transaksi</span></td>
                         <td data-label="Admin"><span style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Multi-Admin</span></td>
+                        <td class="no-print" style="text-align: right; color: var(--text-dim); font-size: 0.7rem;">(Grouped)</td>
                     `;
                 } else {
                     row.innerHTML = `
@@ -230,6 +241,9 @@
                         <td data-label="Qty"><strong style="font-size: 1rem; color: ${log.type === 'in' ? 'var(--primary-color)' : '#ff4757'}">${log.type === 'in' ? '+' : '-'}${log.delta}</strong></td>
                         <td data-label="Keterangan"><span style="font-size: 0.85rem; color: var(--text-dim);">${log.reason}</span></td>
                         <td data-label="Admin"><span style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${log.user || 'System'}</span></td>
+                        <td data-label="Aksi" class="no-print" style="text-align: right;">
+                            <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; color: var(--danger); border-color: rgba(231, 76, 60, 0.2);" onclick="deleteLog(${log.id})">Hapus</button>
+                        </td>
                     `;
                 }
                 body.appendChild(row);
