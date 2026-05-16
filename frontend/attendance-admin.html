@@ -8,31 +8,24 @@
     <style>
         .admin-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 350px 1fr;
             gap: 2rem;
         }
         @media (max-width: 992px) {
             .admin-grid { grid-template-columns: 1fr; }
         }
         .scroll-box {
-            max-height: 500px;
+            max-height: 600px;
             overflow-y: auto;
             background: rgba(255,255,255,0.02);
             border-radius: 12px;
             border: 1px solid var(--glass-border);
         }
-
-        @media print {
-            .no-print, nav, .btn, .nav-divider, .nav-item { display: none !important; }
-            .scroll-box { max-height: none !important; overflow: visible !important; }
-            body { background: white !important; color: black !important; }
-            .container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
-            .stat-card, .scroll-box { border: none !important; background: transparent !important; }
-            table { color: black !important; border: 1px solid #ccc !important; }
-            th { background: #eee !important; color: black !important; }
-            td { border-bottom: 1px solid #eee !important; }
-            .main-logo { filter: none !important; }
-            h1, h2, h3 { color: black !important; -webkit-text-fill-color: black !important; }
+        .filter-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -43,7 +36,7 @@
                 <img src="assets/logo.png" alt="Logo" class="main-logo">
                 <div>
                     <h1>OM BEN BILLIARD</h1>
-                    <p>X V3 KARAOKE Admin Attendance</p>
+                    <p>X V3 KARAOKE Staff & Attendance</p>
                 </div>
             </div>
             <nav></nav>
@@ -53,10 +46,10 @@
         <script>renderNavbar('attendance-admin');</script>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-            <h2 style="font-family: var(--font-heading);">Manajemen & Laporan Karyawan</h2>
+            <h2 style="font-family: var(--font-heading); margin: 0;">Panel Manajemen Staf</h2>
             <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-outline no-print" style="width: auto; color: var(--danger); border-color: rgba(231,76,60,0.3);" onclick="resetAttendance()">Reset Absen Hari Ini</button>
-                <button class="btn btn-outline no-print" style="width: auto;" onclick="window.print()">Cetak Laporan Staf</button>
+                <button class="btn btn-outline" style="width: auto; color: var(--danger); border-color: rgba(231,76,60,0.3);" onclick="resetAttendance()">Reset Absen Hari Ini</button>
+                <button class="btn btn-primary" style="width: auto;" onclick="printStaffReport()">🖨️ Cetak Rekap Absensi</button>
             </div>
         </div>
 
@@ -64,118 +57,156 @@
             <!-- Employee Management -->
             <section>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h2 style="font-family: var(--font-heading);">Daftar Karyawan</h2>
-                    <button class="btn btn-primary no-print" style="width: auto; padding: 0.5rem 1rem;" onclick="openAddEmpModal()">+ Tambah</button>
+                    <h3 style="margin: 0; font-size: 1.1rem;">Daftar Karyawan</h3>
+                    <button class="btn btn-primary" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="openAddEmpModal()">+ Tambah</button>
                 </div>
                 
                 <div class="scroll-box">
-                    <table class="admin-table-container" style="width: 100%; border-collapse: collapse;">
+                    <table class="admin-table-container">
                         <thead>
-                            <tr style="position: sticky; top: 0; background: #1a1a2e; z-index: 1;">
-                                <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Nama</th>
-                                <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Posisi</th>
-                                <th style="padding: 1rem; text-align: right; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Aksi</th>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Posisi</th>
+                                <th style="text-align: right;">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="employee-list">
-                            <!-- Injected by JS -->
-                        </tbody>
+                        <tbody id="employee-list"></tbody>
                     </table>
                 </div>
             </section>
 
             <!-- Attendance History -->
             <section>
-                <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Riwayat Absensi (Semua)</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h3 style="margin: 0; font-size: 1.1rem;" id="attendance-title">Riwayat Absensi</h3>
+                    <div class="filter-bar">
+                        <button class="btn btn-outline" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="setFilter('today')">Hari Ini</button>
+                        <button class="btn btn-outline" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="setFilter('week')">7 Hari</button>
+                        <button class="btn btn-outline" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="setFilter('month')">Bulan Ini</button>
+                        <button class="btn btn-outline" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="setFilter('all')">Semua</button>
+                    </div>
+                </div>
                 <div class="scroll-box">
-                    <table class="admin-table-container" style="width: 100%; border-collapse: collapse;">
+                    <table class="admin-table-container">
                         <thead>
-                            <tr style="position: sticky; top: 0; background: #1a1a2e; z-index: 1;">
-                                <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Tanggal</th>
-                                <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Nama</th>
-                                <th style="padding: 1rem; text-align: center; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Tipe</th>
+                            <tr>
+                                <th>Tanggal & Waktu</th>
+                                <th>Nama Staf</th>
+                                <th style="text-align: center;">Tipe</th>
                             </tr>
                         </thead>
-                        <tbody id="attendance-history">
-                            <!-- Injected by JS -->
-                        </tbody>
+                        <tbody id="attendance-history"></tbody>
                     </table>
                 </div>
             </section>
         </div>
     </div>
 
-    <!-- Add Employee Modal -->
+    <!-- Modal Tambah Karyawan -->
     <div class="modal" id="emp-modal">
         <div class="modal-content">
             <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Tambah Karyawan Baru</h2>
             <form id="emp-form">
                 <div class="form-group">
                     <label>Nama Lengkap</label>
-                    <input type="text" id="emp-name" required placeholder="Contoh: Siti Aminah">
+                    <input type="text" id="emp-name" required>
                 </div>
                 <div class="form-group">
                     <label>Peran / Jabatan</label>
-                    <input type="text" id="emp-role" list="role-options" required placeholder="Pilih atau ketik peran">
+                    <input type="text" id="emp-role" list="role-options" required>
                     <datalist id="role-options">
-                        <option value="Kasir">
-                        <option value="Operator">
-                        <option value="Manager">
-                        <option value="Wasit">
-                        <option value="Kebersihan">
-                        <option value="Lc">
+                        <option value="Kasir"><option value="Operator"><option value="Manager"><option value="Wasit"><option value="Lc">
                     </datalist>
                 </div>
                 <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                     <button type="button" class="btn btn-outline" onclick="document.getElementById('emp-modal').style.display='none'">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan Data</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
+        let allEmployees = [];
+        let allAttendance = [];
+        let currentFilter = 'all';
+
         async function loadData() {
-            const employees = await fetchData('/employees');
-            const attendance = await fetchData('/attendance');
-            
-            // Render Employees
-            const empList = document.getElementById('employee-list');
-            empList.innerHTML = '';
-            employees.forEach(emp => {
+            allEmployees = await fetchData('/employees');
+            allAttendance = await fetchData('/attendance');
+            renderEmployees();
+            renderAttendance();
+        }
+
+        function renderEmployees() {
+            const list = document.getElementById('employee-list');
+            list.innerHTML = '';
+            allEmployees.forEach(emp => {
                 const row = document.createElement('tr');
-                row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
                 row.innerHTML = `
-                    <td data-label="Nama" style="padding: 1rem; font-weight: 600;">${emp.name}</td>
-                    <td data-label="Posisi" style="padding: 1rem; color: var(--text-dim); font-size: 0.85rem;">${emp.role}</td>
-                    <td data-label="Aksi" style="padding: 1rem; text-align: right;">
-                        <button class="btn btn-outline" style="width:auto; padding: 0.3rem 0.6rem; font-size:0.75rem; color:var(--danger);" onclick="deleteEmployee(${emp.id})">Hapus</button>
+                    <td><strong>${emp.name}</strong></td>
+                    <td style="color: var(--text-dim); font-size: 0.8rem;">${emp.role}</td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-outline" style="width: auto; padding: 2px 8px; color: var(--danger); border-color: rgba(231,76,60,0.2);" onclick="deleteEmployee('${emp.id}')">Hapus</button>
                     </td>
                 `;
-                empList.appendChild(row);
+                list.appendChild(row);
             });
+        }
 
-            // Render Attendance History
-            const attHistory = document.getElementById('attendance-history');
-            attHistory.innerHTML = '';
-            attendance.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach(a => {
-                const row = document.createElement('tr');
-                row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        function setFilter(f) {
+            currentFilter = f;
+            renderAttendance();
+        }
+
+        function renderAttendance() {
+            const list = document.getElementById('attendance-history');
+            const title = document.getElementById('attendance-title');
+            list.innerHTML = '';
+            
+            let filtered = [...allAttendance];
+            const now = getSyncedNow();
+            
+            if (currentFilter === 'today') {
+                const todayStr = now.toISOString().split('T')[0];
+                filtered = allAttendance.filter(a => a.timestamp.startsWith(todayStr));
+                title.textContent = "Absensi: Hari Ini";
+            } else if (currentFilter === 'week') {
+                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                filtered = allAttendance.filter(a => new Date(a.timestamp) >= weekAgo);
+                title.textContent = "Absensi: 7 Hari Terakhir";
+            } else if (currentFilter === 'month') {
+                const monthStr = now.toISOString().slice(0, 7);
+                filtered = allAttendance.filter(a => a.timestamp.startsWith(monthStr));
+                title.textContent = "Absensi: Bulan Ini";
+            } else {
+                title.textContent = "Absensi: Semua Riwayat";
+            }
+
+            filtered.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach(a => {
                 const date = new Date(a.timestamp);
+                const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td data-label="Tanggal" style="padding: 1rem; font-size: 0.85rem;">
-                        ${date.toLocaleDateString('id-ID')} <br>
-                        <small style="color:var(--text-dim)">${date.toLocaleTimeString('id-ID')}</small>
+                    <td>
+                        <strong>${date.toLocaleDateString('id-ID')}</strong><br>
+                        <small style="color: var(--text-dim)">${date.toLocaleTimeString('id-ID')}</small>
                     </td>
-                    <td data-label="Nama" style="padding: 1rem;">${a.employeeName}</td>
-                    <td data-label="Tipe" style="padding: 1rem; text-align: center;">
-                        <span style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 6px; background: ${a.type === 'in' ? 'rgba(0,243,255,0.1)' : 'rgba(250,204,21,0.1)'}; color: ${a.type === 'in' ? 'var(--success)' : 'var(--accent-gold)'}">
+                    <td>${a.employeeName}</td>
+                    <td style="text-align: center;">
+                        <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: ${a.type === 'in' ? 'rgba(0,243,255,0.1)' : 'rgba(250,204,21,0.1)'}; color: ${a.type === 'in' ? 'var(--success)' : 'var(--accent-gold)'}">
                             ${a.type === 'in' ? 'MASUK' : 'KELUAR'}
                         </span>
                     </td>
                 `;
-                attHistory.appendChild(row);
+                list.appendChild(row);
             });
+        }
+
+        async function deleteEmployee(id) {
+            if (confirm('Hapus karyawan ini?')) {
+                const res = await deleteData(`/employees/${id}`);
+                if (res && res.success) loadData();
+            }
         }
 
         function openAddEmpModal() {
@@ -185,29 +216,52 @@
 
         document.getElementById('emp-form').onsubmit = async (e) => {
             e.preventDefault();
-            const data = {
+            const res = await postData('/employees', {
                 name: document.getElementById('emp-name').value,
                 role: document.getElementById('emp-role').value
-            };
-            const res = await postData('/employees', data);
+            });
             if (res) {
                 document.getElementById('emp-modal').style.display = 'none';
                 loadData();
             }
         };
 
-        async function deleteEmployee(id) {
-            if (confirm('Hapus karyawan ini? Seluruh riwayat absensinya akan tetap ada namun nama tidak terdaftar lagi.')) {
-                const res = await deleteData(`/employees/${id}`);
-                if (res && res.success) {
-                    loadData();
-                } else {
-                    alert('Gagal menghapus karyawan.');
-                }
+        async function resetAttendance() {
+            if (confirm('Hapus data absensi hari ini?')) {
+                const res = await postData('/attendance/close-shift', {});
+                if (res) loadData();
             }
         }
 
-        // Auto Refresh every 30s
+        function printStaffReport() {
+            const table = document.querySelector('#attendance-history').parentElement.cloneNode(true);
+            const printWin = window.open('', '_blank');
+            const html = `
+                <html>
+                <head>
+                    <title>Rekap Absensi Staf</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; }
+                        h1, h2 { text-align: center; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 12px; }
+                        th { background: #eee; }
+                    </style>
+                </head>
+                <body>
+                    <h1>OM BEN BILLIARD X V3 KARAOKE</h1>
+                    <h2>${document.getElementById('attendance-title').textContent}</h2>
+                    <p style="text-align:center">Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+                    ${table.outerHTML}
+                    <script>
+                        window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
+                    <\/script>
+                </body>
+                </html>`;
+            printWin.document.write(html);
+            printWin.document.close();
+        }
+
         setInterval(loadData, 30000);
         loadData();
     </script>
