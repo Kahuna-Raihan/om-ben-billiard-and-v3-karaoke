@@ -18,13 +18,16 @@ let menuItems = [];
 
 async function refreshData() {
     const newTables = await fetchData('/tables');
-    const newSessions = await fetchData('/sessions');
+    const allSessions = await fetchData('/sessions');
     const newMenu = await fetchData('/menu');
     
+    // FILTER ONLY TABLE SESSIONS
+    const tableSessions = allSessions.filter(s => s.targetType === 'table' || !s.targetType);
+    
     // Stability check: only render if changes detected
-    if (JSON.stringify(tables) !== JSON.stringify(newTables) || JSON.stringify(activeSessions) !== JSON.stringify(newSessions)) {
+    if (JSON.stringify(tables) !== JSON.stringify(newTables) || JSON.stringify(activeSessions) !== JSON.stringify(tableSessions)) {
         tables = newTables;
-        activeSessions = newSessions;
+        activeSessions = tableSessions;
         menuItems = newMenu;
 
         const todayStr = getSyncedNow().toISOString().split('T')[0];

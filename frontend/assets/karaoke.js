@@ -18,12 +18,15 @@ let menuItems = [];
 
 async function refreshData() {
     const newRooms = await fetchData('/rooms');
-    const newSessions = await fetchData('/sessions');
+    const allSessions = await fetchData('/sessions');
     const newMenu = await fetchData('/menu');
     
-    if (JSON.stringify(rooms) !== JSON.stringify(newRooms) || JSON.stringify(activeSessions) !== JSON.stringify(newSessions)) {
+    // FILTER ONLY ROOM SESSIONS
+    const roomSessions = allSessions.filter(s => s.targetType === 'room');
+    
+    if (JSON.stringify(rooms) !== JSON.stringify(newRooms) || JSON.stringify(activeSessions) !== JSON.stringify(roomSessions)) {
         rooms = newRooms;
-        activeSessions = newSessions;
+        activeSessions = roomSessions;
         menuItems = newMenu;
 
         const todayStr = getSyncedNow().toISOString().split('T')[0];
