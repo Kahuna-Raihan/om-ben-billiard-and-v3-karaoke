@@ -226,7 +226,8 @@ startForm.onsubmit = async (e) => {
         tableId: document.getElementById('modal-table-id').value,
         customerName: document.getElementById('customer-name').value,
         type: rentalType.value,
-        durationMinutes: parseInt(document.getElementById('duration-minutes').value) || 0
+        durationMinutes: parseInt(document.getElementById('duration-minutes').value) || 0,
+        targetType: 'table'
     };
     const result = await postData('/sessions/start', data);
     if (result) {

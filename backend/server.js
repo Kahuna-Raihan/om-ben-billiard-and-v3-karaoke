@@ -164,18 +164,39 @@ app.get('/api/stock-logs', (req, res) => res.json(readDB().stockLogs || []));
 // --- SESSIONS API ---
 app.get('/api/sessions', (req, res) => res.json(readDB().sessions));
 app.post('/api/sessions/start', (req, res) => {
-    const { tableId, customerName, type, durationMinutes } = req.body;
+    const { tableId, customerName, type, durationMinutes, targetType } = req.body;
     const db = readDB();
-    let item = db.tables.find(t => t.id == tableId);
-    if (!item) item = db.rooms.find(r => r.id == tableId);
+    
+    let item = null;
+    // Specifically search based on targetType if provided, otherwise fallback
+    if (targetType === 'room') {
+        item = db.rooms.find(r => r.id == tableId);
+    } else if (targetType === 'table') {
+        item = db.tables.find(t => t.id == tableId);
+    } else {
+        // Fallback for older frontend versions
+        item = db.tables.find(t => t.id == tableId);
+        if (!item) item = db.rooms.find(r => r.id == tableId);
+    }
+
     if (!item || item.status !== 'available') return res.status(400).json({ message: 'Target busy or not found' });
+    
     const startTime = new Date();
     let endTime = null;
     if (type === 'duration' && durationMinutes) {
         endTime = new Date(startTime.getTime() + durationMinutes * 60000);
     }
     const newSession = {
-        id: Date.now(), tableId, tableName: item.name, customerName, type, startTime, endTime, hourlyRate: item.hourlyRate, orders: []
+        id: Date.now(), 
+        tableId, 
+        tableName: item.name, 
+        customerName, 
+        type, 
+        startTime, 
+        endTime, 
+        hourlyRate: item.hourlyRate, 
+        orders: [],
+        targetType: targetType || (db.tables.find(t => t.id == tableId) ? 'table' : 'room')
     };
     db.sessions.push(newSession);
     item.status = 'occupied';
@@ -217,12 +238,17 @@ app.post('/api/sessions/:id/stop', (req, res) => {
     };
     db.transactions.push(transaction);
     
-    // ENSURE TABLE STATUS UPDATE (FIX FOR TIMER ISSUE)
-    let item = db.tables.find(t => t.id == session.tableId);
-    if (!item) item = db.rooms.find(r => r.id == session.tableId);
+    // ENSURE CORRECT RESOURCE STATUS UPDATE
+    let item = null;
+    if (session.targetType === 'room') {
+        item = db.rooms.find(r => r.id == session.tableId);
+    } else {
+        item = db.tables.find(t => t.id == session.tableId);
+    }
+
     if (item) {
         item.status = 'available';
-        console.log(`Table ${item.name} status updated to available.`);
+        console.log(`${session.targetType === 'room' ? 'Room' : 'Table'} ${item.name} status updated to available.`);
     }
     
     db.sessions.splice(sessionIdx, 1);
