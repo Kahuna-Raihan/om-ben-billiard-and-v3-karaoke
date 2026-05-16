@@ -65,9 +65,10 @@
                     <label>Username Baru</label>
                     <input type="text" id="new-username" placeholder="Masukkan username baru" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="password-group">
                     <label>Password Baru</label>
                     <input type="password" id="new-password" placeholder="Biarkan kosong jika tidak ingin ganti">
+                    <p id="pwd-notice" style="font-size: 0.75rem; color: var(--danger); margin-top: 0.5rem; display: none;">* Hanya Admin yang dapat mengganti password.</p>
                 </div>
                 <div class="form-group" style="margin-top: 2rem;">
                     <button type="submit" class="btn btn-primary" id="save-btn">Simpan Perubahan</button>
@@ -79,8 +80,18 @@
 
     <script>
         const oldUser = localStorage.getItem('auth_user');
+        const role = localStorage.getItem('auth_role');
         document.getElementById('new-username').value = oldUser;
         
+        // Restriction for Cashier
+        if (role !== 'admin') {
+            const pwdInput = document.getElementById('new-password');
+            pwdInput.disabled = true;
+            pwdInput.style.opacity = '0.5';
+            pwdInput.placeholder = 'Dikunci (Hubungi Admin)';
+            document.getElementById('pwd-notice').style.display = 'block';
+        }
+
         let base64Photo = null;
 
         // Load existing photo if any
