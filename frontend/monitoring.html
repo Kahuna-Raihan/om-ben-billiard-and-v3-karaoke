@@ -58,6 +58,9 @@
 
         async function updateMonitor() {
             const sessions = await fetchData('/sessions');
+            const tables = await fetchData('/tables');
+            const rooms = await fetchData('/rooms');
+            
             const container = document.getElementById('monitor-container');
             container.innerHTML = '';
 
@@ -72,6 +75,14 @@
 
             sessions.forEach(session => {
                 const isBilliard = session.targetType !== 'room';
+                
+                // Find description from source list
+                let sourceItem = isBilliard 
+                    ? tables.find(t => t.id == session.tableId)
+                    : rooms.find(r => r.id == session.tableId);
+                
+                const typeName = sourceItem ? (sourceItem.description || '-') : '-';
+
                 const timer = session.type === 'duration' 
                     ? calculateCountdown(session.endTime)
                     : calculateTimeDiff(session.startTime);
@@ -83,6 +94,7 @@
                         <div class="table-info">
                             <span style="font-size: 0.7rem; color: var(--primary-color); font-weight: bold;">${isBilliard ? 'BILLIARD' : 'KARAOKE'}</span>
                             <h2>${session.tableName}</h2>
+                            <div style="font-size: 0.75rem; color: var(--neon-gold); margin-top: 2px;">• ${typeName}</div>
                         </div>
                         <span class="status-badge" style="background: var(--primary-color); color: var(--bg-dark);">AKTIF</span>
                     </div>
