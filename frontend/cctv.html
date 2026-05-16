@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV Monitoring | Admin Om Ben</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .cctv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .cctv-card {
+            background: black;
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 16/9;
+        }
+        .cctv-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            background: linear-gradient(45deg, #111, #222);
+        }
+        .cctv-overlay {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #0f0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .rec-dot {
+            width: 8px;
+            height: 8px;
+            background: red;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE CCTV Monitor</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('cctv');</script>
+
+        <section>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                <h2 style="font-family: var(--font-heading); margin: 0;">Monitoring Area</h2>
+                <button class="btn btn-outline" style="width: auto;" onclick="setupCCTV()">⚙️ Pengaturan IP Camera</button>
+            </div>
+
+            <div class="cctv-grid">
+                <!-- Camera 1 -->
+                <div class="cctv-card">
+                    <div class="cctv-overlay"><div class="rec-dot"></div> LIVE - AREA BILLIARD</div>
+                    <div class="cctv-placeholder">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
+                        <p id="cam1-status">Kamera Belum Terhubung</p>
+                        <small id="cam1-url" style="font-size: 0.7rem; opacity: 0.5;"></small>
+                    </div>
+                </div>
+
+                <!-- Camera 2 -->
+                <div class="cctv-card">
+                    <div class="cctv-overlay"><div class="rec-dot"></div> LIVE - AREA KASIR</div>
+                    <div class="cctv-placeholder">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
+                        <p id="cam2-status">Kamera Belum Terhubung</p>
+                        <small id="cam2-url" style="font-size: 0.7rem; opacity: 0.5;"></small>
+                    </div>
+                </div>
+
+                <!-- Camera 3 -->
+                <div class="cctv-card">
+                    <div class="cctv-overlay"><div class="rec-dot"></div> LIVE - AREA KARAOKE</div>
+                    <div class="cctv-placeholder">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
+                        <p id="cam3-status">Kamera Belum Terhubung</p>
+                        <small id="cam3-url" style="font-size: 0.7rem; opacity: 0.5;"></small>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 15px; border: 1px dashed var(--glass-border);">
+                <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Info CCTV</h3>
+                <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.6;">
+                    Untuk menghubungkan CCTV, pastikan IP Camera su berada di jaringan (WiFi/LAN) yang sama dengan laptop ini. Masukkan URL MJPEG stream dari aplikasi CCTV su (misal: iVMS, HikVision, atau IP Cam Adapter).
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        if (localStorage.getItem('auth_role') !== 'admin') {
+            window.location.href = 'index.html';
+        }
+
+        function setupCCTV() {
+            const url = prompt("Masukkan URL Stream IP Camera su (contoh: http://192.168.1.10:8080/video):");
+            if (url) {
+                localStorage.setItem('cctv_url_1', url);
+                alert("URL Berhasil disimpan. Sistem akan mencoba menghubungkan...");
+                location.reload();
+            }
+        }
+
+        // Try to load stream
+        window.onload = () => {
+            const savedUrl = localStorage.getItem('cctv_url_1');
+            if (savedUrl) {
+                const containers = document.querySelectorAll('.cctv-placeholder');
+                // For demo, we just show the URL. In reality, we'd inject an <img> or <video> tag
+                document.getElementById('cam1-status').innerHTML = `<img src="${savedUrl}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML='Stream Gagal: Cek Koneksi IP Camera'">`;
+                document.getElementById('cam1-url').textContent = savedUrl;
+            }
+        }
+    </script>
+</body>
+</html>
