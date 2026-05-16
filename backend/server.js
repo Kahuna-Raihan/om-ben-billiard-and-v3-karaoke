@@ -20,6 +20,8 @@ function readDB() {
         if (!data.rooms) data.rooms = [];
         if (!data.users) data.users = [];
         if (!data.stockLogs) data.stockLogs = [];
+        if (!data.menu) data.menu = [];
+        data.menu.forEach(item => { if (item.stock === undefined) item.stock = 0; });
         return data;
     } catch (err) {
         console.error('Error reading DB:', err);
@@ -157,16 +159,17 @@ app.post('/api/menu/:id/set-stock', (req, res) => {
     if (!item) return res.status(404).json({ error: 'Item not found' });
 
     const oldStock = item.stock || 0;
-    item.stock = parseInt(stock);
+    const newStock = parseInt(stock);
+    item.stock = newStock;
 
-    // Log the change
+    // Log the change with more detail
     db.stockLogs.push({
         id: Date.now(),
         itemId: item.id,
         itemName: item.name,
-        type: item.stock > oldStock ? 'in' : 'out',
-        delta: Math.abs(item.stock - oldStock),
-        reason: reason || 'Manual Update',
+        type: newStock > oldStock ? 'in' : 'out',
+        delta: Math.abs(newStock - oldStock),
+        reason: `${reason || 'Update Manual'}: (${oldStock} -> ${newStock})`,
         user: user || 'Admin',
         timestamp: new Date().toISOString()
     });
