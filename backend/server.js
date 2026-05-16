@@ -260,6 +260,25 @@ app.delete('/api/employees/:id', (req, res) => {
     writeDB(db);
     res.json({ success: true });
 });
+
+// --- USERS MANAGEMENT ---
+app.get('/api/users', (req, res) => {
+    const users = readDB().users.map(u => ({ id: u.id, username: u.username, role: u.role }));
+    res.json(users);
+});
+
+app.put('/api/users/:id/password', (req, res) => {
+    const db = readDB();
+    const user = db.users.find(u => u.id == req.params.id);
+    if (user) {
+        user.password = req.body.newPassword;
+        writeDB(db);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ message: 'User not found' });
+    }
+});
+
 app.get('/api/attendance', (req, res) => res.json(readDB().attendance));
 app.post('/api/attendance', (req, res) => {
     const { employeeId, type } = req.body;

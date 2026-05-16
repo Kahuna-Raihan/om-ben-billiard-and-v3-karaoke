@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen User | Admin Om Ben</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE User Security</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('users-admin');</script>
+
+        <section>
+            <h2 style="font-family: var(--font-heading); margin-bottom: 2rem;">Keamanan & Reset Password</h2>
+            <div class="table-grid" id="user-list">
+                <!-- User cards injected here -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div class="modal" id="password-modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Reset Password</h2>
+            <form id="password-form">
+                <input type="hidden" id="reset-user-id">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="reset-username" disabled style="opacity: 0.7;">
+                </div>
+                <div class="form-group">
+                    <label>Password Baru</label>
+                    <input type="password" id="new-password" required placeholder="Masukkan password baru">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('password-modal').style.display='none'">Batal</button>
+                    <button type="submit" class="btn btn-primary">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Restrict to Admin
+        if (localStorage.getItem('auth_role') !== 'admin') {
+            alert('Akses Ditolak! Halaman ini hanya untuk Admin.');
+            window.location.href = 'index.html';
+        }
+
+        async function loadUsers() {
+            const users = await fetchData('/users');
+            const container = document.getElementById('user-list');
+            container.innerHTML = '';
+            
+            users.forEach(user => {
+                const card = document.createElement('div');
+                card.className = 'stat-card';
+                card.style.textAlign = 'left';
+                card.style.padding = '1.5rem';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-size: 0.7rem; color: var(--primary-color); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${user.role}</span>
+                        <img src="assets/logo.png" style="width: 20px; opacity: 0.5;">
+                    </div>
+                    <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem;">${user.username}</div>
+                    <button class="btn btn-outline" style="font-size: 0.8rem; padding: 0.5rem;" onclick="openPasswordModal(${user.id}, '${user.username}')">Ganti Password</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openPasswordModal(id, username) {
+            document.getElementById('reset-user-id').value = id;
+            document.getElementById('reset-username').value = username;
+            document.getElementById('new-password').value = '';
+            document.getElementById('password-modal').style.display = 'flex';
+        }
+
+        document.getElementById('password-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('reset-user-id').value;
+            const newPassword = document.getElementById('new-password').value;
+            
+            const res = await fetch(`${API_BASE}/users/${id}/password`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newPassword })
+            });
+            
+            if (res.ok) {
+                alert('Password berhasil diperbarui!');
+                document.getElementById('password-modal').style.display = 'none';
+                loadUsers();
+            } else {
+                alert('Gagal memperbarui password.');
+            }
+        };
+
+        loadUsers();
+    </script>
+</body>
+</html>
