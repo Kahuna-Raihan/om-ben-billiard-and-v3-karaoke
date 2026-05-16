@@ -103,11 +103,11 @@
         }
 
         // Auto Refresh
-        let timeLeft = 1;
+        let timeLeft = 30;
         setInterval(() => {
             timeLeft--;
             if (timeLeft <= 0) {
-                timeLeft = 1;
+                timeLeft = 30;
                 updateMonitor();
             }
             document.getElementById('refresh-timer').textContent = timeLeft;
