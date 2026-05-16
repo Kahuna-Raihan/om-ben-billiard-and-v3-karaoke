@@ -17,16 +17,23 @@ async function init() {
 let menuItems = [];
 
 async function refreshData() {
-    tables = await fetchData('/tables');
-    activeSessions = await fetchData('/sessions');
-    menuItems = await fetchData('/menu');
+    const newTables = await fetchData('/tables');
+    const newSessions = await fetchData('/sessions');
+    const newMenu = await fetchData('/menu');
     
-    const todayStr = getSyncedNow().toISOString().split('T')[0];
-    const allTransactions = await fetchData(`/transactions`);
-    const todayTransactions = allTransactions.filter(t => t.date === todayStr);
-    
-    renderTables();
-    updateStats(todayTransactions);
+    // Stability check: only render if changes detected
+    if (JSON.stringify(tables) !== JSON.stringify(newTables) || JSON.stringify(activeSessions) !== JSON.stringify(newSessions)) {
+        tables = newTables;
+        activeSessions = newSessions;
+        menuItems = newMenu;
+
+        const todayStr = getSyncedNow().toISOString().split('T')[0];
+        const allTransactions = await fetchData(`/transactions`);
+        const todayTransactions = allTransactions.filter(t => t.date === todayStr);
+        
+        renderTables();
+        updateStats(todayTransactions);
+    }
 }
 
 function updateStats(transactions) {

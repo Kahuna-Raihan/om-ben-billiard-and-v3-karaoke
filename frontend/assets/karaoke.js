@@ -17,16 +17,22 @@ async function init() {
 let menuItems = [];
 
 async function refreshData() {
-    rooms = await fetchData('/rooms');
-    activeSessions = await fetchData('/sessions');
-    menuItems = await fetchData('/menu');
+    const newRooms = await fetchData('/rooms');
+    const newSessions = await fetchData('/sessions');
+    const newMenu = await fetchData('/menu');
     
-    const todayStr = getSyncedNow().toISOString().split('T')[0];
-    const allTransactions = await fetchData(`/transactions`);
-    const todayTransactions = allTransactions.filter(t => t.date === todayStr);
-    
-    renderRooms();
-    updateStats(todayTransactions);
+    if (JSON.stringify(rooms) !== JSON.stringify(newRooms) || JSON.stringify(activeSessions) !== JSON.stringify(newSessions)) {
+        rooms = newRooms;
+        activeSessions = newSessions;
+        menuItems = newMenu;
+
+        const todayStr = getSyncedNow().toISOString().split('T')[0];
+        const allTransactions = await fetchData(`/transactions`);
+        const todayTransactions = allTransactions.filter(t => t.date === todayStr);
+        
+        renderRooms();
+        updateStats(todayTransactions);
+    }
 }
 
 function updateStats(transactions) {
