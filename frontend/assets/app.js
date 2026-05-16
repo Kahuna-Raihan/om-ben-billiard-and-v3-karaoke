@@ -148,6 +148,7 @@ function renderNavbar(activePage) {
             <li><a href="karaoke-settings.html" class="${activePage === 'karaoke-settings' ? 'active-admin' : ''}">Ruang</a></li>
             <li><a href="rental.html" class="${activePage === 'rental' ? 'active-admin' : ''}">Meja</a></li>
             <li><a href="monitoring.html" class="${activePage === 'monitoring' ? 'active-admin' : ''}" style="color:var(--primary-color)">LIVE</a></li>
+            <li><a href="stock-history.html" class="${activePage === 'stock-history' ? 'active-admin' : ''}" style="color:var(--secondary-color)">📦 Stok</a></li>
             <li><a href="finance.html" class="${activePage === 'finance' ? 'active-admin' : ''}">Laporan</a></li>
             <li><a href="attendance-admin.html" class="${activePage === 'attendance-admin' ? 'active-admin' : ''}">Staf</a></li>
             

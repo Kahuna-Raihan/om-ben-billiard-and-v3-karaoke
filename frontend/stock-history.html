@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Stok | Admin Om Ben</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .log-in { color: var(--success); font-weight: bold; }
+        .log-out { color: var(--danger); font-weight: bold; }
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE Stock Monitoring</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('stock-history');</script>
+
+        <section>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-family: var(--font-heading); margin: 0;">Rekapitulasi Barang Keluar/Masuk</h2>
+                <button class="btn btn-outline" style="width: auto;" onclick="loadLogs()">Refresh Data</button>
+            </div>
+
+            <div class="filter-bar">
+                <div class="form-group" style="margin:0; flex: 1; min-width: 200px;">
+                    <input type="text" id="search-item" placeholder="Cari Nama Barang..." oninput="filterLogs()">
+                </div>
+                <select id="filter-type" onchange="filterLogs()" style="padding: 0.5rem; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border);">
+                    <option value="all">Semua Tipe</option>
+                    <option value="in">Masuk (+)</option>
+                    <option value="out">Keluar (-)</option>
+                </select>
+            </div>
+
+            <table class="admin-table-container">
+                <thead>
+                    <tr>
+                        <th>Waktu</th>
+                        <th>Nama Barang</th>
+                        <th>Tipe</th>
+                        <th>Jumlah</th>
+                        <th>Keterangan / Alasan</th>
+                        <th>Oleh</th>
+                    </tr>
+                </thead>
+                <tbody id="log-body">
+                    <!-- Logs injected here -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script>
+        if (localStorage.getItem('auth_role') !== 'admin') {
+            window.location.href = 'index.html';
+        }
+
+        let allLogs = [];
+
+        async function loadLogs() {
+            allLogs = await fetchData('/stock-logs');
+            renderLogs(allLogs);
+        }
+
+        function renderLogs(logs) {
+            const body = document.getElementById('log-body');
+            body.innerHTML = '';
+
+            if (logs.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--text-dim);">Belum ada riwayat stok.</td></tr>';
+                return;
+            }
+
+            logs.sort((a,b) => b.id - a.id).forEach(log => {
+                const row = document.createElement('tr');
+                const date = new Date(log.timestamp);
+                
+                row.innerHTML = `
+                    <td>
+                        <small>${date.toLocaleDateString('id-ID')}</small><br>
+                        <strong>${date.toLocaleTimeString('id-ID')}</strong>
+                    </td>
+                    <td><strong style="color: var(--primary-color)">${log.itemName}</strong></td>
+                    <td><span class="log-${log.type}">${log.type === 'in' ? 'MASUK' : 'KELUAR'}</span></td>
+                    <td><strong style="font-size: 1.1rem;">${log.type === 'in' ? '+' : '-'}${log.delta}</strong></td>
+                    <td style="font-size: 0.85rem; color: var(--text-dim);">${log.reason}</td>
+                    <td><span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${log.user}</span></td>
+                `;
+                body.appendChild(row);
+            });
+        }
+
+        function filterLogs() {
+            const searchTerm = document.getElementById('search-item').value.toLowerCase();
+            const typeFilter = document.getElementById('filter-type').value;
+
+            const filtered = allLogs.filter(log => {
+                const matchesSearch = log.itemName.toLowerCase().includes(searchTerm);
+                const matchesType = typeFilter === 'all' || log.type === typeFilter;
+                return matchesSearch && matchesType;
+            });
+
+            renderLogs(filtered);
+        }
+
+        loadLogs();
+    </script>
+</body>
+</html>

@@ -19,15 +19,31 @@ function readDB() {
         const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         if (!data.rooms) data.rooms = [];
         if (!data.users) data.users = [];
+        if (!data.stockLogs) data.stockLogs = [];
         return data;
     } catch (err) {
         console.error('Error reading DB:', err);
-        return { users: [], tables: [], rooms: [], sessions: [], transactions: [], menu: [], employees: [], attendance: [] };
+        return { users: [], tables: [], rooms: [], sessions: [], transactions: [], menu: [], employees: [], attendance: [], stockLogs: [] };
     }
 }
 
 function writeDB(data) {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+}
+
+// Logger for Stock
+function logStock(db, itemName, type, delta, reason, user) {
+    const log = {
+        id: Date.now(),
+        itemName,
+        type, // 'in' or 'out'
+        delta,
+        reason,
+        user: user || 'System',
+        timestamp: new Date()
+    };
+    if (!db.stockLogs) db.stockLogs = [];
+    db.stockLogs.push(log);
 }
 
 // Root redirect
@@ -111,17 +127,13 @@ app.delete('/api/rooms/:id', (req, res) => {
     res.json({ success: true });
 });
 
-// --- MENU API ---
+// --- MENU & STOCK API ---
 app.get('/api/menu', (req, res) => res.json(readDB().menu));
-app.get('/api/menu-categories', (req, res) => {
-    const db = readDB();
-    const categories = [...new Set(db.menu.map(m => m.category))].map(name => ({ name }));
-    res.json(categories);
-});
 app.post('/api/menu', (req, res) => {
     const db = readDB();
     const newItem = { id: Date.now(), ...req.body, price: parseInt(req.body.price), stock: parseInt(req.body.stock) || 0 };
     db.menu.push(newItem);
+    logStock(db, newItem.name, 'in', newItem.stock, 'Initial/New Item', req.query.user);
     writeDB(db);
     res.json(newItem);
 });
@@ -129,30 +141,16 @@ app.post('/api/menu/:id/adjust-stock', (req, res) => {
     const db = readDB();
     const item = db.menu.find(m => m.id == req.params.id);
     if (item) {
-        item.stock = (item.stock || 0) + req.body.delta;
+        const delta = parseInt(req.body.delta);
+        item.stock = (item.stock || 0) + delta;
+        logStock(db, item.name, delta > 0 ? 'in' : 'out', Math.abs(delta), req.body.reason || 'Manual Adjustment', req.body.user);
         writeDB(db);
         res.json({ success: true, newStock: item.stock });
     } else {
         res.status(404).json({ success: false });
     }
 });
-app.post('/api/menu/:id/set-stock', (req, res) => {
-    const db = readDB();
-    const item = db.menu.find(m => m.id == req.params.id);
-    if (item) {
-        item.stock = req.body.stock;
-        writeDB(db);
-        res.json({ success: true });
-    } else {
-        res.status(404).json({ success: false });
-    }
-});
-app.delete('/api/menu/:id', (req, res) => {
-    const db = readDB();
-    db.menu = db.menu.filter(m => m.id != req.params.id);
-    writeDB(db);
-    res.json({ success: true });
-});
+app.get('/api/stock-logs', (req, res) => res.json(readDB().stockLogs || []));
 
 // --- SESSIONS API ---
 app.get('/api/sessions', (req, res) => res.json(readDB().sessions));
@@ -182,10 +180,12 @@ app.post('/api/sessions/:id/order', (req, res) => {
     const session = db.sessions.find(s => s.id == req.params.id);
     const menuItem = db.menu.find(m => m.id == menuId);
     if (session && menuItem) {
-        const order = { menuId, name: menuItem.name, price: menuItem.price, qty: parseInt(qty), subtotal: menuItem.price * parseInt(qty) };
+        const q = parseInt(qty);
+        const order = { menuId, name: menuItem.name, price: menuItem.price, qty: q, subtotal: menuItem.price * q };
         if (!session.orders) session.orders = [];
         session.orders.push(order);
-        menuItem.stock = (menuItem.stock || 0) - qty;
+        menuItem.stock = (menuItem.stock || 0) - q;
+        logStock(db, menuItem.name, 'out', q, `Order from ${session.tableName}`, req.body.user);
         writeDB(db);
         res.json({ success: true });
     } else {
@@ -207,9 +207,15 @@ app.post('/api/sessions/:id/stop', (req, res) => {
         id: Date.now(), ...session, endTime: stopTime, durationMinutes: Math.round(durationMs / 60000), tableAmount, ordersAmount: ordersTotal, amount: tableAmount + ordersTotal, date: stopTime.toISOString().split('T')[0], isArchived: false
     };
     db.transactions.push(transaction);
+    
+    // ENSURE TABLE STATUS UPDATE (FIX FOR TIMER ISSUE)
     let item = db.tables.find(t => t.id == session.tableId);
     if (!item) item = db.rooms.find(r => r.id == session.tableId);
-    if (item) item.status = 'available';
+    if (item) {
+        item.status = 'available';
+        console.log(`Table ${item.name} status updated to available.`);
+    }
+    
     db.sessions.splice(sessionIdx, 1);
     writeDB(db);
     res.json(transaction);
@@ -217,41 +223,26 @@ app.post('/api/sessions/:id/stop', (req, res) => {
 
 // --- TRANSACTIONS API ---
 app.get('/api/transactions', (req, res) => res.json(readDB().transactions));
-app.delete('/api/transactions/:id', (req, res) => {
-    const db = readDB();
-    db.transactions = db.transactions.filter(t => t.id != req.params.id);
-    writeDB(db);
-    res.json({ success: true });
-});
-
 app.post('/api/transactions/pos', (req, res) => {
-    const { customerName, orders, totalAmount } = req.body;
+    const { customerName, orders, totalAmount, user } = req.body;
     const db = readDB();
-    
-    // Create transaction
     const transaction = {
         id: Date.now(),
         customerName: customerName || 'Pelanggan POS',
         type: 'pos',
         amount: totalAmount,
-        orders: orders.map(o => ({
-            name: o.name,
-            qty: o.quantity,
-            price: o.price,
-            subtotal: o.subtotal
-        })),
+        orders: orders.map(o => ({ name: o.name, qty: o.quantity, price: o.price, subtotal: o.subtotal })),
         date: new Date().toISOString().split('T')[0],
         timestamp: new Date(),
         isArchived: false
     };
-
     db.transactions.push(transaction);
 
-    // Reduce stock
     orders.forEach(order => {
         const menuItem = db.menu.find(m => m.id == order.itemId);
         if (menuItem) {
             menuItem.stock = (menuItem.stock || 0) - order.quantity;
+            logStock(db, menuItem.name, 'out', order.quantity, 'F&B POS Direct Sale', user);
         }
     });
 
@@ -262,50 +253,19 @@ app.post('/api/transactions/pos', (req, res) => {
 app.post('/api/transactions/close-shift', (req, res) => {
     const db = readDB();
     let count = 0;
-    db.transactions.forEach(t => {
-        if (!t.isArchived) { t.isArchived = true; count++; }
-    });
+    db.transactions.forEach(t => { if (!t.isArchived) { t.isArchived = true; count++; } });
     writeDB(db);
     res.json({ success: true, archivedCount: count });
 });
 
-// --- EMPLOYEES & ATTENDANCE ---
+// --- EMPLOYEES & USERS ---
 app.get('/api/employees', (req, res) => res.json(readDB().employees));
-app.post('/api/employees', (req, res) => {
-    const db = readDB();
-    const newEmp = { id: Date.now(), ...req.body };
-    db.employees.push(newEmp);
-    writeDB(db);
-    res.json(newEmp);
-});
-app.delete('/api/employees/:id', (req, res) => {
-    const db = readDB();
-    db.employees = db.employees.filter(e => e.id != req.params.id);
-    writeDB(db);
-    res.json({ success: true });
-});
-app.get('/api/attendance', (req, res) => res.json(readDB().attendance));
-app.post('/api/attendance', (req, res) => {
-    const { employeeId, type } = req.body;
-    const db = readDB();
-    const emp = db.employees.find(e => e.id == employeeId);
-    const record = { id: Date.now(), employeeId, employeeName: emp ? emp.name : 'Unknown', type, timestamp: new Date(), date: new Date().toISOString().split('T')[0] };
-    db.attendance.push(record);
-    writeDB(db);
-    res.json(record);
-});
-
-// --- USERS MANAGEMENT ---
-app.get('/api/users', (req, res) => {
-    const users = readDB().users.map(u => ({ id: u.id, username: u.username, role: u.role, profilePic: u.profilePic }));
-    res.json(users);
-});
+app.get('/api/users', (req, res) => res.json(readDB().users.map(u => ({ id: u.id, username: u.username, role: u.role, profilePic: u.profilePic }))));
 app.post('/api/users', (req, res) => {
     const db = readDB();
     const { username, password, role } = req.body;
     if (db.users.find(u => u.username === username)) return res.status(400).json({ success: false, message: 'Username sudah ada!' });
-    const newUser = { id: Date.now(), username, password, role: role || 'kasir' };
-    db.users.push(newUser);
+    db.users.push({ id: Date.now(), username, password, role: role || 'kasir' });
     writeDB(db);
     res.json({ success: true });
 });
@@ -313,15 +273,10 @@ app.put('/api/users/update', (req, res) => {
     const db = readDB();
     const { oldUsername, newUsername, newPassword, profilePic } = req.body;
     const user = db.users.find(u => u.username === oldUsername);
-    if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
-    
-    if (newUsername && newUsername !== oldUsername) {
-        if (db.users.find(u => u.username === newUsername)) return res.status(400).json({ success: false, message: 'Username baru sudah dipakai' });
-        user.username = newUsername;
-    }
+    if (!user) return res.status(404).json({ success: false });
+    if (newUsername && newUsername !== oldUsername) user.username = newUsername;
     if (newPassword) user.password = newPassword;
     if (profilePic) user.profilePic = profilePic;
-    
     writeDB(db);
     res.json({ success: true, username: user.username, profilePic: user.profilePic });
 });
@@ -333,16 +288,5 @@ app.delete('/api/users/:id', (req, res) => {
     writeDB(db);
     res.json({ success: true });
 });
-app.put('/api/users/:id/password', (req, res) => {
-    const db = readDB();
-    const user = db.users.find(u => u.id == req.params.id);
-    if (user) {
-        user.password = req.body.newPassword;
-        writeDB(db);
-        res.json({ success: true });
-    } else res.status(404).json({ message: 'User not found' });
-});
 
-app.listen(PORT, () => {
-    console.log(`Server running at port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running at port ${PORT}`));
