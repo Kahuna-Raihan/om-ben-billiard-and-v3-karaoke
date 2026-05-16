@@ -62,7 +62,7 @@ function renderTables() {
                     <h2>${table.name}</h2>
                     <div class="rate">${formatRupiah(table.hourlyRate)} / jam • ${table.description}</div>
                 </div>
-                <div class="status-badge">${table.status === 'available' ? 'Tersedia' : (table.status === 'booked' ? 'BOOKED' : 'Digunakan')}</div>
+                <div class="status-badge">${table.status === 'available' ? 'Tersedia' : (table.status === 'booked' ? 'RESERVED' : 'Digunakan')}</div>
             </div>
             <div class="table-content">
                 <div class="timer-display" id="timer-${table.id}">${session ? '--:--:--' : '00:00:00'}</div>
