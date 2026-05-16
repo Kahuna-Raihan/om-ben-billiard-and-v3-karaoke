@@ -422,17 +422,30 @@ app.post('/api/users', (req, res) => {
 app.put('/api/users/update', (req, res) => {
     const db = readDB();
     const { oldUsername, newUsername, newPassword, profilePic } = req.body;
-    const user = db.users.find(u => u.username === oldUsername);
-    if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
     
-    // Check if password is same as old
+    // Find user in the database
+    const userIndex = db.users.findIndex(u => u.username === oldUsername);
+    if (userIndex === -1) return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+    
+    const user = db.users[userIndex];
+
+    // Check if new password is same as old
     if (newPassword && user.password === newPassword) {
         return res.status(400).json({ success: false, message: 'Password tidak boleh sama dengan yg kemarin' });
     }
 
-    if (newUsername && newUsername !== oldUsername) user.username = newUsername;
+    // Update the username in the list
+    if (newUsername && newUsername !== oldUsername) {
+        // Check if new username already taken by another user
+        const exists = db.users.find(u => u.username === newUsername && u.id !== user.id);
+        if (exists) return res.status(400).json({ success: false, message: 'Username sudah digunakan orang lain su!' });
+        
+        user.username = newUsername;
+    }
+    
     if (newPassword) user.password = newPassword;
     if (profilePic) user.profilePic = profilePic;
+    
     writeDB(db);
     res.json({ success: true, username: user.username, profilePic: user.profilePic });
 });
