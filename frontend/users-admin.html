@@ -23,11 +23,42 @@
         <script>renderNavbar('users-admin');</script>
 
         <section style="margin-top: 1rem;">
-            <h2 style="font-family: var(--font-heading); margin-bottom: 1.5rem; font-size: 1.5rem;">Keamanan & Reset Password</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-family: var(--font-heading); margin: 0; font-size: 1.5rem;">Keamanan & Reset Password</h2>
+                <button class="btn btn-primary" style="width: auto;" onclick="openAddUserModal()">+ Tambah User</button>
+            </div>
             <div class="table-grid" id="user-list">
                 <!-- User cards injected here -->
             </div>
         </section>
+    </div>
+
+    <!-- Add User Modal -->
+    <div class="modal" id="add-user-modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Tambah Akun Baru</h2>
+            <form id="add-user-form">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="add-username" required placeholder="Contoh: kasir_v3">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="add-password" required placeholder="Masukkan password">
+                </div>
+                <div class="form-group">
+                    <label>Role / Akses</label>
+                    <select id="add-role">
+                        <option value="kasir">Kasir (Terbatas)</option>
+                        <option value="admin">Admin (Akses Penuh)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('add-user-modal').style.display='none'">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Akun</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Reset Password Modal -->
@@ -73,13 +104,52 @@
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
                         <span style="font-size: 0.65rem; color: var(--primary-color); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${user.role}</span>
-                        <img src="assets/logo.png" style="width: 18px; opacity: 0.4;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            ${user.username !== 'om ben' ? `<button onclick="deleteUser(${user.id})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.8rem;">Hapus</button>` : ''}
+                            <img src="assets/logo.png" style="width: 18px; opacity: 0.4;">
+                        </div>
                     </div>
                     <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 1.2rem; color: var(--text-light);">${user.username}</div>
                     <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.6rem; width: 100%; border-radius: 10px;" onclick="openPasswordModal(${user.id}, '${user.username}')">Ganti Password</button>
                 `;
                 container.appendChild(card);
             });
+        }
+
+        function openAddUserModal() {
+            document.getElementById('add-user-form').reset();
+            document.getElementById('add-user-modal').style.display = 'flex';
+        }
+
+        document.getElementById('add-user-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                username: document.getElementById('add-username').value,
+                password: document.getElementById('add-password').value,
+                role: document.getElementById('add-role').value
+            };
+            
+            const res = await fetch(`${API_BASE}/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await res.json();
+            if (res.ok) {
+                alert('Akun berhasil dibuat!');
+                document.getElementById('add-user-modal').style.display = 'none';
+                loadUsers();
+            } else {
+                alert(result.message || 'Gagal membuat akun.');
+            }
+        };
+
+        async function deleteUser(id) {
+            if (confirm('Hapus akun ini secara permanen?')) {
+                const res = await fetch(`${API_BASE}/users/${id}`, { method: 'DELETE' });
+                if (res.ok) loadUsers();
+            }
         }
 
         function openPasswordModal(id, username) {

@@ -267,6 +267,36 @@ app.get('/api/users', (req, res) => {
     res.json(users);
 });
 
+app.post('/api/users', (req, res) => {
+    const db = readDB();
+    const { username, password, role } = req.body;
+    
+    if (db.users.find(u => u.username === username)) {
+        return res.status(400).json({ success: false, message: 'Username sudah ada!' });
+    }
+
+    const newUser = {
+        id: Date.now(),
+        username,
+        password,
+        role: role || 'kasir'
+    };
+    db.users.push(newUser);
+    writeDB(db);
+    res.json({ success: true, user: { id: newUser.id, username: newUser.username, role: newUser.role } });
+});
+
+app.delete('/api/users/:id', (req, res) => {
+    const db = readDB();
+    const user = db.users.find(u => u.id == req.params.id);
+    if (user && user.username === 'om ben') {
+        return res.status(403).json({ message: 'User utama tidak bisa dihapus' });
+    }
+    db.users = db.users.filter(u => u.id != req.params.id);
+    writeDB(db);
+    res.json({ success: true });
+});
+
 app.put('/api/users/:id/password', (req, res) => {
     const db = readDB();
     const user = db.users.find(u => u.id == req.params.id);
