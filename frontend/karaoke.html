@@ -31,7 +31,7 @@
                 <h3>Sedang Digunakan</h3>
                 <div class="value" id="occupied-count">0</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card admin-only" id="revenue-card">
                 <h3>Pendapatan Hari Ini</h3>
                 <div class="value" id="today-revenue">Rp 0</div>
             </div>
@@ -41,6 +41,12 @@
             <!-- Room cards will be injected here -->
         </section>
     </div>
+
+    <script>
+        if (localStorage.getItem('auth_role') !== 'admin') {
+            document.getElementById('revenue-card').style.display = 'none';
+        }
+    </script>
 
     <!-- Start Session Modal -->
     <div class="modal" id="start-modal">
