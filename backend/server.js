@@ -282,6 +282,12 @@ app.delete('/api/employees/:id', (req, res) => {
     writeDB(db);
     res.json({ success: true });
 });
+app.post('/api/employees/reset', (req, res) => {
+    const db = readDB();
+    db.employees = [];
+    writeDB(db);
+    res.json({ success: true });
+});
 
 // --- ATTENDANCE API ---
 app.get('/api/attendance', (req, res) => res.json(readDB().attendance || []));

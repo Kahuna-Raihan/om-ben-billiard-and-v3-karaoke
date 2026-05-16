@@ -202,7 +202,10 @@
             <div class="panel-lux">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <h3 style="margin: 0; font-size: 0.9rem; color: var(--neon-blue); letter-spacing: 1px;">DATABASE KARYAWAN</h3>
-                    <button class="btn-lux no-print" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="openAddEmpModal()">+ ADD</button>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn no-print" style="width: auto; padding: 2px 8px; font-size: 0.6rem; color: var(--danger); border: 1px solid rgba(231,76,60,0.3); border-radius: 8px;" onclick="resetEmployees()">RESET SEMUA</button>
+                        <button class="btn-lux no-print" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="openAddEmpModal()">+ ADD</button>
+                    </div>
                 </div>
                 
                 <div class="scroll-container">
@@ -461,6 +464,15 @@
             if (confirm('Reset absensi hari ini?')) {
                 const res = await postData('/attendance/close-shift', {});
                 if (res) loadData();
+            }
+        }
+
+        async function resetEmployees() {
+            if (confirm('PERINGATAN: Hapus SELURUH daftar karyawan?')) {
+                if (confirm('APAKAH ANDA YAKIN? Data tidak bisa dikembalikan!')) {
+                    const res = await postData('/employees/reset', {});
+                    if (res) loadData();
+                }
             }
         }
 
