@@ -147,7 +147,10 @@
                         <td style="padding: 1rem; text-align: center;">
                             <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
                                 <button class="btn btn-outline" style="width: 28px; height: 28px; padding: 0;" onclick="adjustStock(${item.id}, -1)">-</button>
-                                <span style="min-width: 30px; font-weight: bold; color: ${item.stock <= 5 ? 'var(--danger)' : 'white'}">${item.stock || 0}</span>
+                                <input type="number" value="${item.stock || 0}" 
+                                    style="width: 50px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); border-radius: 6px; color: white; text-align: center; font-weight: bold; padding: 2px;"
+                                    onchange="updateStockDirect(${item.id}, this.value)"
+                                >
                                 <button class="btn btn-outline" style="width: 28px; height: 28px; padding: 0;" onclick="adjustStock(${item.id}, 1)">+</button>
                             </div>
                         </td>
@@ -158,6 +161,15 @@
                     tbody.appendChild(row);
                 });
             }
+        }
+
+        async function updateStockDirect(id, value) {
+            const res = await postData(`/menu/${id}/set-stock`, { 
+                stock: parseInt(value), 
+                reason: 'Admin Direct Input',
+                user: localStorage.getItem('auth_user') 
+            });
+            if (res) loadMenu();
         }
 
         async function adjustStock(id, delta) {

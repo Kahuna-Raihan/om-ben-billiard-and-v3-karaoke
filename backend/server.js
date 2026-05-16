@@ -150,6 +150,30 @@ app.post('/api/menu/:id/adjust-stock', (req, res) => {
         res.status(404).json({ success: false });
     }
 });
+app.post('/api/menu/:id/set-stock', (req, res) => {
+    const { stock, reason, user } = req.body;
+    const db = readDB();
+    const item = db.menu.find(m => m.id == req.params.id);
+    if (!item) return res.status(404).json({ error: 'Item not found' });
+
+    const oldStock = item.stock || 0;
+    item.stock = parseInt(stock);
+
+    // Log the change
+    db.stockLogs.push({
+        id: Date.now(),
+        itemId: item.id,
+        itemName: item.name,
+        type: item.stock > oldStock ? 'in' : 'out',
+        delta: Math.abs(item.stock - oldStock),
+        reason: reason || 'Manual Update',
+        user: user || 'Admin',
+        timestamp: new Date().toISOString()
+    });
+
+    writeDB(db);
+    res.json({ success: true, newStock: item.stock });
+});
 app.delete('/api/menu/:id', (req, res) => {
     const db = readDB();
     const initialCount = db.menu.length;
