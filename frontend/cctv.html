@@ -33,6 +33,7 @@
             position: absolute;
             top: 1rem;
             left: 1rem;
+            right: 1rem;
             background: rgba(0,0,0,0.6);
             padding: 4px 10px;
             border-radius: 6px;
@@ -40,7 +41,20 @@
             color: #0f0;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 0.5rem;
+            z-index: 10;
+        }
+        .cctv-card:fullscreen {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            border-radius: 0;
+        }
+        .cctv-card:fullscreen .cctv-placeholder img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
         }
         .rec-dot {
             width: 8px;
@@ -79,8 +93,13 @@
 
             <div class="cctv-grid">
                 <!-- Camera 1 -->
-                <div class="cctv-card">
-                    <div class="cctv-overlay"><div class="rec-dot"></div> LIVE - AREA BILLIARD</div>
+                <div class="cctv-card" id="cam-1">
+                    <div class="cctv-overlay">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+                            <div class="rec-dot"></div> LIVE - AREA BILLIARD
+                        </div>
+                        <button onclick="toggleFullscreen('cam-1')" style="background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 1rem;">⛶</button>
+                    </div>
                     <div class="cctv-placeholder">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
                         <p id="cam1-status">Kamera Belum Terhubung</p>
@@ -89,8 +108,13 @@
                 </div>
 
                 <!-- Camera 2 -->
-                <div class="cctv-card">
-                    <div class="cctv-overlay"><div class="rec-dot"></div> LIVE - AREA KASIR</div>
+                <div class="cctv-card" id="cam-2">
+                    <div class="cctv-overlay">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+                            <div class="rec-dot"></div> LIVE - AREA KASIR
+                        </div>
+                        <button onclick="toggleFullscreen('cam-2')" style="background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 1rem;">⛶</button>
+                    </div>
                     <div class="cctv-placeholder">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
                         <p id="cam2-status">Kamera Belum Terhubung</p>
@@ -99,8 +123,13 @@
                 </div>
 
                 <!-- Camera 3 -->
-                <div class="cctv-card">
-                    <div class="cctv-overlay"><div class="rec-dot"></div> LIVE - AREA KARAOKE</div>
+                <div class="cctv-card" id="cam-3">
+                    <div class="cctv-overlay">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+                            <div class="rec-dot"></div> LIVE - AREA KARAOKE
+                        </div>
+                        <button onclick="toggleFullscreen('cam-3')" style="background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 1rem;">⛶</button>
+                    </div>
                     <div class="cctv-placeholder">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
                         <p id="cam3-status">Kamera Belum Terhubung</p>
@@ -132,12 +161,21 @@
             }
         }
 
+        function toggleFullscreen(id) {
+            const elem = document.getElementById(id);
+            if (!document.fullscreenElement) {
+                if (elem.requestFullscreen) elem.requestFullscreen();
+                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+                else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
         // Try to load stream
         window.onload = () => {
             const savedUrl = localStorage.getItem('cctv_url_1');
             if (savedUrl) {
-                const containers = document.querySelectorAll('.cctv-placeholder');
-                // For demo, we just show the URL. In reality, we'd inject an <img> or <video> tag
                 document.getElementById('cam1-status').innerHTML = `<img src="${savedUrl}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML='Stream Gagal: Cek Koneksi IP Camera'">`;
                 document.getElementById('cam1-url').textContent = savedUrl;
             }
