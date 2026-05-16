@@ -258,6 +258,21 @@ app.post('/api/sessions/:id/stop', (req, res) => {
 
 // --- TRANSACTIONS API ---
 app.get('/api/transactions', (req, res) => res.json(readDB().transactions));
+app.delete('/api/transactions/reset-today', (req, res) => {
+    const db = readDB();
+    const today = new Date().toISOString().split('T')[0];
+    const initialCount = db.transactions.length;
+    db.transactions = db.transactions.filter(t => t.date !== today);
+    const deletedCount = initialCount - db.transactions.length;
+    writeDB(db);
+    res.json({ success: true, deletedCount });
+});
+app.delete('/api/transactions/:id', (req, res) => {
+    const db = readDB();
+    db.transactions = db.transactions.filter(t => String(t.id) !== String(req.params.id));
+    writeDB(db);
+    res.json({ success: true });
+});
 app.post('/api/transactions/pos', (req, res) => {
     const { customerName, orders, totalAmount, user } = req.body;
     const db = readDB();

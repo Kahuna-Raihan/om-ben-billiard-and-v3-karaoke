@@ -325,7 +325,7 @@
 
         async function resetToday() {
             if (confirm('PERINGATAN: Ini akan MENGHAPUS SEMUA transaksi hari ini secara permanen. Apakah Anda yakin?')) {
-                const res = await fetch(`http://localhost:3001/api/transactions/reset-today`, { method: 'DELETE' });
+                const res = await fetch(`/api/transactions/reset-today`, { method: 'DELETE' });
                 const result = await res.json();
                 if (result.success) {
                     alert(`Berhasil mereset ${result.deletedCount} transaksi hari ini.`);
