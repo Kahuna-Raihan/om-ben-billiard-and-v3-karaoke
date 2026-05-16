@@ -139,11 +139,15 @@
                 });
                 
                 if (res && res.success) {
-                    statusEl.style.color = 'var(--primary-color)';
-                    statusEl.textContent = 'Berhasil! Profil diperbarui.';
-                    
+                    // Update the "ID Card" in the browser immediately
                     localStorage.setItem('auth_user', res.username);
                     if (res.profilePic) localStorage.setItem('auth_profile_pic', res.profilePic);
+                    
+                    // Update navbar immediately before reload for smooth feel
+                    renderNavbar('profile');
+                    
+                    statusEl.style.color = 'var(--primary-color)';
+                    statusEl.textContent = 'Berhasil! Username & Profil diperbarui.';
                     
                     setTimeout(() => {
                         window.location.reload();
@@ -152,7 +156,7 @@
                     const msg = res ? res.message : 'Gagal menyimpan.';
                     statusEl.style.color = 'var(--danger)';
                     statusEl.textContent = msg;
-                    alert(msg); // Show the alert as requested
+                    alert(msg);
                     saveBtn.disabled = false;
                     saveBtn.textContent = 'Simpan Perubahan';
                 }
