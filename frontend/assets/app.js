@@ -20,7 +20,7 @@ function getSyncedNow() {
 }
 
 // --- AUTH GUARD ---
-if (!window.location.href.includes('login.html')) {
+if (!window.location.href.includes('login.html') && !window.location.href.includes('attendance.html')) {
     if (!localStorage.getItem('auth_role')) window.location.href = 'login.html';
 }
 
