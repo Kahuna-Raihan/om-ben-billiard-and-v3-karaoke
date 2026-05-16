@@ -13,7 +13,7 @@
             margin-bottom: 2.5rem;
         }
         .stat-box {
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--card-bg);
             border: 1px solid var(--glass-border);
             padding: 1.5rem;
             border-radius: 20px;
@@ -22,6 +22,26 @@
         .stat-box h3 { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
         .stat-box .val { font-size: 1.8rem; font-weight: 800; }
         
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        th {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
         .badge {
             padding: 4px 12px;
             border-radius: 10px;
@@ -31,28 +51,13 @@
         }
         .badge-in { background: rgba(0, 243, 255, 0.1); color: var(--primary-color); border: 1px solid rgba(0, 243, 255, 0.3); }
         .badge-out { background: rgba(255, 71, 87, 0.1); color: #ff4757; border: 1px solid rgba(255, 71, 87, 0.3); }
-        
-        .log-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 10px;
-        }
-        .log-table th { padding: 1rem; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; text-align: left; }
-        .log-table td { 
-            padding: 1.2rem 1rem; 
-            background: rgba(255,255,255,0.02);
-            border-top: 1px solid rgba(255,255,255,0.05);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .log-table tr td:first-child { border-left: 1px solid rgba(255,255,255,0.05); border-radius: 15px 0 0 15px; }
-        .log-table tr td:last-child { border-right: 1px solid rgba(255,255,255,0.05); border-radius: 0 15px 15px 0; }
 
         @media print {
             header, nav, .filter-bar, .no-print, button { display: none !important; }
-            body { background: white !important; color: black !important; padding: 20px !important; }
-            .container { max-width: 100% !important; padding: 0 !important; width: 100% !important; }
-            .log-table td { background: transparent !important; border: 1px solid #ddd !important; color: black !important; border-radius: 0 !important; }
-            .badge { border: 1px solid #000 !important; color: black !important; background: transparent !important; }
+            body { background: white !important; color: black !important; padding: 40px !important; }
+            table { width: 100% !important; border: 1px solid black !important; color: black !important; border-collapse: collapse !important; }
+            th, td { border: 1px solid black !important; padding: 10px !important; color: black !important; background: transparent !important; }
+            th { background-color: #f0f0f0 !important; }
         }
     </style>
 </head>
@@ -109,7 +114,7 @@
             </div>
 
             <div id="print-area">
-                <table class="admin-table-container">
+                <table>
                     <thead>
                         <tr style="background: rgba(255,255,255,0.02);">
                             <th>Hari & Tanggal</th>
