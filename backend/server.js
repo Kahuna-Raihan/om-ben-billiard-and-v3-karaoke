@@ -16,10 +16,12 @@ const DB_PATH = path.join(__dirname, 'data', 'db.json');
 // Helper to read/write DB
 function readDB() {
     try {
-        return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+        const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+        if (!data.rooms) data.rooms = [];
+        return data;
     } catch (err) {
         console.error('Error reading DB:', err);
-        return { users: [], tables: [], sessions: [], transactions: [], menu: [], employees: [], attendance: [] };
+        return { users: [], tables: [], rooms: [], sessions: [], transactions: [], menu: [], employees: [], attendance: [] };
     }
 }
 
@@ -38,7 +40,6 @@ app.post('/api/login', (req, res) => {
         const { username, password } = req.body;
         const db = readDB();
         const user = db.users.find(u => u.username === username && u.password === password);
-        
         if (user) {
             res.json({ success: true, role: user.role, username: user.username });
         } else {
@@ -49,21 +50,15 @@ app.post('/api/login', (req, res) => {
     }
 });
 
-// --- TABLES API ---
+// --- TABLES API (Billiard) ---
 app.get('/api/tables', (req, res) => res.json(readDB().tables));
-
 app.post('/api/tables', (req, res) => {
     const db = readDB();
-    const newTable = {
-        id: Date.now(),
-        ...req.body,
-        status: 'available'
-    };
+    const newTable = { id: Date.now(), ...req.body, status: 'available' };
     db.tables.push(newTable);
     writeDB(db);
     res.json(newTable);
 });
-
 app.delete('/api/tables/:id', (req, res) => {
     const db = readDB();
     db.tables = db.tables.filter(t => t.id != req.params.id);
@@ -71,28 +66,48 @@ app.delete('/api/tables/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// --- ROOMS API (Karaoke) ---
+app.get('/api/rooms', (req, res) => res.json(readDB().rooms || []));
+app.post('/api/rooms', (req, res) => {
+    const db = readDB();
+    const newRoom = { id: Date.now(), ...req.body, status: 'available' };
+    if (!db.rooms) db.rooms = [];
+    db.rooms.push(newRoom);
+    writeDB(db);
+    res.json(newRoom);
+});
+app.put('/api/rooms/:id', (req, res) => {
+    const db = readDB();
+    const idx = db.rooms.findIndex(r => r.id == req.params.id);
+    if (idx !== -1) {
+        db.rooms[idx] = { ...db.rooms[idx], ...req.body };
+        writeDB(db);
+        res.json(db.rooms[idx]);
+    } else {
+        res.status(404).json({ message: 'Room not found' });
+    }
+});
+app.delete('/api/rooms/:id', (req, res) => {
+    const db = readDB();
+    db.rooms = db.rooms.filter(r => r.id != req.params.id);
+    writeDB(db);
+    res.json({ success: true });
+});
+
 // --- MENU API ---
 app.get('/api/menu', (req, res) => res.json(readDB().menu));
-
 app.get('/api/menu-categories', (req, res) => {
     const db = readDB();
     const categories = [...new Set(db.menu.map(m => m.category))].map(name => ({ name }));
     res.json(categories);
 });
-
 app.post('/api/menu', (req, res) => {
     const db = readDB();
-    const newItem = {
-        id: Date.now(),
-        ...req.body,
-        price: parseInt(req.body.price),
-        stock: parseInt(req.body.stock) || 0
-    };
+    const newItem = { id: Date.now(), ...req.body, price: parseInt(req.body.price), stock: parseInt(req.body.stock) || 0 };
     db.menu.push(newItem);
     writeDB(db);
     res.json(newItem);
 });
-
 app.post('/api/menu/:id/adjust-stock', (req, res) => {
     const db = readDB();
     const item = db.menu.find(m => m.id == req.params.id);
@@ -104,7 +119,6 @@ app.post('/api/menu/:id/adjust-stock', (req, res) => {
         res.status(404).json({ success: false });
     }
 });
-
 app.post('/api/menu/:id/set-stock', (req, res) => {
     const db = readDB();
     const item = db.menu.find(m => m.id == req.params.id);
@@ -116,7 +130,6 @@ app.post('/api/menu/:id/set-stock', (req, res) => {
         res.status(404).json({ success: false });
     }
 });
-
 app.delete('/api/menu/:id', (req, res) => {
     const db = readDB();
     db.menu = db.menu.filter(m => m.id != req.params.id);
@@ -126,12 +139,15 @@ app.delete('/api/menu/:id', (req, res) => {
 
 // --- SESSIONS API ---
 app.get('/api/sessions', (req, res) => res.json(readDB().sessions));
-
 app.post('/api/sessions/start', (req, res) => {
     const { tableId, customerName, type, durationMinutes } = req.body;
     const db = readDB();
-    const table = db.tables.find(t => t.id == tableId);
-    if (!table || table.status !== 'available') return res.status(400).json({ message: 'Table busy' });
+    
+    // Check in tables or rooms
+    let item = db.tables.find(t => t.id == tableId);
+    if (!item) item = db.rooms.find(r => r.id == tableId);
+    
+    if (!item || item.status !== 'available') return res.status(400).json({ message: 'Target busy or not found' });
 
     const startTime = new Date();
     let endTime = null;
@@ -142,17 +158,17 @@ app.post('/api/sessions/start', (req, res) => {
     const newSession = {
         id: Date.now(),
         tableId,
-        tableName: table.name,
+        tableName: item.name,
         customerName,
         type,
         startTime,
         endTime,
-        hourlyRate: table.hourlyRate,
+        hourlyRate: item.hourlyRate,
         orders: []
     };
 
     db.sessions.push(newSession);
-    table.status = 'occupied';
+    item.status = 'occupied';
     writeDB(db);
     res.json(newSession);
 });
@@ -164,19 +180,10 @@ app.post('/api/sessions/:id/order', (req, res) => {
     const menuItem = db.menu.find(m => m.id == menuId);
 
     if (session && menuItem) {
-        const order = {
-            menuId,
-            name: menuItem.name,
-            price: menuItem.price,
-            qty: parseInt(qty),
-            subtotal: menuItem.price * parseInt(qty)
-        };
+        const order = { menuId, name: menuItem.name, price: menuItem.price, qty: parseInt(qty), subtotal: menuItem.price * parseInt(qty) };
         if (!session.orders) session.orders = [];
         session.orders.push(order);
-        
-        // Adjust stock
         menuItem.stock = (menuItem.stock || 0) - qty;
-        
         writeDB(db);
         res.json({ success: true });
     } else {
@@ -209,8 +216,11 @@ app.post('/api/sessions/:id/stop', (req, res) => {
     };
 
     db.transactions.push(transaction);
-    const table = db.tables.find(t => t.id == session.tableId);
-    if (table) table.status = 'available';
+    
+    // Reset status in tables or rooms
+    let item = db.tables.find(t => t.id == session.tableId);
+    if (!item) item = db.rooms.find(r => r.id == session.tableId);
+    if (item) item.status = 'available';
     
     db.sessions.splice(sessionIdx, 1);
     writeDB(db);
@@ -219,22 +229,17 @@ app.post('/api/sessions/:id/stop', (req, res) => {
 
 // --- TRANSACTIONS API ---
 app.get('/api/transactions', (req, res) => res.json(readDB().transactions));
-
 app.delete('/api/transactions/:id', (req, res) => {
     const db = readDB();
     db.transactions = db.transactions.filter(t => t.id != req.params.id);
     writeDB(db);
     res.json({ success: true });
 });
-
 app.post('/api/transactions/close-shift', (req, res) => {
     const db = readDB();
     let count = 0;
     db.transactions.forEach(t => {
-        if (!t.isArchived) {
-            t.isArchived = true;
-            count++;
-        }
+        if (!t.isArchived) { t.isArchived = true; count++; }
     });
     writeDB(db);
     res.json({ success: true, archivedCount: count });
@@ -242,7 +247,6 @@ app.post('/api/transactions/close-shift', (req, res) => {
 
 // --- EMPLOYEES & ATTENDANCE ---
 app.get('/api/employees', (req, res) => res.json(readDB().employees));
-
 app.post('/api/employees', (req, res) => {
     const db = readDB();
     const newEmp = { id: Date.now(), ...req.body };
@@ -250,33 +254,22 @@ app.post('/api/employees', (req, res) => {
     writeDB(db);
     res.json(newEmp);
 });
-
 app.delete('/api/employees/:id', (req, res) => {
     const db = readDB();
     db.employees = db.employees.filter(e => e.id != req.params.id);
     writeDB(db);
     res.json({ success: true });
 });
-
 app.get('/api/attendance', (req, res) => res.json(readDB().attendance));
-
 app.post('/api/attendance', (req, res) => {
     const { employeeId, type } = req.body;
     const db = readDB();
     const emp = db.employees.find(e => e.id == employeeId);
-    const record = {
-        id: Date.now(),
-        employeeId,
-        employeeName: emp ? emp.name : 'Unknown',
-        type,
-        timestamp: new Date(),
-        date: new Date().toISOString().split('T')[0]
-    };
+    const record = { id: Date.now(), employeeId, employeeName: emp ? emp.name : 'Unknown', type, timestamp: new Date(), date: new Date().toISOString().split('T')[0] };
     db.attendance.push(record);
     writeDB(db);
     res.json(record);
 });
-
 app.post('/api/attendance/close-shift', (req, res) => {
     const db = readDB();
     const today = new Date().toISOString().split('T')[0];
