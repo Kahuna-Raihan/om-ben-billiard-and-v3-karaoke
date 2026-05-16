@@ -80,7 +80,8 @@
         <section>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;" class="no-print">
                 <h2 style="font-family: var(--font-heading); margin: 0;">REKAPITULASI BARANG</h2>
-                <div style="display: flex; gap: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-outline" style="width: auto; background: rgba(231, 76, 60, 0.1); color: #e74c3c; border-color: rgba(231, 76, 60, 0.3);" onclick="resetAllStockLogs()">RESET SELURUH RIWAYAT STOK</button>
                     <button class="btn btn-outline" style="width: auto;" onclick="loadLogs()">↻ REFRESH</button>
                     <button class="btn btn-outline no-print" style="width: auto;" onclick="printStockReport()">Cetak Laporan</button>
                 </div>
@@ -159,6 +160,19 @@
                 const res = await deleteData(`/stock-logs/${id}`);
                 if (res && res.success) {
                     loadLogs();
+                }
+            }
+        }
+
+        async function resetAllStockLogs() {
+            if (confirm('!!! PERINGATAN KERAS !!!\n\nIni akan MENGHAPUS SELURUH RIWAYAT PERGERAKAN STOK secara permanen!\nData yang sudah dihapus tidak bisa dikembalikan.\n\nApakah Anda benar-benar yakin?')) {
+                if (confirm('Konfirmasi Terakhir: Hapus SEMUA riwayat stok sekarang?')) {
+                    const res = await fetch(`/api/stock-logs/reset-all`, { method: 'DELETE' });
+                    const result = await res.json();
+                    if (result.success) {
+                        alert(`BERHASIL: Seluruh ${result.deletedCount} riwayat stok telah dimusnahkan.`);
+                        loadLogs();
+                    }
                 }
             }
         }

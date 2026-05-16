@@ -179,6 +179,13 @@ app.post('/api/menu/:id/set-stock', (req, res) => {
     writeDB(db);
     res.json({ success: true, newStock: item.stock });
 });
+app.delete('/api/stock-logs/reset-all', (req, res) => {
+    const db = readDB();
+    const count = db.stockLogs.length;
+    db.stockLogs = [];
+    writeDB(db);
+    res.json({ success: true, deletedCount: count });
+});
 app.delete('/api/stock-logs/:id', (req, res) => {
     const db = readDB();
     db.stockLogs = db.stockLogs.filter(l => String(l.id) !== String(req.params.id));
