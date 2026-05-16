@@ -158,7 +158,7 @@ function printReceipt(data) {
             </div>
             <script>
                 window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
-            </script>
+            <\/script>
         </body>
         </html>
     `);
