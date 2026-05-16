@@ -16,6 +16,7 @@ function logout() {
 }
 
 const formatRupiah = (number) => {
+    if (number === undefined || number === null) return 'Rp -';
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
@@ -25,16 +26,20 @@ const formatRupiah = (number) => {
 
 const formatTime = (isoString) => {
     if (!isoString) return '--:--';
-    return new Date(isoString).toLocaleTimeString('id-ID', {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '--:--';
+    return date.toLocaleTimeString('id-ID', {
         hour: '2-digit',
         minute: '2-digit'
     });
 };
 
+// Stabilized Time Calculation
 const calculateTimeDiff = (startTimeISO) => {
+    if (!startTimeISO) return { hours: 0, minutes: 0, seconds: 0, formatted: '00:00:00' };
     const start = new Date(startTimeISO);
     const now = new Date();
-    const diffMs = Math.max(0, now - start);
+    const diffMs = Math.max(0, now.getTime() - start.getTime());
     
     const hours = Math.floor(diffMs / 3600000);
     const minutes = Math.floor((diffMs % 3600000) / 60000);
@@ -49,9 +54,10 @@ const calculateTimeDiff = (startTimeISO) => {
 };
 
 const calculateCountdown = (endTimeISO) => {
+    if (!endTimeISO) return { hours: 0, minutes: 0, seconds: 0, isExpired: true, formatted: '00:00:00' };
     const end = new Date(endTimeISO);
     const now = new Date();
-    const diffMs = Math.max(0, end - now);
+    const diffMs = Math.max(0, end.getTime() - now.getTime());
     
     const hours = Math.floor(diffMs / 3600000);
     const minutes = Math.floor((diffMs % 3600000) / 60000);
@@ -73,7 +79,7 @@ async function fetchData(endpoint) {
         return await response.json();
     } catch (error) {
         console.error(`Error fetching ${endpoint}:`, error);
-        return []; // Return empty array instead of null to prevent crashes
+        return [];
     }
 }
 
@@ -119,6 +125,7 @@ function renderNavbar(activePage) {
             <li><a href="admin.html" class="${activePage === 'admin' ? 'active-admin' : ''}">Menu</a></li>
             <li><a href="karaoke-settings.html" class="${activePage === 'karaoke-settings' ? 'active-admin' : ''}">Ruang</a></li>
             <li><a href="rental.html" class="${activePage === 'rental' ? 'active-admin' : ''}">Meja</a></li>
+            <li><a href="monitoring.html" class="${activePage === 'monitoring' ? 'active-admin' : ''}" style="color:var(--primary-color)">LIVE</a></li>
             <li><a href="finance.html" class="${activePage === 'finance' ? 'active-admin' : ''}">Laporan</a></li>
             <li><a href="attendance-admin.html" class="${activePage === 'attendance-admin' ? 'active-admin' : ''}">Staf</a></li>
             
@@ -128,8 +135,6 @@ function renderNavbar(activePage) {
             <li><a href="index.html" class="${activePage === 'billiard' ? 'active' : ''}">Billiard</a></li>
             <li><a href="karaoke.html" class="${activePage === 'karaoke' ? 'active' : ''}">Karaoke</a></li>
             <li><a href="pos.html" class="${activePage === 'pos' ? 'active' : ''}">F&B</a></li>
-            <li class="nav-divider"></li>
-            <li><a href="#" onclick="confirmRestart()" style="color: var(--danger);">Restart</a></li>
         `;
     } else {
         navHtml += `
@@ -138,8 +143,6 @@ function renderNavbar(activePage) {
             <li><a href="karaoke.html" class="${activePage === 'karaoke' ? 'active' : ''}">Karaoke</a></li>
             <li><a href="pos.html" class="${activePage === 'pos' ? 'active' : ''}">F&B</a></li>
             <li><a href="attendance.html" class="${activePage === 'attendance' ? 'active' : ''}">Absensi</a></li>
-            <li class="nav-divider"></li>
-            <li><a href="#" onclick="confirmRestart()" style="color: var(--danger);">Restart</a></li>
         `;
     }
 
@@ -158,19 +161,8 @@ function renderNavbar(activePage) {
     nav.innerHTML = navHtml;
 }
 
-function confirmRestart() {
-    if (confirm('Apakah Anda yakin ingin me-restart sistem? Aplikasi akan berhenti sejenak dan menyala kembali.')) {
-        fetch('/api/restart', { method: 'POST' })
-            .then(() => {
-                alert('Sistem sedang di-restart. Tunggu 5-10 detik lalu refresh halaman.');
-            })
-            .catch(() => {
-                alert('Perintah restart dikirim. Tunggu beberapa saat.');
-            });
-    }
-}
-
 function printReceipt(data) {
+    if (!data) return;
     const printWindow = document.createElement('div');
     printWindow.className = 'thermal-receipt';
     
@@ -186,7 +178,7 @@ function printReceipt(data) {
                 <span>${formatRupiah(data.tableAmount || data.amount)}</span>
             </div>
             <div class="item-row">
-                <p>Durasi: ${data.durationMinutes} menit</p>
+                <p>Durasi: ${data.durationMinutes || 0} menit</p>
             </div>
         `;
         if (data.orders && data.orders.length > 0) {
@@ -200,13 +192,14 @@ function printReceipt(data) {
                 `;
             });
         }
-    } else {
+    } else if (data.orders || data.items) {
         // F&B POS Receipt
-        data.items.forEach(item => {
+        const items = data.orders || data.items;
+        items.forEach(item => {
             itemsHtml += `
                 <div class="item-row">
-                    <span>${item.name} x${item.quantity}</span>
-                    <span>${formatRupiah(item.price * item.quantity)}</span>
+                    <span>${item.name} x${item.qty || item.quantity}</span>
+                    <span>${formatRupiah(item.subtotal || (item.price * item.quantity))}</span>
                 </div>
             `;
         });
@@ -227,7 +220,7 @@ function printReceipt(data) {
         <div class="divider"></div>
         <div class="total-row">
             <span>TOTAL</span>
-            <span>${formatRupiah(data.amount)}</span>
+            <span>${formatRupiah(data.amount || data.totalAmount)}</span>
         </div>
         <div class="divider"></div>
         <div class="footer">

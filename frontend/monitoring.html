@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Monitoring | Admin Om Ben</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .active-card {
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0% { border-color: rgba(0, 243, 255, 0.3); }
+            50% { border-color: rgba(0, 243, 255, 0.8); }
+            100% { border-color: rgba(0, 243, 255, 0.3); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE Live Monitor</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('monitoring');</script>
+
+        <section>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="font-family: var(--font-heading); margin: 0;">Status Meja & Ruangan Aktif</h2>
+                <div style="font-size: 0.9rem; color: var(--text-dim);">Auto Refresh: <span id="refresh-timer">10</span>s</div>
+            </div>
+
+            <div class="monitor-grid" id="monitor-container">
+                <!-- Active sessions injected here -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        if (localStorage.getItem('auth_role') !== 'admin') {
+            window.location.href = 'index.html';
+        }
+
+        async function updateMonitor() {
+            const sessions = await fetchData('/sessions');
+            const container = document.getElementById('monitor-container');
+            container.innerHTML = '';
+
+            if (sessions.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 5rem; background: var(--card-bg); border-radius: 20px; color: var(--text-dim);">
+                        <h3>Tidak ada meja atau ruangan yang aktif saat ini.</h3>
+                    </div>
+                `;
+                return;
+            }
+
+            sessions.forEach(session => {
+                const isBilliard = !session.tableName.toLowerCase().includes('room');
+                const timer = session.type === 'duration' 
+                    ? calculateCountdown(session.endTime)
+                    : calculateTimeDiff(session.startTime);
+
+                const card = document.createElement('div');
+                card.className = 'table-card active-card';
+                card.innerHTML = `
+                    <div class="table-header">
+                        <div class="table-info">
+                            <span style="font-size: 0.7rem; color: var(--primary-color); font-weight: bold;">${isBilliard ? 'BILLIARD' : 'KARAOKE'}</span>
+                            <h2>${session.tableName}</h2>
+                        </div>
+                        <span class="status-badge" style="background: var(--primary-color); color: var(--bg-dark);">AKTIF</span>
+                    </div>
+                    <div class="timer-display" style="color: var(--primary-color); font-size: 3rem;">${timer.formatted}</div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 1rem; font-size: 0.9rem;">
+                        <div>
+                            <div style="color: var(--text-dim);">Pelanggan</div>
+                            <div>${session.customerName}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: var(--text-dim);">Mulai</div>
+                            <div>${formatTime(session.startTime)}</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Auto Refresh
+        let timeLeft = 10;
+        setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                timeLeft = 10;
+                updateMonitor();
+            }
+            document.getElementById('refresh-timer').textContent = timeLeft;
+        }, 1000);
+
+        updateMonitor();
+    </script>
+</body>
+</html>
