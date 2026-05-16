@@ -73,8 +73,11 @@ function renderRooms() {
             <div class="table-footer" style="display: flex; gap: 0.5rem;">
                 ${room.status === 'available' 
                     ? `<button class="btn btn-primary" onclick="openStartModal(${room.id})">Mulai Sewa Ruangan</button>`
-                    : `<button class="btn btn-outline" style="flex: 1;" onclick="openOrderModal(${session.id})">Order F&B</button>
-                       <button class="btn btn-outline" style="flex: 1;" onclick="openStopModal(${session.id}, ${room.id})">Selesaikan</button>`
+                    : (room.status === 'booked' 
+                        ? `<button class="btn btn-primary" onclick="openStartModal(${room.id})">Cek-in Booking</button>`
+                        : `<button class="btn btn-outline" style="flex: 1;" onclick="openOrderModal(${session ? session.id : 0})">Order F&B</button>
+                           <button class="btn btn-outline" style="flex: 1;" onclick="openStopModal(${session ? session.id : 0}, ${room.id})">Selesaikan</button>`
+                      )
                 }
             </div>
         `;

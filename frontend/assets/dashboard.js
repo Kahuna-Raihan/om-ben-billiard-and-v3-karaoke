@@ -74,8 +74,11 @@ function renderTables() {
             <div class="table-footer" style="display: flex; gap: 0.5rem;">
                 ${table.status === 'available' 
                     ? `<button class="btn btn-primary" onclick="openStartModal(${table.id})">Mulai Sewa Meja</button>`
-                    : `<button class="btn btn-outline" style="flex: 1;" onclick="openOrderModal(${session.id})">Order F&B</button>
-                       <button class="btn btn-outline" style="flex: 1;" onclick="openStopModal(${session.id}, ${table.id})">Selesaikan</button>`
+                    : (table.status === 'booked' 
+                        ? `<button class="btn btn-primary" onclick="openStartModal(${table.id})">Cek-in Booking</button>`
+                        : `<button class="btn btn-outline" style="flex: 1;" onclick="openOrderModal(${session ? session.id : 0})">Order F&B</button>
+                           <button class="btn btn-outline" style="flex: 1;" onclick="openStopModal(${session ? session.id : 0}, ${table.id})">Selesaikan</button>`
+                      )
                 }
             </div>
         `;
