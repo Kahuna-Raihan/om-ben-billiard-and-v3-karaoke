@@ -218,6 +218,42 @@ app.delete('/api/transactions/:id', (req, res) => {
     writeDB(db);
     res.json({ success: true });
 });
+
+app.post('/api/transactions/pos', (req, res) => {
+    const { customerName, orders, totalAmount } = req.body;
+    const db = readDB();
+    
+    // Create transaction
+    const transaction = {
+        id: Date.now(),
+        customerName: customerName || 'Pelanggan POS',
+        type: 'pos',
+        amount: totalAmount,
+        orders: orders.map(o => ({
+            name: o.name,
+            qty: o.quantity,
+            price: o.price,
+            subtotal: o.subtotal
+        })),
+        date: new Date().toISOString().split('T')[0],
+        timestamp: new Date(),
+        isArchived: false
+    };
+
+    db.transactions.push(transaction);
+
+    // Reduce stock
+    orders.forEach(order => {
+        const menuItem = db.menu.find(m => m.id == order.itemId);
+        if (menuItem) {
+            menuItem.stock = (menuItem.stock || 0) - order.quantity;
+        }
+    });
+
+    writeDB(db);
+    res.json(transaction);
+});
+
 app.post('/api/transactions/close-shift', (req, res) => {
     const db = readDB();
     let count = 0;
