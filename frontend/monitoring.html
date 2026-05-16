@@ -71,7 +71,7 @@
             }
 
             sessions.forEach(session => {
-                const isBilliard = !session.tableName.toLowerCase().includes('room');
+                const isBilliard = session.targetType !== 'room';
                 const timer = session.type === 'duration' 
                     ? calculateCountdown(session.endTime)
                     : calculateTimeDiff(session.startTime);
