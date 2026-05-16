@@ -6,28 +6,59 @@
     <title>Riwayat Stok | Admin Om Ben</title>
     <link rel="stylesheet" href="assets/style.css">
     <style>
-        .log-in { color: var(--success); font-weight: bold; }
-        .log-out { color: var(--danger); font-weight: bold; }
-        .filter-bar {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            background: var(--card-bg);
-            padding: 1rem;
-            border-radius: 12px;
-            flex-wrap: wrap;
+        .stock-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
         }
+        .stat-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 20px;
+            text-align: center;
+        }
+        .stat-box h3 { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-box .val { font-size: 1.8rem; font-weight: 800; }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .badge-in { background: rgba(0, 243, 255, 0.1); color: var(--primary-color); border: 1px solid rgba(0, 243, 255, 0.3); }
+        .badge-out { background: rgba(255, 71, 87, 0.1); color: #ff4757; border: 1px solid rgba(255, 71, 87, 0.3); }
+        
+        .log-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+        .log-table th { padding: 1rem; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; text-align: left; }
+        .log-table td { 
+            padding: 1.2rem 1rem; 
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .log-table tr td:first-child { border-left: 1px solid rgba(255,255,255,0.05); border-radius: 15px 0 0 15px; }
+        .log-table tr td:last-child { border-right: 1px solid rgba(255,255,255,0.05); border-radius: 0 15px 15px 0; }
+
         @media print {
-            header, nav, .filter-bar, button { display: none !important; }
-            .admin-table-container { color: black !important; background: white !important; }
-            body { background: white !important; color: black !important; padding: 0 !important; }
+            header, nav, .filter-bar, .no-print, button { display: none !important; }
+            body { background: white !important; color: black !important; padding: 20px !important; }
             .container { max-width: 100% !important; padding: 0 !important; width: 100% !important; }
+            .log-table td { background: transparent !important; border: 1px solid #ddd !important; color: black !important; border-radius: 0 !important; }
+            .badge { border: 1px solid #000 !important; color: black !important; background: transparent !important; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
+        <header class="no-print">
             <div class="logo-section">
                 <img src="assets/logo.png" alt="Logo" class="main-logo">
                 <div>
@@ -42,35 +73,51 @@
         <script>renderNavbar('stock-history');</script>
 
         <section>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-                <h2 style="font-family: var(--font-heading); margin: 0;">Rekapitulasi Barang Keluar/Masuk</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;" class="no-print">
+                <h2 style="font-family: var(--font-heading); margin: 0;">REKAPITULASI BARANG</h2>
                 <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-outline" style="width: auto;" onclick="loadLogs()">↻ Refresh</button>
-                    <button class="btn btn-primary" style="width: auto;" onclick="printStockReport()">🖨️ Cetak Laporan</button>
+                    <button class="btn btn-outline" style="width: auto;" onclick="loadLogs()">↻ REFRESH</button>
+                    <button class="btn btn-primary" style="width: auto; background: var(--neon-gold); color: black;" onclick="printStockReport()">🖨️ CETAK LAPORAN</button>
                 </div>
             </div>
 
-            <div class="filter-bar">
-                <div class="form-group" style="margin:0; flex: 1; min-width: 200px;">
+            <!-- STOCK STATS -->
+            <div class="stock-stats no-print">
+                <div class="stat-box">
+                    <h3>Total Masuk (+)</h3>
+                    <div class="val" id="stat-in" style="color: var(--primary-color);">0</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Total Keluar (-)</h3>
+                    <div class="val" id="stat-out" style="color: #ff4757;">0</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Log Aktivitas</h3>
+                    <div class="val" id="stat-count" style="color: var(--neon-gold);">0</div>
+                </div>
+            </div>
+
+            <div class="filter-bar no-print">
+                <div class="form-group" style="margin:0; flex: 1; min-width: 250px;">
                     <input type="text" id="search-item" placeholder="Cari Nama Barang..." oninput="filterLogs()">
                 </div>
-                <select id="filter-type" onchange="filterLogs()" style="padding: 0.5rem; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border);">
-                    <option value="all">Semua Tipe</option>
-                    <option value="in">Masuk (+)</option>
-                    <option value="out">Keluar (-)</option>
+                <select id="filter-type" onchange="filterLogs()" style="padding: 0.5rem 1rem; border-radius: 12px; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border);">
+                    <option value="all">SEMUA TIPE</option>
+                    <option value="in">BARANG MASUK (+)</option>
+                    <option value="out">BARANG KELUAR (-)</option>
                 </select>
             </div>
 
             <div id="print-area">
-                <table class="admin-table-container">
+                <table class="log-table">
                     <thead>
                         <tr>
-                            <th>Waktu</th>
-                            <th>Nama Barang</th>
-                            <th>Tipe</th>
-                            <th>Jumlah</th>
-                            <th>Keterangan / Alasan</th>
-                            <th>Oleh</th>
+                            <th>WAKTU</th>
+                            <th>NAMA BARANG</th>
+                            <th>TIPE</th>
+                            <th>QTY</th>
+                            <th>KETERANGAN / ALASAN</th>
+                            <th>ADMIN</th>
                         </tr>
                     </thead>
                     <tbody id="log-body">
@@ -92,8 +139,18 @@
             const logs = await fetchData('/stock-logs');
             if (JSON.stringify(allLogs) !== JSON.stringify(logs)) {
                 allLogs = logs;
-                renderLogs(allLogs);
+                updateStats(logs);
+                renderLogs(logs);
             }
+        }
+
+        function updateStats(logs) {
+            const totalIn = logs.filter(l => l.type === 'in').reduce((acc, l) => acc + (l.delta || 0), 0);
+            const totalOut = logs.filter(l => l.type === 'out').reduce((acc, l) => acc + (l.delta || 0), 0);
+            
+            document.getElementById('stat-in').textContent = totalIn;
+            document.getElementById('stat-out').textContent = totalOut;
+            document.getElementById('stat-count').textContent = logs.length;
         }
 
         function renderLogs(logs) {
@@ -101,7 +158,7 @@
             body.innerHTML = '';
 
             if (logs.length === 0) {
-                body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--text-dim);">Belum ada riwayat stok.</td></tr>';
+                body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 5rem; color: var(--text-dim);">Belum ada riwayat stok.</td></tr>';
                 return;
             }
 
@@ -110,15 +167,20 @@
                 const date = new Date(log.timestamp);
                 
                 row.innerHTML = `
-                    <td>
-                        <small>${date.toLocaleDateString('id-ID')}</small><br>
-                        <strong>${date.toLocaleTimeString('id-ID')}</strong>
+                    <td style="white-space: nowrap;">
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">${date.toLocaleDateString('id-ID')}</div>
+                        <div style="font-weight: bold; color: #fff;">${date.toLocaleTimeString('id-ID')}</div>
                     </td>
-                    <td><strong style="color: var(--primary-color)">${log.itemName}</strong></td>
-                    <td><span class="log-${log.type}">${log.type === 'in' ? 'MASUK' : 'KELUAR'}</span></td>
-                    <td><strong style="font-size: 1.1rem;">${log.type === 'in' ? '+' : '-'}${log.delta}</strong></td>
-                    <td style="font-size: 0.85rem; color: var(--text-dim);">${log.reason}</td>
-                    <td><span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${log.user}</span></td>
+                    <td><strong style="color: #fff; font-size: 1rem;">${log.itemName}</strong></td>
+                    <td><span class="badge ${log.type === 'in' ? 'badge-in' : 'badge-out'}">${log.type === 'in' ? 'MASUK' : 'KELUAR'}</span></td>
+                    <td><strong style="font-size: 1.2rem; color: ${log.type === 'in' ? 'var(--primary-color)' : '#ff4757'}">${log.type === 'in' ? '+' : '-'}${log.delta}</strong></td>
+                    <td style="font-size: 0.85rem; color: var(--text-dim); max-width: 250px;">${log.reason}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--neon-blue); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold; color: #000;">${log.user ? log.user.charAt(0).toUpperCase() : 'S'}</div>
+                            <span style="font-size: 0.8rem; color: #fff;">${log.user || 'System'}</span>
+                        </div>
+                    </td>
                 `;
                 body.appendChild(row);
             });
@@ -138,25 +200,48 @@
         }
 
         function printStockReport() {
-            const table = document.querySelector('.admin-table-container').cloneNode(true);
+            const table = document.querySelector('.log-table').cloneNode(true);
             const printWin = window.open('', '_blank');
+            
             const html = `
                 <html>
                 <head>
                     <title>Laporan Stok Barang</title>
                     <style>
-                        body { font-family: sans-serif; padding: 20px; color: black; }
-                        h1, h2 { text-align: center; margin: 5px 0; }
+                        body { font-family: sans-serif; padding: 40px; color: black; line-height: 1.6; }
+                        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px; }
+                        .header h1 { margin: 0; font-size: 24px; }
                         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 12px; }
-                        th { background-color: #f2f2f2; }
+                        th, td { border: 1px solid #000; padding: 10px; text-align: left; font-size: 11px; }
+                        th { background-color: #f0f0f0; text-transform: uppercase; }
+                        .footer { margin-top: 50px; display: flex; justify-content: space-between; }
+                        .sig-box { width: 200px; text-align: center; }
+                        .sig-space { height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px; }
                     </style>
                 </head>
                 <body>
-                    <h1>OM BEN BILLIARD X V3 KARAOKE</h1>
-                    <h2>Laporan Keluar/Masuk Barang</h2>
-                    <p style="text-align:center">Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+                    <div class="header">
+                        <h1>OM BEN BILLIARD X V3 KARAOKE</h1>
+                        <p>Jl. Raya Utama No. 123, Kota Billiard</p>
+                        <h3>LAPORAN MUTASI STOK BARANG</h3>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                        <span>Periode: <strong>Semua Waktu</strong></span>
+                        <span>Dicetak: <strong>${new Date().toLocaleString('id-ID')}</strong></span>
+                    </div>
                     ${table.outerHTML}
+                    <div class="footer">
+                        <div class="sig-box">
+                            <p>Admin Gudang</p>
+                            <div class="sig-space"></div>
+                            <p>( ________________ )</p>
+                        </div>
+                        <div class="sig-box">
+                            <p>Mengetahui,</p>
+                            <div class="sig-space"></div>
+                            <p>( <strong>OM BEN</strong> )</p>
+                        </div>
+                    </div>
                     <script>
                         window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
                     <\/script>
@@ -166,7 +251,6 @@
             printWin.document.close();
         }
 
-        // Auto Refresh every 30s
         setInterval(loadLogs, 30000);
         loadLogs();
     </script>
