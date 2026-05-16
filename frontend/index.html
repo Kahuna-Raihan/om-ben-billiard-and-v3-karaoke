@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Om Ben Billiard</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE POS System</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('billiard');</script>
+
+        <section class="stats-overview">
+            <div class="stat-card">
+                <h3>Meja Tersedia</h3>
+                <div class="value" id="available-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Sedang Digunakan</h3>
+                <div class="value" id="occupied-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pendapatan Hari Ini</h3>
+                <div class="value" id="today-revenue">Rp 0</div>
+            </div>
+        </section>
+
+        <section class="table-grid" id="table-container">
+            <!-- Table cards will be injected here -->
+        </section>
+    </div>
+
+    <!-- Start Session Modal -->
+    <div class="modal" id="start-modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Mulai Sewa Meja</h2>
+            <form id="start-form">
+                <input type="hidden" id="modal-table-id">
+                <div class="form-group">
+                    <label>Nama Penyewa</label>
+                    <input type="text" id="customer-name" placeholder="Contoh: Budi" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipe Sewa</label>
+                    <select id="rental-type">
+                        <option value="open">Open Time (Bayar belakangan)</option>
+                        <option value="duration">Durasi (Tentukan waktu)</option>
+                    </select>
+                </div>
+                <div id="duration-group" class="form-group" style="display: none;">
+                    <label>Durasi (Menit)</label>
+                    <input type="number" id="duration-minutes" placeholder="60">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline" id="close-modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Mulai Sekarang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stop Session Modal -->
+    <div class="modal" id="stop-modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1rem; font-family: var(--font-heading);">Selesaikan Sewa</h2>
+            <div id="bill-details" style="margin-bottom: 2rem; background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 15px;">
+                <!-- Bill info injected here -->
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" class="btn btn-outline" id="close-stop-modal">Batal</button>
+                <button type="button" class="btn btn-outline" id="print-receipt-btn" style="color: var(--accent-gold); border-color: rgba(240, 192, 64, 0.3);">Cetak Struk</button>
+                <button type="button" class="btn btn-primary" id="confirm-stop">Selesai & Bayar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order F&B Modal -->
+    <div class="modal" id="order-modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Pesan Makanan & Minuman</h2>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="form-group" style="flex: 2; margin: 0;">
+                    <label>Pilih Menu</label>
+                    <select id="menu-select">
+                        <!-- Menu injected here -->
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1; margin: 0;">
+                    <label>Jumlah</label>
+                    <input type="number" id="menu-qty" value="1" min="1">
+                </div>
+                <button class="btn btn-primary" style="width: auto; height: 43px; align-self: flex-end;" onclick="addOrderToSession()">Tambah</button>
+            </div>
+            
+            <h3 style="font-size: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">Pesanan Meja Ini</h3>
+            <div style="max-height: 200px; overflow-y: auto; margin-bottom: 2rem;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                    <tbody id="session-orders-list">
+                        <!-- Existing orders injected here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" class="btn btn-outline" id="close-order-modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/app.js"></script>
+    <script src="assets/dashboard.js"></script>
+</body>
+</html>

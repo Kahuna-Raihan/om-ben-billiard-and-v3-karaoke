@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengaturan Meja | Om Ben Billiard</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE Settings</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('rental');</script>
+
+        <section>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="font-family: var(--font-heading); margin: 0;">Pengaturan Tarif & Meja</h2>
+                <button class="btn btn-primary" style="width: auto;" onclick="openAddModal()">+ Tambah Meja</button>
+            </div>
+            <div class="table-grid" id="settings-container">
+                <!-- Editable cards injected here -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Edit/Add Modal -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <h2 id="modal-title" style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Ubah Data Meja</h2>
+            <form id="edit-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>Nama Meja</label>
+                    <input type="text" id="edit-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Tarif Per Jam (Rp)</label>
+                    <input type="number" id="edit-rate" required>
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi/Tipe</label>
+                    <input type="text" id="edit-desc">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline" id="close-edit">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        if (localStorage.getItem('auth_role') !== 'admin') {
+            alert('Akses Ditolak! Halaman ini khusus Admin.');
+            window.location.href = 'index.html';
+        }
+
+        let isEditMode = false;
+
+        async function loadTables() {
+            const tables = await fetchData('/tables');
+            const container = document.getElementById('settings-container');
+            container.innerHTML = '';
+
+            tables.forEach(table => {
+                const card = document.createElement('div');
+                card.className = 'table-card';
+                card.innerHTML = `
+                    <div class="table-header">
+                        <div class="table-info">
+                            <h2>${table.name}</h2>
+                            <div class="rate">${formatRupiah(table.hourlyRate)} / jam</div>
+                        </div>
+                    </div>
+                    <div style="color: var(--text-dim); margin-bottom: 1.5rem;">
+                        Tipe: ${table.description}
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-outline" onclick="openEditModal(${JSON.stringify(table).replace(/"/g, '&quot;')})">Edit</button>
+                        <button class="btn btn-outline" style="color: var(--danger); border-color: rgba(231, 76, 60, 0.2);" onclick="deleteTable(${table.id})">Hapus</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modal-title').textContent = 'Tambah Meja Baru';
+            document.getElementById('edit-id').value = '';
+            document.getElementById('edit-name').value = '';
+            document.getElementById('edit-rate').value = 15000;
+            document.getElementById('edit-desc').value = '';
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function openEditModal(table) {
+            isEditMode = true;
+            document.getElementById('modal-title').textContent = 'Ubah Data Meja';
+            document.getElementById('edit-id').value = table.id;
+            document.getElementById('edit-name').value = table.name;
+            document.getElementById('edit-rate').value = table.hourlyRate;
+            document.getElementById('edit-desc').value = table.description;
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        async function deleteTable(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus meja ini?')) {
+                const res = await fetch(`/api/tables/${id}`, { method: 'DELETE' });
+                if (res.ok) loadTables();
+                else {
+                    const err = await res.json();
+                    alert(err.message);
+                }
+            }
+        }
+
+        document.getElementById('close-edit').onclick = () => document.getElementById('edit-modal').style.display = 'none';
+
+        document.getElementById('edit-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                name: document.getElementById('edit-name').value,
+                hourlyRate: parseInt(document.getElementById('edit-rate').value),
+                description: document.getElementById('edit-desc').value
+            };
+
+            const url = isEditMode ? `/api/tables/${id}` : `/api/tables`;
+            const method = isEditMode ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                document.getElementById('edit-modal').style.display = 'none';
+                loadTables();
+            }
+        };
+
+        loadTables();
+    </script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Om Ben Billiard</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE Admin</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('admin');</script>
+
+        <section>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="font-family: var(--font-heading); margin: 0;">Manajemen Menu F&B</h2>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div class="form-group" style="margin: 0; min-width: 200px;">
+                        <input type="text" id="search-admin-menu" placeholder="Cari menu..." oninput="loadMenu()" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 0.6rem 1rem;">
+                    </div>
+                    <button class="btn btn-outline" style="width: auto; color: var(--danger); border-color: rgba(231, 76, 60, 0.3);" onclick="restartSystem()">⟳ Restart</button>
+                    <button class="btn btn-primary" style="width: auto;" onclick="openMenuModal()">+ Tambah</button>
+                </div>
+            </div>
+            
+            <div style="background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--glass-border);">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 1rem; background: rgba(255,255,255,0.05); color: var(--text-dim);">Kategori</th>
+                            <th style="padding: 1rem; background: rgba(255,255,255,0.05); color: var(--text-dim);">Nama Menu</th>
+                            <th style="padding: 1rem; background: rgba(255,255,255,0.05); color: var(--text-dim);">Harga</th>
+                            <th style="padding: 1rem; background: rgba(255,255,255,0.05); color: var(--text-dim);">Stok</th>
+                            <th style="padding: 1rem; background: rgba(255,255,255,0.05); color: var(--text-dim);">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menu-list">
+                        <!-- Menu items will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Menu Modal -->
+    <div class="modal" id="menu-modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Tambah Menu F&B</h2>
+            <form id="menu-form">
+                <div class="form-group">
+                    <label>Kategori</label>
+                    <input type="text" id="menu-category" list="category-options" required placeholder="Pilih atau ketik kategori baru">
+                    <datalist id="category-options">
+                        <!-- Categories injected here -->
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>Nama Makanan/Minuman</label>
+                    <input type="text" id="menu-name" required placeholder="Contoh: Es Teh Manis">
+                </div>
+                <div class="form-group">
+                    <label>Harga (Rp)</label>
+                    <input type="number" id="menu-price" required placeholder="5000">
+                </div>
+                <div class="form-group">
+                    <label>Stok Awal</label>
+                    <input type="number" id="menu-stock" required placeholder="100" value="0">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('menu-modal').style.display='none'">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Menu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Restrict to Admin
+        if (localStorage.getItem('auth_role') !== 'admin') {
+            alert('Akses Ditolak! Halaman ini hanya untuk Admin.');
+            window.location.href = 'index.html';
+        }
+
+        async function restartSystem() {
+            if (confirm('PERINGATAN: Memulai ulang sistem akan memutus koneksi semua klien selama beberapa detik. Apakah Anda yakin?')) {
+                try {
+                    await fetch('/api/restart', { method: 'POST' });
+                    alert('Sistem sedang di-restart. Harap tunggu beberapa detik lalu refresh halaman ini.');
+                } catch(e) {
+                    alert('Sistem berhasil direstart.');
+                }
+            }
+        }
+
+        async function loadMenu() {
+            const menu = await fetchData('/menu');
+            const categories = await fetchData('/menu-categories');
+            
+            // Populate datalist
+            const datalist = document.getElementById('category-options');
+            datalist.innerHTML = '';
+            categories.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                datalist.appendChild(opt);
+            });
+
+            // Populate table
+            const searchQuery = document.getElementById('search-admin-menu').value.toLowerCase();
+            const filtered = menu.filter(item => item.name.toLowerCase().includes(searchQuery));
+
+            const tbody = document.getElementById('menu-list');
+            tbody.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem;">Menu tidak ditemukan</td></tr>';
+                return;
+            }
+
+            // Group by category
+            const grouped = filtered.reduce((acc, item) => {
+                if (!acc[item.category]) acc[item.category] = [];
+                acc[item.category].push(item);
+                return acc;
+            }, {});
+
+            for (const category in grouped) {
+                // Category Header Row
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = `
+                    <td colspan="4" style="padding: 0.8rem 1rem; background: rgba(0, 243, 255, 0.05); font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; color: var(--primary-color);">
+                        ${category.toUpperCase()}
+                    </td>
+                `;
+                tbody.appendChild(headerRow);
+
+                grouped[category].forEach(item => {
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid var(--glass-border)';
+                    const stockClass = (item.stock || 0) <= 5 ? 'style="color: var(--danger); font-weight: bold;"' : '';
+                    row.innerHTML = `
+                        <td style="padding: 1rem; color: var(--text-dim);">${item.category}</td>
+                        <td style="padding: 1rem; font-weight: bold;">${item.name}</td>
+                        <td style="padding: 1rem; color: var(--accent-gold);">${formatRupiah(item.price)}</td>
+                        <td style="padding: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button class="btn btn-outline" style="width: 25px; height: 25px; padding: 0;" onclick="adjustStock(${item.id}, -1)">-</button>
+                                <input type="number" value="${item.stock || 0}" 
+                                    style="width: 50px; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 4px; color: white; padding: 2px;"
+                                    onchange="updateStock(${item.id}, this.value)">
+                                <button class="btn btn-outline" style="width: 25px; height: 25px; padding: 0;" onclick="adjustStock(${item.id}, 1)">+</button>
+                            </div>
+                        </td>
+                        <td style="padding: 1rem;">
+                            <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231, 76, 60, 0.2);" onclick="deleteMenu(${item.id})">Hapus</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        async function adjustStock(id, delta) {
+            const res = await postData(`/menu/${id}/adjust-stock`, { delta });
+            if (res.success) {
+                loadMenu();
+            }
+        }
+
+        async function updateStock(id, newStock) {
+            const res = await postData(`/menu/${id}/set-stock`, { stock: parseInt(newStock) });
+            if (res.success) {
+                loadMenu();
+            }
+        }
+
+        function openMenuModal() {
+            document.getElementById('menu-form').reset();
+            document.getElementById('menu-modal').style.display = 'flex';
+        }
+
+        document.getElementById('menu-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                category: document.getElementById('menu-category').value,
+                name: document.getElementById('menu-name').value,
+                price: document.getElementById('menu-price').value
+            };
+            
+            const res = await postData('/menu', {
+                ...data,
+                stock: parseInt(document.getElementById('menu-stock').value) || 0
+            });
+            if (res) {
+                document.getElementById('menu-modal').style.display = 'none';
+                loadMenu();
+            }
+        };
+
+        async function deleteMenu(id) {
+            if(confirm('Hapus menu ini?')) {
+                await fetch(`${API_BASE}/menu/${id}`, { method: 'DELETE' });
+                loadMenu();
+            }
+        }
+
+        loadMenu();
+    </script>
+</body>
+</html>

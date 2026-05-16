@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Karyawan & Absensi | Admin Om Ben</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        @media (max-width: 992px) {
+            .admin-grid { grid-template-columns: 1fr; }
+        }
+        .scroll-box {
+            max-height: 500px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        @media print {
+            .no-print, nav, .btn, .nav-divider, .nav-item { display: none !important; }
+            .scroll-box { max-height: none !important; overflow: visible !important; }
+            body { background: white !important; color: black !important; }
+            .container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+            .stat-card, .scroll-box { border: none !important; background: transparent !important; }
+            table { color: black !important; border: 1px solid #ccc !important; }
+            th { background: #eee !important; color: black !important; }
+            td { border-bottom: 1px solid #eee !important; }
+            .main-logo { filter: none !important; }
+            h1, h2, h3 { color: black !important; -webkit-text-fill-color: black !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE Admin Attendance</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('attendance-admin');</script>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <h2 style="font-family: var(--font-heading);">Manajemen & Laporan Karyawan</h2>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-outline no-print" style="width: auto; color: var(--danger); border-color: rgba(231,76,60,0.3);" onclick="resetAttendance()">Reset Absen Hari Ini</button>
+                <button class="btn btn-outline no-print" style="width: auto;" onclick="window.print()">Cetak Laporan Staf</button>
+            </div>
+        </div>
+
+        <div class="admin-grid">
+            <!-- Employee Management -->
+            <section>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="font-family: var(--font-heading);">Daftar Karyawan</h2>
+                    <button class="btn btn-primary no-print" style="width: auto; padding: 0.5rem 1rem;" onclick="openAddEmpModal()">+ Tambah</button>
+                </div>
+                
+                <div class="scroll-box">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="position: sticky; top: 0; background: #1a1a2e; z-index: 1;">
+                                <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Nama</th>
+                                <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Posisi</th>
+                                <th style="padding: 1rem; text-align: right; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employee-list">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Attendance History -->
+            <section>
+                <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Riwayat Absensi (Semua)</h2>
+                <div class="scroll-box">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="position: sticky; top: 0; background: #1a1a2e; z-index: 1;">
+                                <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Tanggal</th>
+                                <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Nama</th>
+                                <th style="padding: 1rem; text-align: center; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Tipe</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-history">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Add Employee Modal -->
+    <div class="modal" id="emp-modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Tambah Karyawan Baru</h2>
+            <form id="emp-form">
+                <div class="form-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="emp-name" required placeholder="Contoh: Siti Aminah">
+                </div>
+                <div class="form-group">
+                    <label>Peran / Jabatan</label>
+                    <input type="text" id="emp-role" list="role-options" required placeholder="Pilih atau ketik peran">
+                    <datalist id="role-options">
+                        <option value="Kasir">
+                        <option value="Operator">
+                        <option value="Manager">
+                        <option value="Wasit">
+                        <option value="Kebersihan">
+                        <option value="Lc">
+                    </datalist>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('emp-modal').style.display='none'">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            const employees = await fetchData('/employees');
+            const attendance = await fetchData('/attendance');
+            
+            // Render Employees
+            const empList = document.getElementById('employee-list');
+            empList.innerHTML = '';
+            employees.forEach(emp => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                row.innerHTML = `
+                    <td style="padding: 1rem; font-weight: 600;">${emp.name}</td>
+                    <td style="padding: 1rem; color: var(--text-dim); font-size: 0.85rem;">${emp.role}</td>
+                    <td style="padding: 1rem; text-align: right;">
+                        <button class="btn btn-outline" style="width:auto; padding: 0.3rem 0.6rem; font-size:0.75rem; color:var(--danger);" onclick="deleteEmployee(${emp.id})">Hapus</button>
+                    </td>
+                `;
+                empList.appendChild(row);
+            });
+
+            // Render Attendance History
+            const attHistory = document.getElementById('attendance-history');
+            attHistory.innerHTML = '';
+            attendance.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach(a => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                const date = new Date(a.timestamp);
+                row.innerHTML = `
+                    <td style="padding: 1rem; font-size: 0.85rem;">
+                        ${date.toLocaleDateString('id-ID')} <br>
+                        <small style="color:var(--text-dim)">${date.toLocaleTimeString('id-ID')}</small>
+                    </td>
+                    <td style="padding: 1rem;">${a.employeeName}</td>
+                    <td style="padding: 1rem; text-align: center;">
+                        <span style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 6px; background: ${a.type === 'in' ? 'rgba(0,243,255,0.1)' : 'rgba(250,204,21,0.1)'}; color: ${a.type === 'in' ? 'var(--success)' : 'var(--accent-gold)'}">
+                            ${a.type === 'in' ? 'MASUK' : 'KELUAR'}
+                        </span>
+                    </td>
+                `;
+                attHistory.appendChild(row);
+            });
+        }
+
+        function openAddEmpModal() {
+            document.getElementById('emp-form').reset();
+            document.getElementById('emp-modal').style.display = 'flex';
+        }
+
+        document.getElementById('emp-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('emp-name').value,
+                role: document.getElementById('emp-role').value
+            };
+            const res = await postData('/employees', data);
+            if (res) {
+                document.getElementById('emp-modal').style.display = 'none';
+                loadData();
+            }
+        };
+
+        async function resetAttendance() {
+            if (confirm('PERINGATAN: Ini akan MENGHAPUS SEMUA data absensi (Masuk & Keluar) hari ini secara permanen. Lanjutkan?')) {
+                const res = await fetch(`/api/attendance/close-shift`, { method: 'POST' });
+                const result = await res.json();
+                if (result.success) {
+                    alert(`Berhasil mereset ${result.deletedCount} data absensi hari ini.`);
+                    loadData();
+                }
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

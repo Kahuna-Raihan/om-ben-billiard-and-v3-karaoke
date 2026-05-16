@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Om Ben Billiard</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            padding: 3rem;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .login-card h1 {
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #fff, var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .login-card p {
+            color: var(--text-dim);
+            margin-bottom: 2rem;
+        }
+        #login-error {
+            color: var(--danger);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <img src="assets/logo.png" alt="Logo" style="width: 80px; height: 80px; margin-bottom: 1.5rem; filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.3));">
+            <h1>OM BEN BILLIARD</h1>
+            <p>X V3 KARAOKE POS System</p>
+            <div id="login-error">Username atau password salah!</div>
+            <form id="login-form">
+                <div class="form-group" style="text-align: left;">
+                    <label>Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label>Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Login System</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('auth_role', data.role);
+                    localStorage.setItem('auth_user', data.username);
+                    
+                    if (data.role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (err) {
+                alert('Tidak dapat terhubung ke server');
+            }
+        };
+    </script>
+</body>
+</html>

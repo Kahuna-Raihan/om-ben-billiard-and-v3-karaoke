@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Pegawai | Vini Vidi Vici Billiard</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .attendance-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+        @media (max-width: 768px) {
+            .attendance-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE Attendance</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('attendance');</script>
+
+        <div class="attendance-grid">
+            <section>
+                <div class="stat-card" style="margin-bottom: 2rem;">
+                    <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Input Absensi</h2>
+                    <form id="attendance-form">
+                        <div class="form-group">
+                            <label>Pilih Pegawai</label>
+                            <select id="employee-id" required>
+                                <option value="">-- Pilih Nama --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipe Absen</label>
+                            <select id="attendance-type" required>
+                                <option value="in">Masuk Shift</option>
+                                <option value="out">Keluar Shift</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Simpan Absensi</button>
+                    </form>
+                </div>
+
+                <div class="stat-card">
+                    <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Tambah Pegawai Baru</h2>
+                    <form id="add-employee-form">
+                        <div class="form-group">
+                            <label>Nama Pegawai</label>
+                            <input type="text" id="new-emp-name" required placeholder="Contoh: Budi">
+                        </div>
+                        <div class="form-group">
+                            <label>Peran / Role</label>
+                            <input type="text" id="new-emp-role" list="role-options" required placeholder="Pilih atau ketik peran baru">
+                            <datalist id="role-options">
+                                <option value="Kasir">
+                                <option value="Operator">
+                                <option value="Manager">
+                                <option value="Wasit">
+                                <option value="Kebersihan">
+                            </datalist>
+                        </div>
+                        <button type="submit" class="btn btn-outline" style="margin-top: 1rem;">Tambah Pegawai</button>
+                    </form>
+                </div>
+            </section>
+
+            <section>
+                <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Kehadiran Hari Ini</h2>
+                <div style="background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--glass-border);">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 1rem; text-align: left; background: rgba(255,255,255,0.05);">Waktu</th>
+                                <th style="padding: 1rem; text-align: left; background: rgba(255,255,255,0.05);">Nama</th>
+                                <th style="padding: 1rem; text-align: left; background: rgba(255,255,255,0.05);">Tipe</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-list">
+                            <!-- Attendance records -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        async function loadEmployees() {
+            const employees = await fetchData('/employees');
+            const select = document.getElementById('employee-id');
+            select.innerHTML = '<option value="">-- Pilih Nama --</option>'; // Reset options
+            employees.forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = `${emp.name} (${emp.role})`;
+                select.appendChild(opt);
+            });
+        }
+
+        async function loadAttendance() {
+            const data = await fetchData('/attendance');
+            const list = document.getElementById('attendance-list');
+            list.innerHTML = '';
+            
+            // Filter today
+            const today = new Date().toISOString().split('T')[0];
+            const filtered = data.filter(a => a.date === today).reverse();
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2rem; color:var(--text-dim)">Belum ada absensi hari ini</td></tr>';
+                return;
+            }
+
+            filtered.forEach(a => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid var(--glass-border)';
+                row.innerHTML = `
+                    <td style="padding: 1rem;">${new Date(a.timestamp).toLocaleTimeString()}</td>
+                    <td style="padding: 1rem;">${a.employeeName}</td>
+                    <td style="padding: 1rem;">
+                        <span style="color: ${a.type === 'in' ? 'var(--success)' : 'var(--accent-gold)'}">
+                            ${a.type === 'in' ? 'MASUK' : 'KELUAR'}
+                        </span>
+                    </td>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        document.getElementById('attendance-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                employeeId: document.getElementById('employee-id').value,
+                type: document.getElementById('attendance-type').value
+            };
+            
+            const res = await postData('/attendance', data);
+            if (res) {
+                alert('Absensi berhasil disimpan!');
+                loadAttendance();
+            }
+        };
+
+        document.getElementById('add-employee-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('new-emp-name').value,
+                role: document.getElementById('new-emp-role').value
+            };
+            
+            const res = await postData('/employees', data);
+            if (res) {
+                alert('Pegawai baru berhasil ditambahkan!');
+                document.getElementById('add-employee-form').reset();
+                loadEmployees(); // Refresh the select list
+            }
+        };
+
+        loadEmployees();
+        loadAttendance();
+    </script>
+</body>
+</html>

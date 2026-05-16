@@ -1,0 +1,171 @@
+{
+  "tables": [
+    {
+      "id": 1,
+      "name": "Meja 1",
+      "hourlyRate": 15000,
+      "status": "available",
+      "description": "Standar"
+    },
+    {
+      "id": 2,
+      "name": "Meja 2",
+      "hourlyRate": 15000,
+      "status": "available",
+      "description": "Standar"
+    },
+    {
+      "id": 3,
+      "name": "Meja 3",
+      "hourlyRate": 15000,
+      "status": "available",
+      "description": "Standar"
+    },
+    {
+      "id": 4,
+      "name": "Meja 4",
+      "hourlyRate": 20000,
+      "status": "available",
+      "description": "VIP"
+    },
+    {
+      "id": 5,
+      "name": "Meja 5",
+      "hourlyRate": 20000,
+      "status": "available",
+      "description": "VIP"
+    }
+  ],
+  "sessions": [],
+  "transactions": [],
+  "employees": [
+    {
+      "id": 1,
+      "name": "Ahmad Fauzi",
+      "role": "Kasir",
+      "phone": "081234567890",
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Budi Santoso",
+      "role": "Operator",
+      "phone": "081234567891",
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "Citra Dewi",
+      "role": "Kasir",
+      "phone": "081234567892",
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 1778924473758,
+      "name": "raihan",
+      "role": "Manager",
+      "phone": "",
+      "createdAt": "2026-05-16T09:41:13.758Z"
+    },
+    {
+      "id": 1778927755064,
+      "name": "Sulis",
+      "role": "Lc",
+      "phone": "",
+      "createdAt": "2026-05-16T10:35:55.064Z"
+    },
+    {
+      "id": 1778928649639,
+      "name": "Eri",
+      "role": "Manager",
+      "phone": "",
+      "createdAt": "2026-05-16T10:50:49.639Z"
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "username": "om ben",
+      "password": "1231",
+      "role": "admin"
+    },
+    {
+      "id": 2,
+      "username": "kasir",
+      "password": "123",
+      "role": "kasir"
+    }
+  ],
+  "rooms": [
+    {
+      "id": 1,
+      "name": "Ruang Small 1",
+      "hourlyRate": 50000,
+      "status": "available",
+      "description": "Kapasitas 4 Orang"
+    },
+    {
+      "id": 2,
+      "name": "Ruang Small 2",
+      "hourlyRate": 50000,
+      "status": "available",
+      "description": "Kapasitas 4 Orang"
+    },
+    {
+      "id": 3,
+      "name": "Ruang VIP",
+      "hourlyRate": 100000,
+      "status": "available",
+      "description": "Kapasitas 10 Orang + Toilet Dalam"
+    },
+    {
+      "id": 1778927572560,
+      "name": "Ruang 4",
+      "hourlyRate": 50000,
+      "status": "available",
+      "description": "kapasitas 6 orang"
+    }
+  ],
+  "karaokeSessions": [],
+  "menuCategories": [
+    {
+      "id": 1,
+      "name": "Makanan"
+    },
+    {
+      "id": 2,
+      "name": "Minuman Dingin"
+    },
+    {
+      "id": 3,
+      "name": "Minuman Panas"
+    },
+    {
+      "id": 4,
+      "name": "Cemilan"
+    }
+  ],
+  "menu": [
+    {
+      "id": 1778925286921,
+      "name": "indomie",
+      "category": "Makanan",
+      "price": 5000,
+      "stock": 1
+    },
+    {
+      "id": 1778927645224,
+      "name": "Bintang",
+      "category": "Bir",
+      "price": 50000
+    },
+    {
+      "id": 1778929764622,
+      "name": "Indomie Rebus",
+      "category": "Makanan",
+      "price": 5000,
+      "stock": 1
+    }
+  ],
+  "attendance": []
+}

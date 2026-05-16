@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Keuangan | Om Ben Billiard</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .filter-section {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        th {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        @media print {
+            .no-print, nav, .btn, .nav-divider, .nav-item { display: none !important; }
+            body { background: white !important; color: black !important; padding: 0 !important; }
+            .container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+            .stat-card, .stat-card .value, #summary-section, #summary-cards div { 
+                background: white !important; 
+                color: black !important; 
+                border: 1px solid #ddd !important; 
+                box-shadow: none !important;
+                filter: none !important;
+            }
+            #summary-cards { 
+                display: grid !important; 
+                grid-template-columns: repeat(3, 1fr) !important; 
+                gap: 10px !important; 
+            }
+            #summary-section { display: block !important; margin-top: 20px; }
+            table { width: 100% !important; border: 1px solid #ccc !important; color: black !important; }
+            th { background: #f0f0f0 !important; color: black !important; border: 1px solid #ccc !important; }
+            td { border-bottom: 1px solid #eee !important; color: black !important; }
+            h1, h2, h3, .logo-section h1 { color: black !important; -webkit-text-fill-color: black !important; }
+            .main-logo { filter: none !important; }
+            .logo-section { border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="no-print">
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE Finance</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('finance');</script>
+
+        <div class="report-header">
+            <h2 style="font-family: var(--font-heading);">Laporan Pemasukan</h2>
+            <button class="btn btn-outline no-print" style="width: auto;" onclick="window.print()">Cetak Laporan</button>
+        </div>
+
+        <section class="filter-section no-print" style="flex-wrap: wrap;">
+            <div class="form-group" style="margin:0">
+                <label>Pilih Tanggal</label>
+                <input type="date" id="filter-date">
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-outline" style="width: auto; height: 45px;" onclick="setFilter('today')">Hari Ini</button>
+                <button class="btn btn-outline" style="width: auto; height: 45px;" onclick="setFilter('week')">Minggu Ini</button>
+                <button class="btn btn-outline" style="width: auto; height: 45px;" onclick="setFilter('month')">Bulan Ini</button>
+                <button class="btn btn-outline" style="width: auto; height: 45px;" onclick="setFilter('year')">Tahun Ini</button>
+                <button class="btn btn-outline" style="width: auto; height: 45px;" onclick="setFilter('all')">Semua</button>
+            </div>
+            <div style="margin-left: auto;">
+                <button class="btn btn-outline" style="width: auto; height: 45px; color: var(--accent-gold); border-color: rgba(250,204,21,0.3);" onclick="closeShift()">Tutup Shift Kasir</button>
+            </div>
+        </section>
+
+        <div class="stats-overview no-print">
+            <div class="stat-card">
+                <h3 id="report-title">Total Pendapatan (Shift Aktif)</h3>
+                <div class="value" id="total-revenue">Rp 0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Transaksi</h3>
+                <div class="value" id="total-count">0</div>
+            </div>
+        </div>
+
+        <!-- Summary Section -->
+        <section id="summary-section" style="margin-bottom: 2rem; display: none;">
+            <h3 style="margin-bottom: 1rem; font-family: var(--font-heading);">Rekapitulasi Periodik (Termasuk Arsip)</h3>
+            <div id="summary-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                <!-- Summary items will be injected here -->
+            </div>
+        </section>
+
+        <h3 style="margin-bottom: 1rem; font-family: var(--font-heading);" id="table-title">Transaksi Shift Saat Ini</h3>
+        <table id="transaction-table">
+            <thead>
+                <tr>
+                    <th>Hari & Tanggal</th>
+                    <th>Tipe</th>
+                    <th>Meja/Ruang</th>
+                    <th>Penyewa</th>
+                    <th>Durasi</th>
+                    <th>Total</th>
+                    <th class="no-print">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="transaction-body">
+                <!-- Data rows -->
+            </tbody>
+        </table>
+
+        <!-- Archived History Section -->
+        <section id="archive-section" style="margin-top: 4rem; padding-top: 2rem; border-top: 2px dashed var(--glass-border);">
+            <h3 style="margin-bottom: 1.5rem; font-family: var(--font-heading); color: var(--text-dim);">Riwayat Arsip (Sudah Tutup Buku)</h3>
+            <table id="archive-table">
+                <thead>
+                    <tr style="background: rgba(255,255,255,0.02);">
+                        <th>Hari & Tanggal</th>
+                        <th>Tipe</th>
+                        <th>Meja/Ruang</th>
+                        <th>Penyewa</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="archive-body">
+                    <!-- Archived data -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script>
+        if (localStorage.getItem('auth_role') !== 'admin') {
+            alert('Akses Ditolak! Halaman ini khusus Admin.');
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('filter-date').valueAsDate = new Date();
+        let currentFilter = 'today';
+
+        function setFilter(type) {
+            currentFilter = type;
+            loadReport();
+        }
+
+        async function loadReport() {
+            const date = document.getElementById('filter-date').value;
+            let transactions = await fetchData(`/transactions`);
+            const body = document.getElementById('transaction-body');
+            const archiveBody = document.getElementById('archive-body');
+            const summaryCards = document.getElementById('summary-cards');
+            const summarySection = document.getElementById('summary-section');
+            const archiveSection = document.getElementById('archive-section');
+            
+            body.innerHTML = '';
+            archiveBody.innerHTML = '';
+            summaryCards.innerHTML = '';
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            
+            // All transactions for summary/rekap (regardless of archive status)
+            let allForRekap = [...transactions];
+
+            // Filter logic
+            if (currentFilter === 'today') {
+                allForRekap = allForRekap.filter(t => t.date === todayStr);
+                transactions = allForRekap.filter(t => !t.isArchived);
+                const archivedOnly = allForRekap.filter(t => t.isArchived);
+                
+                document.getElementById('report-title').textContent = "Pendapatan Shift Aktif (Hari Ini)";
+                document.getElementById('table-title').textContent = "Transaksi Shift Saat Ini";
+                summarySection.style.display = 'none';
+                archiveSection.style.display = archivedOnly.length > 0 ? 'block' : 'none';
+                renderTable(archivedOnly, archiveBody, false);
+            } else {
+                // For week/month/year/all, we show everything mixed or summarized
+                if (currentFilter === 'week') {
+                    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    allForRekap = allForRekap.filter(t => new Date(t.endTime) >= oneWeekAgo);
+                    document.getElementById('report-title').textContent = "Total Pendapatan 7 Hari Terakhir";
+                } else if (currentFilter === 'month') {
+                    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                    allForRekap = allForRekap.filter(t => new Date(t.endTime) >= oneMonthAgo);
+                    document.getElementById('report-title').textContent = "Total Pendapatan 30 Hari Terakhir";
+                } else if (currentFilter === 'year') {
+                    const oneYearAgo = new Date(now.getFullYear(), 0, 1);
+                    allForRekap = allForRekap.filter(t => new Date(t.endTime) >= oneYearAgo);
+                    document.getElementById('report-title').textContent = "Total Pendapatan Tahun Ini";
+                } else if (currentFilter === 'all') {
+                    document.getElementById('report-title').textContent = "Total Semua Pendapatan";
+                } else {
+                    allForRekap = allForRekap.filter(t => t.date === date);
+                    document.getElementById('report-title').textContent = `Laporan Tanggal ${date}`;
+                }
+
+                transactions = allForRekap; // Show all for these filters
+                summarySection.style.display = 'block';
+                archiveSection.style.display = 'none';
+                document.getElementById('table-title').textContent = "Rincian Transaksi Periodik";
+                
+                const groupType = currentFilter === 'week' ? 'day' : (currentFilter === 'month' ? 'week' : 'month');
+                renderSummary(allForRekap, groupType);
+            }
+
+            renderTable(transactions, body, true);
+
+            let total = allForRekap.reduce((sum, t) => sum + t.amount, 0);
+            document.getElementById('total-revenue').textContent = formatRupiah(total);
+            document.getElementById('total-count').textContent = allForRekap.length;
+        }
+
+        function renderTable(data, targetEl, withActions) {
+            data.sort((a,b) => new Date(b.endTime) - new Date(a.endTime)).forEach(t => {
+                let typeLabel = 'Billiard';
+                if (t.type === 'karaoke') typeLabel = '<span style="color:var(--secondary-color);font-weight:bold;">Karaoke</span>';
+                if (t.tableId === 'POS') typeLabel = '<span style="color:var(--primary-color);">F&B POS</span>';
+
+                const row = document.createElement('tr');
+                const tDate = new Date(t.endTime);
+                const dayName = tDate.toLocaleDateString('id-ID', { weekday: 'long' });
+                
+                row.innerHTML = `
+                    <td>
+                        <strong style="color:var(--accent-gold)">${dayName}</strong><br>
+                        ${tDate.toLocaleDateString('id-ID')} <br>
+                        <small style="color:var(--text-dim)">${tDate.toLocaleTimeString('id-ID')}</small>
+                    </td>
+                    <td>${typeLabel}</td>
+                    <td>${t.tableName}</td>
+                    <td>${t.customerName}</td>
+                    ${withActions ? `<td>${t.durationMinutes} menit</td>` : ''}
+                    <td style="color:var(--accent-gold); font-weight:600">${formatRupiah(t.amount)}</td>
+                    ${withActions ? `
+                        <td class="no-print">
+                            <button class="btn btn-outline" style="padding: 0.5rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231, 76, 60, 0.2);" onclick="deleteTransaction(${t.id})">Hapus</button>
+                        </td>
+                    ` : ''}
+                `;
+                targetEl.appendChild(row);
+            });
+            if (data.length === 0) {
+                targetEl.innerHTML = `<tr><td colspan="${withActions ? 7 : 5}" style="text-align:center; padding:2rem; color:var(--text-dim)">Tidak ada data</td></tr>`;
+            }
+        }
+
+        async function closeShift() {
+            if (confirm('Tutup shift kasir sekarang? Data hari ini akan diarsipkan (tampilan dashboard hari ini akan bersih, tapi tetap terekap di laporan mingguan/bulanan).')) {
+                const res = await postData('/transactions/close-shift', {});
+                if (res) {
+                    alert(`Shift berhasil ditutup. ${res.archivedCount} transaksi telah diarsipkan.`);
+                    loadReport();
+                }
+            }
+        }
+
+        function renderSummary(transactions, groupBy) {
+            const summaryCards = document.getElementById('summary-cards');
+            const groups = {};
+
+            transactions.forEach(t => {
+                const d = new Date(t.endTime);
+                let key;
+                if (groupBy === 'day') {
+                    key = d.toLocaleDateString('id-ID', { weekday: 'long' });
+                } else if (groupBy === 'week') {
+                    // Simple week grouping (Week 1, Week 2 of current month or just date range)
+                    const startOfWeek = new Date(d);
+                    startOfWeek.setDate(d.getDate() - d.getDay());
+                    key = "Minggu " + startOfWeek.toLocaleDateString('id-ID', { day:'numeric', month:'short' });
+                } else {
+                    key = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                }
+
+                if (!groups[key]) groups[key] = 0;
+                groups[key] += t.amount;
+            });
+
+            Object.entries(groups).forEach(([name, amount]) => {
+                const card = document.createElement('div');
+                card.style.cssText = "background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border); text-align: center;";
+                card.innerHTML = `
+                    <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem;">${name}</div>
+                    <div style="font-size: 1.1rem; color: var(--success); font-weight: bold;">${formatRupiah(amount)}</div>
+                `;
+                summaryCards.appendChild(card);
+            });
+        }
+
+        async function resetToday() {
+            if (confirm('PERINGATAN: Ini akan MENGHAPUS SEMUA transaksi hari ini secara permanen. Apakah Anda yakin?')) {
+                const res = await fetch(`http://localhost:3001/api/transactions/reset-today`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    alert(`Berhasil mereset ${result.deletedCount} transaksi hari ini.`);
+                    loadReport();
+                }
+            }
+        }
+
+        async function deleteTransaction(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus data histori ini? Tindakan ini tidak dapat dibatalkan.')) {
+                const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadReport();
+                } else {
+                    alert('Gagal menghapus transaksi.');
+                }
+            }
+        }
+
+        loadReport();
+    </script>
+</body>
+</html>
