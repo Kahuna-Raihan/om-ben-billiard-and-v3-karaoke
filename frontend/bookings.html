@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Booking | Om Ben Billiard</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .booking-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        .form-card, .list-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            border-radius: 24px;
+            backdrop-filter: blur(12px);
+        }
+        .booking-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1.2rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+        .booking-item:hover {
+            transform: scale(1.01);
+            background: rgba(255,255,255,0.05);
+        }
+        .badge-type {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .type-table { background: rgba(52, 152, 219, 0.2); color: #3498db; }
+        .type-room { background: rgba(155, 89, 182, 0.2); color: #9b59b2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE Booking System</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('bookings');</script>
+
+        <div class="booking-grid">
+            <!-- Left: Form -->
+            <div class="form-card">
+                <h2 style="font-family: var(--font-heading); margin-bottom: 1.5rem;">Buat Booking Baru</h2>
+                <form id="booking-form">
+                    <div class="form-group">
+                        <label>Nama Pelanggan</label>
+                        <input type="text" id="customer-name" placeholder="Contoh: Budi" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Pilih Lokasi</label>
+                        <select id="target-select" required>
+                            <option value="">-- Pilih Meja/Ruangan --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jam Kedatangan</label>
+                        <input type="datetime-local" id="booking-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Catatan (Opsional)</label>
+                        <textarea id="notes" placeholder="Contoh: Request stik khusus" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 12px; color: white; padding: 0.8rem; height: 80px;"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Simpan Reservasi</button>
+                </form>
+            </div>
+
+            <!-- Right: List -->
+            <div class="list-card">
+                <h2 style="font-family: var(--font-heading); margin-bottom: 1.5rem;">Daftar Reservasi Hari Ini</h2>
+                <div id="booking-list">
+                    <!-- Bookings injected here -->
+                    <div style="text-align: center; padding: 4rem; color: var(--text-dim);">Belum ada jadwal booking.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allTables = [];
+        let allRooms = [];
+
+        async function init() {
+            allTables = await fetchData('/tables');
+            allRooms = await fetchData('/rooms');
+            loadTargets();
+            loadBookings();
+        }
+
+        function loadTargets() {
+            const select = document.getElementById('target-select');
+            
+            // Available Tables
+            allTables.filter(t => t.status === 'available').forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = `table|${t.id}`;
+                opt.textContent = `🎱 Meja ${t.id} (Tersedia)`;
+                select.appendChild(opt);
+            });
+
+            // Available Rooms
+            allRooms.filter(r => r.status === 'available').forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = `room|${r.id}`;
+                opt.textContent = `🎤 Ruang ${r.name} (Tersedia)`;
+                select.appendChild(opt);
+            });
+        }
+
+        async function loadBookings() {
+            const bookings = await fetchData('/bookings');
+            const container = document.getElementById('booking-list');
+            
+            if (bookings.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 4rem; color: var(--text-dim);">Belum ada jadwal booking.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            bookings.sort((a,b) => new Date(a.bookingTime) - new Date(b.bookingTime)).forEach(b => {
+                const date = new Date(b.bookingTime);
+                const item = document.createElement('div');
+                item.className = 'booking-item';
+                
+                let targetName = b.targetType === 'room' ? 'Ruang' : 'Meja';
+                if (b.targetType === 'room') {
+                    const r = allRooms.find(rx => rx.id == b.targetId);
+                    targetName = r ? `Ruang ${r.name}` : `Ruang #${b.targetId}`;
+                } else {
+                    targetName = `Meja ${b.targetId}`;
+                }
+
+                item.innerHTML = `
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
+                            <span class="badge-type ${b.targetType === 'room' ? 'type-room' : 'type-table'}">${b.targetType}</span>
+                            <strong style="font-size: 1.1rem;">${b.customerName}</strong>
+                        </div>
+                        <div style="color: var(--text-dim); font-size: 0.85rem;">
+                            📍 ${targetName} | ⏰ ${date.toLocaleDateString('id-ID')} - ${date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}
+                        </div>
+                        ${b.notes ? `<div style="font-size: 0.75rem; color: var(--accent-gold); margin-top: 0.4rem;">📝 ${b.notes}</div>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="checkInBooking(${b.id}, '${b.targetType}', ${b.targetId}, '${b.customerName}')">Mulai Sewa</button>
+                        <button class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231,76,60,0.2);" onclick="cancelBooking(${b.id})">Batal</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        document.getElementById('booking-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const targetVal = document.getElementById('target-select').value;
+            if (!targetVal) return alert('Pilih meja/ruangan dulu su!');
+
+            const [type, id] = targetVal.split('|');
+            const data = {
+                customerName: document.getElementById('customer-name').value,
+                targetId: id,
+                targetType: type,
+                bookingTime: document.getElementById('booking-time').value,
+                notes: document.getElementById('notes').value
+            };
+
+            const res = await postData('/bookings', data);
+            if (res) {
+                alert('Booking Berhasil Disimpan!');
+                location.reload();
+            }
+        };
+
+        async function cancelBooking(id) {
+            if (confirm('Batalkan reservasi ini?')) {
+                await deleteData(`/bookings/${id}`);
+                location.reload();
+            }
+        }
+
+        async function checkInBooking(bookingId, type, targetId, customerName) {
+            if (confirm(`Mulai sesi sewa untuk ${customerName}?`)) {
+                // 1. Delete booking
+                await deleteData(`/bookings/${bookingId}`);
+                
+                // 2. Start session (Redirect to respective dashboard with params)
+                const page = type === 'room' ? 'karaoke.html' : 'index.html';
+                window.location.href = `${page}?autoStart=${targetId}&name=${encodeURIComponent(customerName)}`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

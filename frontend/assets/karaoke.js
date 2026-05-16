@@ -61,7 +61,7 @@ function renderRooms() {
                     <h2>${room.name}</h2>
                     <div class="rate">${formatRupiah(room.hourlyRate)} / jam • ${room.description}</div>
                 </div>
-                <div class="status-badge">${room.status === 'available' ? 'Tersedia' : 'Digunakan'}</div>
+                <div class="status-badge">${room.status === 'available' ? 'Tersedia' : (room.status === 'booked' ? 'BOOKED' : 'Digunakan')}</div>
             </div>
             <div class="table-content">
                 <div class="timer-display" id="timer-${room.id}">${session ? '--:--:--' : '00:00:00'}</div>
@@ -210,3 +210,16 @@ startForm.onsubmit = async (e) => {
 };
 
 init();
+
+// Handle Auto-start from Booking
+window.addEventListener('load', () => {
+    const params = new URLSearchParams(window.location.search);
+    const autoId = params.get('autoStart');
+    const name = params.get('name');
+    if (autoId) {
+        setTimeout(() => {
+            openStartModal(autoId);
+            document.getElementById('customer-name').value = decodeURIComponent(name || '');
+        }, 500);
+    }
+});

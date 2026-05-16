@@ -20,6 +20,7 @@ function readDB() {
         if (!data.rooms) data.rooms = [];
         if (!data.users) data.users = [];
         if (!data.stockLogs) data.stockLogs = [];
+        if (!data.bookings) data.bookings = [];
         if (!data.menu) data.menu = [];
         data.menu.forEach(item => { if (item.stock === undefined) item.stock = 0; });
         return data;
@@ -441,6 +442,40 @@ app.delete('/api/users/:id', (req, res) => {
     if (user && user.username === 'om ben') return res.status(403).json({ message: 'User utama tidak bisa dihapus' });
     db.users = db.users.filter(u => String(u.id) !== String(req.params.id));
     writeDB(db);
+    res.json({ success: true });
+});
+
+// --- BOOKING API ---
+app.get('/api/bookings', (req, res) => res.json(readDB().bookings || []));
+app.post('/api/bookings', (req, res) => {
+    const db = readDB();
+    const { customerName, targetId, targetType, bookingTime, notes } = req.body;
+    const newBooking = { id: Date.now(), customerName, targetId, targetType, bookingTime, notes, status: 'pending' };
+    db.bookings.push(newBooking);
+    
+    // Update status of table/room to 'booked'
+    let item = null;
+    if (targetType === 'room') item = db.rooms.find(r => r.id == targetId);
+    else item = db.tables.find(t => t.id == targetId);
+    
+    if (item) item.status = 'booked';
+    
+    writeDB(db);
+    res.json(newBooking);
+});
+app.delete('/api/bookings/:id', (req, res) => {
+    const db = readDB();
+    const booking = db.bookings.find(b => b.id == req.params.id);
+    if (booking) {
+        // Reset status if canceling
+        let item = null;
+        if (booking.targetType === 'room') item = db.rooms.find(r => r.id == booking.targetId);
+        else item = db.tables.find(t => t.id == booking.targetId);
+        if (item) item.status = 'available';
+        
+        db.bookings = db.bookings.filter(b => b.id != req.params.id);
+        writeDB(db);
+    }
     res.json({ success: true });
 });
 

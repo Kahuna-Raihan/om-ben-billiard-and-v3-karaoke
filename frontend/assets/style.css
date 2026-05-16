@@ -224,6 +224,10 @@ nav a.active-admin {
     background: var(--accent-gold);
 }
 
+.table-card.booked::before {
+    background: #ff9f43; /* Orange for booking */
+}
+
 .table-header {
     display: flex;
     justify-content: space-between;
@@ -253,6 +257,12 @@ nav a.active-admin {
     background: rgba(46, 204, 113, 0.1);
     color: var(--success);
     border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.booked .status-badge {
+    background: rgba(255, 159, 67, 0.1);
+    color: #ff9f43;
+    border: 1px solid rgba(255, 159, 67, 0.2);
 }
 
 .occupied .status-badge {

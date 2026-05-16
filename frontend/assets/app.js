@@ -78,6 +78,7 @@ function renderNavbar(active) {
             <li><a href="stock-history.html" class="${active === 'stock-history' ? 'active-admin' : ''}" style="color:var(--secondary-color)">📦 STOK</a></li>
             <li><a href="finance.html" class="${active === 'finance' ? 'active-admin' : ''}">📊 LAPORAN</a></li>
             <li><a href="attendance-admin.html" class="${active === 'attendance-admin' ? 'active-admin' : ''}">👥 STAF</a></li>
+            <li><a href="bookings.html" class="${active === 'bookings' ? 'active-admin' : ''}" style="color: var(--accent-gold)">📅 BOOKING</a></li>
         `;
     } else {
         html += `
@@ -85,6 +86,7 @@ function renderNavbar(active) {
             <li><a href="index.html" class="${active === 'billiard' ? 'active' : ''}">Billiard</a></li>
             <li><a href="karaoke.html" class="${active === 'karaoke' ? 'active' : ''}">Karaoke</a></li>
             <li><a href="pos.html" class="${active === 'pos' ? 'active' : ''}">F&B</a></li>
+            <li><a href="bookings.html" class="${active === 'bookings' ? 'active' : ''}" style="color: var(--accent-gold)">📅 Booking</a></li>
         `;
     }
     html += `
