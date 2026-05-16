@@ -99,7 +99,8 @@
                 <button class="btn btn-outline" style="width: auto; height: 45px;" onclick="setFilter('year')">Tahun Ini</button>
                 <button class="btn btn-outline" style="width: auto; height: 45px;" onclick="setFilter('all')">Semua</button>
             </div>
-            <div style="margin-left: auto;">
+            <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                <button class="btn btn-outline" style="width: auto; height: 45px; background: rgba(231, 76, 60, 0.1); color: #e74c3c; border-color: rgba(231, 76, 60, 0.3);" onclick="resetAllTransactions()">RESET SELURUH TRANSAKSI KEUANGAN</button>
                 <button class="btn btn-outline" style="width: auto; height: 45px; color: var(--accent-gold); border-color: rgba(250,204,21,0.3);" onclick="closeShift()">Tutup Shift Kasir</button>
             </div>
         </section>
@@ -330,6 +331,19 @@
                 if (result.success) {
                     alert(`Berhasil mereset ${result.deletedCount} transaksi hari ini.`);
                     loadReport();
+                }
+            }
+        }
+
+        async function resetAllTransactions() {
+            if (confirm('!!! PERINGATAN KERAS !!!\n\nIni akan MENGHAPUS SELURUH SEJARAH KEUANGAN secara permanen!\nData yang sudah dihapus tidak bisa dikembalikan.\n\nApakah Anda benar-benar yakin?')) {
+                if (confirm('Konfirmasi Terakhir: Hapus SEMUA data sekarang?')) {
+                    const res = await fetch(`/api/transactions/reset-all`, { method: 'DELETE' });
+                    const result = await res.json();
+                    if (result.success) {
+                        alert(`BERHASIL: Seluruh ${result.deletedCount} data keuangan telah dimusnahkan.`);
+                        loadReport();
+                    }
                 }
             }
         }

@@ -267,6 +267,13 @@ app.delete('/api/transactions/reset-today', (req, res) => {
     writeDB(db);
     res.json({ success: true, deletedCount });
 });
+app.delete('/api/transactions/reset-all', (req, res) => {
+    const db = readDB();
+    const count = db.transactions.length;
+    db.transactions = [];
+    writeDB(db);
+    res.json({ success: true, deletedCount: count });
+});
 app.delete('/api/transactions/:id', (req, res) => {
     const db = readDB();
     db.transactions = db.transactions.filter(t => String(t.id) !== String(req.params.id));
