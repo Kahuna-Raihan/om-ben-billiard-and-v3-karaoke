@@ -29,7 +29,7 @@
                     <div class="form-group" style="margin: 0; min-width: 200px;">
                         <input type="text" id="search-admin-menu" placeholder="Cari menu..." oninput="loadMenu()" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 0.6rem 1rem;">
                     </div>
-                    <button class="btn btn-outline" style="width: auto; color: var(--danger); border-color: rgba(231, 76, 60, 0.3);" onclick="restartSystem()">⟳ Restart</button>
+                    <button class="btn btn-outline" style="width: auto;" onclick="window.location.reload()">↻ Refresh</button>
                     <button class="btn btn-primary" style="width: auto;" onclick="openMenuModal()">+ Tambah</button>
                 </div>
             </div>
@@ -90,17 +90,6 @@
         if (localStorage.getItem('auth_role') !== 'admin') {
             alert('Akses Ditolak! Halaman ini hanya untuk Admin.');
             window.location.href = 'index.html';
-        }
-
-        async function restartSystem() {
-            if (confirm('PERINGATAN: Memulai ulang sistem akan memutus koneksi semua klien selama beberapa detik. Apakah Anda yakin?')) {
-                try {
-                    await fetch('/api/restart', { method: 'POST' });
-                    alert('Sistem sedang di-restart. Harap tunggu beberapa detik lalu refresh halaman ini.');
-                } catch(e) {
-                    alert('Sistem berhasil direstart.');
-                }
-            }
         }
 
         async function loadMenu() {

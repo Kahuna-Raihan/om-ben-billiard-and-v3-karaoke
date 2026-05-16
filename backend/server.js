@@ -279,11 +279,6 @@ app.post('/api/attendance/close-shift', (req, res) => {
     res.json({ success: true, deletedCount: beforeCount - db.attendance.length });
 });
 
-app.post('/api/restart', (req, res) => {
-    res.json({ success: true });
-    setTimeout(() => process.exit(0), 1000);
-});
-
 app.listen(PORT, () => {
     console.log(`Server running at port ${PORT}`);
 });
