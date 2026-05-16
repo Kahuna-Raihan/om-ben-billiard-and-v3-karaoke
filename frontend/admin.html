@@ -190,12 +190,8 @@
 
         async function deleteMenu(id) {
             if(confirm('Hapus menu ini?')) {
-                // FORCE DELETE WITH CORRECT URL
-                const response = await fetch(`${API_BASE}/menu/${id}`, { 
-                    method: 'DELETE'
-                });
-                const resData = await response.json();
-                if (resData.success) {
+                const res = await deleteData(`/menu/${id}`);
+                if (res && res.success) {
                     loadMenu();
                 } else {
                     alert('Gagal menghapus menu. Silakan coba lagi.');

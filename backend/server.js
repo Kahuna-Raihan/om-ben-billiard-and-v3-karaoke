@@ -94,7 +94,7 @@ app.put('/api/tables/:id', (req, res) => {
 });
 app.delete('/api/tables/:id', (req, res) => {
     const db = readDB();
-    db.tables = db.tables.filter(t => t.id != req.params.id);
+    db.tables = db.tables.filter(t => String(t.id) !== String(req.params.id));
     writeDB(db);
     res.json({ success: true });
 });
@@ -122,7 +122,7 @@ app.put('/api/rooms/:id', (req, res) => {
 });
 app.delete('/api/rooms/:id', (req, res) => {
     const db = readDB();
-    db.rooms = db.rooms.filter(r => r.id != req.params.id);
+    db.rooms = db.rooms.filter(r => String(r.id) !== String(req.params.id));
     writeDB(db);
     res.json({ success: true });
 });
@@ -139,7 +139,7 @@ app.post('/api/menu', (req, res) => {
 });
 app.post('/api/menu/:id/adjust-stock', (req, res) => {
     const db = readDB();
-    const item = db.menu.find(m => m.id == req.params.id);
+    const item = db.menu.find(m => String(m.id) === String(req.params.id));
     if (item) {
         const delta = parseInt(req.body.delta);
         item.stock = (item.stock || 0) + delta;
@@ -149,6 +149,15 @@ app.post('/api/menu/:id/adjust-stock', (req, res) => {
     } else {
         res.status(404).json({ success: false });
     }
+});
+app.delete('/api/menu/:id', (req, res) => {
+    const db = readDB();
+    const initialCount = db.menu.length;
+    db.menu = db.menu.filter(m => String(m.id) !== String(req.params.id));
+    const finalCount = db.menu.length;
+    console.log(`[DELETE MENU] ID: ${req.params.id} | Result: ${initialCount} -> ${finalCount}`);
+    writeDB(db);
+    res.json({ success: true });
 });
 app.get('/api/stock-logs', (req, res) => res.json(readDB().stockLogs || []));
 
@@ -282,9 +291,9 @@ app.put('/api/users/update', (req, res) => {
 });
 app.delete('/api/users/:id', (req, res) => {
     const db = readDB();
-    const user = db.users.find(u => u.id == req.params.id);
+    const user = db.users.find(u => String(u.id) === String(req.params.id));
     if (user && user.username === 'om ben') return res.status(403).json({ message: 'User utama tidak bisa dihapus' });
-    db.users = db.users.filter(u => u.id != req.params.id);
+    db.users = db.users.filter(u => String(u.id) !== String(req.params.id));
     writeDB(db);
     res.json({ success: true });
 });

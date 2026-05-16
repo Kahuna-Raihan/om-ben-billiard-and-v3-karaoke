@@ -119,16 +119,14 @@ async function postData(endpoint, data) {
     }
 }
 
-async function putData(endpoint, data) {
+async function deleteData(endpoint) {
     try {
         const response = await fetch(`${API_BASE}${endpoint}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            method: 'DELETE'
         });
         return await response.json();
     } catch (error) {
-        console.error(`Error putting ${endpoint}:`, error);
+        console.error(`Error deleting ${endpoint}:`, error);
         return null;
     }
 }
