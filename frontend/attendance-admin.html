@@ -236,6 +236,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                     <h3 style="margin: 0; font-size: 1rem; color: var(--neon-gold);" id="attendance-title">SEMUA RIWAYAT</h3>
                     <div style="display: flex; gap: 0.5rem;" class="no-print">
+                        <button class="btn no-print" style="width: auto; font-size: 0.6rem; color: var(--danger); border: 1px solid rgba(231,76,60,0.3); border-radius: 8px; padding: 4px 8px;" onclick="resetAllLogs()">RESET SEMUA LOGS</button>
                         <button class="btn btn-outline" style="width: auto; font-size: 0.7rem; padding: 4px 10px;" onclick="setFilter('today')">HARI INI</button>
                         <button class="btn btn-outline" style="width: auto; font-size: 0.7rem; padding: 4px 10px;" onclick="setFilter('week')">MINGGU</button>
                         <button class="btn btn-outline" style="width: auto; font-size: 0.7rem; padding: 4px 10px;" onclick="setFilter('month')">BULAN</button>
@@ -471,6 +472,15 @@
             if (confirm('PERINGATAN: Hapus SELURUH daftar karyawan?')) {
                 if (confirm('APAKAH ANDA YAKIN? Data tidak bisa dikembalikan!')) {
                     const res = await postData('/employees/reset', {});
+                    if (res) loadData();
+                }
+            }
+        }
+
+        async function resetAllLogs() {
+            if (confirm('Hapus SELURUH RIWAYAT absensi dari awal sampai sekarang?')) {
+                if (confirm('DATA AKAN HILANG PERMANEN! Lanjutkan?')) {
+                    const res = await postData('/attendance/reset-all', {});
                     if (res) loadData();
                 }
             }

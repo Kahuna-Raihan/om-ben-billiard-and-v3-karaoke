@@ -306,9 +306,14 @@ app.post('/api/attendance', (req, res) => {
 app.post('/api/attendance/close-shift', (req, res) => {
     const db = readDB();
     const today = new Date().toISOString().split('T')[0];
-    // Optional: Only clear today or clear all. Usually reset means clear all logs for current view.
-    // Let's archive them or just filter them out for today.
+    // This was only for today, user wants GLOBAL reset too.
     db.attendance = db.attendance.filter(a => !a.timestamp.startsWith(today));
+    writeDB(db);
+    res.json({ success: true });
+});
+app.post('/api/attendance/reset-all', (req, res) => {
+    const db = readDB();
+    db.attendance = [];
     writeDB(db);
     res.json({ success: true });
 });
