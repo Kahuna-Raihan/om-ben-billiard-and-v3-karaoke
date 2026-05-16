@@ -167,15 +167,15 @@
                 const date = new Date(log.timestamp);
                 
                 row.innerHTML = `
-                    <td style="white-space: nowrap;">
+                    <td data-label="WAKTU" style="white-space: nowrap;">
                         <small style="color: var(--text-dim);">${date.toLocaleDateString('id-ID')}</small><br>
                         <strong>${date.toLocaleTimeString('id-ID')}</strong>
                     </td>
-                    <td><strong style="color: var(--primary-color)">${log.itemName}</strong></td>
-                    <td><span class="badge ${log.type === 'in' ? 'badge-in' : 'badge-out'}" style="padding: 2px 8px; font-size: 0.65rem;">${log.type === 'in' ? 'MASUK' : 'KELUAR'}</span></td>
-                    <td><strong style="font-size: 1rem; color: ${log.type === 'in' ? 'var(--primary-color)' : '#ff4757'}">${log.type === 'in' ? '+' : '-'}${log.delta}</strong></td>
-                    <td style="font-size: 0.85rem; color: var(--text-dim);">${log.reason}</td>
-                    <td><span style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${log.user || 'System'}</span></td>
+                    <td data-label="NAMA BARANG"><strong style="color: var(--primary-color)">${log.itemName}</strong></td>
+                    <td data-label="TIPE"><span class="badge ${log.type === 'in' ? 'badge-in' : 'badge-out'}" style="padding: 2px 8px; font-size: 0.65rem;">${log.type === 'in' ? 'MASUK' : 'KELUAR'}</span></td>
+                    <td data-label="QTY"><strong style="font-size: 1rem; color: ${log.type === 'in' ? 'var(--primary-color)' : '#ff4757'}">${log.type === 'in' ? '+' : '-'}${log.delta}</strong></td>
+                    <td data-label="KETERANGAN"><span style="font-size: 0.85rem; color: var(--text-dim);">${log.reason}</span></td>
+                    <td data-label="ADMIN"><span style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${log.user || 'System'}</span></td>
                 `;
                 body.appendChild(row);
             });
