@@ -149,8 +149,10 @@
                         window.location.reload();
                     }, 1000);
                 } else {
+                    const msg = res ? res.message : 'Gagal menyimpan.';
                     statusEl.style.color = 'var(--danger)';
-                    statusEl.textContent = res ? res.message : 'Gagal menyimpan.';
+                    statusEl.textContent = msg;
+                    alert(msg); // Show the alert as requested
                     saveBtn.disabled = false;
                     saveBtn.textContent = 'Simpan Perubahan';
                 }

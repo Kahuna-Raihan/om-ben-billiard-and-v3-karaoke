@@ -422,7 +422,13 @@ app.put('/api/users/update', (req, res) => {
     const db = readDB();
     const { oldUsername, newUsername, newPassword, profilePic } = req.body;
     const user = db.users.find(u => u.username === oldUsername);
-    if (!user) return res.status(404).json({ success: false });
+    if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+    
+    // Check if password is same as old
+    if (newPassword && user.password === newPassword) {
+        return res.status(400).json({ success: false, message: 'Password tidak boleh sama dengan yg kemarin' });
+    }
+
     if (newUsername && newUsername !== oldUsername) user.username = newUsername;
     if (newPassword) user.password = newPassword;
     if (profilePic) user.profilePic = profilePic;
