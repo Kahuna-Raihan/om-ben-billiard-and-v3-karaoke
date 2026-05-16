@@ -151,16 +151,15 @@
 
         async function loadLogs() {
             const logs = await fetchData('/stock-logs');
-            if (JSON.stringify(allLogs) !== JSON.stringify(logs)) {
-                allLogs = logs;
-                populateCategories(logs);
-                updateStats(logs);
-                renderLogs(logs);
-            }
+            allLogs = logs;
+            populateCategories(logs);
+            updateStats(logs);
+            renderLogs(logs);
         }
 
         function populateCategories(logs) {
             const dropdown = document.getElementById('filter-category');
+            if (!dropdown) return;
             const categories = [...new Set(logs.map(l => l.itemCategory).filter(Boolean))];
             
             const currentVal = dropdown.value;
@@ -179,6 +178,7 @@
             if (confirm('Apakah Anda yakin ingin menghapus catatan riwayat stok ini?')) {
                 const res = await deleteData(`/stock-logs/${id}`);
                 if (res && res.success) {
+                    allLogs = []; // Force refresh
                     loadLogs();
                 }
             }
@@ -191,6 +191,7 @@
                     const result = await res.json();
                     if (result.success) {
                         alert(`BERHASIL: Seluruh ${result.deletedCount} riwayat stok telah dimusnahkan.`);
+                        allLogs = []; // Force refresh
                         loadLogs();
                     }
                 }
@@ -212,7 +213,7 @@
             body.innerHTML = '';
 
             if (logs.length === 0) {
-                body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 5rem; color: var(--text-dim);">Belum ada riwayat stok.</td></tr>';
+                body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 5rem; color: var(--text-dim);">Belum ada riwayat stok.</td></tr>';
                 return;
             }
 
@@ -257,7 +258,7 @@
                             ${log.deltaIn > 0 ? `<span class="badge badge-in" style="margin-bottom:2px; display:inline-block;">MASUK (+${log.deltaIn})</span><br>` : ''}
                             ${log.deltaOut > 0 ? `<span class="badge badge-out">KELUAR (-${log.deltaOut})</span>` : ''}
                         </td>
-                        <td data-label="Total Pergerakan">
+                        <td data-label="Qty">
                             <strong style="font-size: 1rem;">${log.deltaIn - log.deltaOut >= 0 ? '+' : ''}${log.deltaIn - log.deltaOut}</strong>
                         </td>
                         <td data-label="Keterangan"><span style="font-size: 0.85rem; color: var(--text-dim);">Hasil gabungan ${log.count} transaksi</span></td>
@@ -301,7 +302,7 @@
         }
 
         function printStockReport() {
-            const table = document.querySelector('.log-table').cloneNode(true);
+            const table = document.querySelector('table').cloneNode(true);
             const printWin = window.open('', '_blank');
             
             const html = `
