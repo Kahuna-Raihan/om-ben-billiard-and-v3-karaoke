@@ -56,6 +56,7 @@ const calculateCountdown = (endISO) => {
 
 async function fetchData(ep) { try { return await (await fetch(`${API_BASE}${ep}`)).json(); } catch(e){ return []; } }
 async function postData(ep, data) { try { return await (await fetch(`${API_BASE}${ep}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })).json(); } catch(e){ return null; } }
+async function putData(ep, data) { try { return await (await fetch(`${API_BASE}${ep}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })).json(); } catch(e){ return null; } }
 async function deleteData(ep) { try { return await (await fetch(`${API_BASE}${ep}`, { method: 'DELETE' })).json(); } catch(e){ return null; } }
 
 function renderNavbar(active) {
