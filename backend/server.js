@@ -45,14 +45,251 @@ app.post('/api/login', (req, res) => {
             res.status(401).json({ success: false, message: 'Username atau password salah' });
         }
     } catch (err) {
-        res.status(500).json({ success: false, message: 'Server Error: ' + err.message });
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
 
-// --- BASIC GET API ---
+// --- TABLES API ---
 app.get('/api/tables', (req, res) => res.json(readDB().tables));
-app.get('/api/sessions', (req, res) => res.json(readDB().sessions));
+
+app.post('/api/tables', (req, res) => {
+    const db = readDB();
+    const newTable = {
+        id: Date.now(),
+        ...req.body,
+        status: 'available'
+    };
+    db.tables.push(newTable);
+    writeDB(db);
+    res.json(newTable);
+});
+
+app.delete('/api/tables/:id', (req, res) => {
+    const db = readDB();
+    db.tables = db.tables.filter(t => t.id != req.params.id);
+    writeDB(db);
+    res.json({ success: true });
+});
+
+// --- MENU API ---
 app.get('/api/menu', (req, res) => res.json(readDB().menu));
+
+app.get('/api/menu-categories', (req, res) => {
+    const db = readDB();
+    const categories = [...new Set(db.menu.map(m => m.category))].map(name => ({ name }));
+    res.json(categories);
+});
+
+app.post('/api/menu', (req, res) => {
+    const db = readDB();
+    const newItem = {
+        id: Date.now(),
+        ...req.body,
+        price: parseInt(req.body.price),
+        stock: parseInt(req.body.stock) || 0
+    };
+    db.menu.push(newItem);
+    writeDB(db);
+    res.json(newItem);
+});
+
+app.post('/api/menu/:id/adjust-stock', (req, res) => {
+    const db = readDB();
+    const item = db.menu.find(m => m.id == req.params.id);
+    if (item) {
+        item.stock = (item.stock || 0) + req.body.delta;
+        writeDB(db);
+        res.json({ success: true, newStock: item.stock });
+    } else {
+        res.status(404).json({ success: false });
+    }
+});
+
+app.post('/api/menu/:id/set-stock', (req, res) => {
+    const db = readDB();
+    const item = db.menu.find(m => m.id == req.params.id);
+    if (item) {
+        item.stock = req.body.stock;
+        writeDB(db);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ success: false });
+    }
+});
+
+app.delete('/api/menu/:id', (req, res) => {
+    const db = readDB();
+    db.menu = db.menu.filter(m => m.id != req.params.id);
+    writeDB(db);
+    res.json({ success: true });
+});
+
+// --- SESSIONS API ---
+app.get('/api/sessions', (req, res) => res.json(readDB().sessions));
+
+app.post('/api/sessions/start', (req, res) => {
+    const { tableId, customerName, type, durationMinutes } = req.body;
+    const db = readDB();
+    const table = db.tables.find(t => t.id == tableId);
+    if (!table || table.status !== 'available') return res.status(400).json({ message: 'Table busy' });
+
+    const startTime = new Date();
+    let endTime = null;
+    if (type === 'duration' && durationMinutes) {
+        endTime = new Date(startTime.getTime() + durationMinutes * 60000);
+    }
+
+    const newSession = {
+        id: Date.now(),
+        tableId,
+        tableName: table.name,
+        customerName,
+        type,
+        startTime,
+        endTime,
+        hourlyRate: table.hourlyRate,
+        orders: []
+    };
+
+    db.sessions.push(newSession);
+    table.status = 'occupied';
+    writeDB(db);
+    res.json(newSession);
+});
+
+app.post('/api/sessions/:id/order', (req, res) => {
+    const { menuId, qty } = req.body;
+    const db = readDB();
+    const session = db.sessions.find(s => s.id == req.params.id);
+    const menuItem = db.menu.find(m => m.id == menuId);
+
+    if (session && menuItem) {
+        const order = {
+            menuId,
+            name: menuItem.name,
+            price: menuItem.price,
+            qty: parseInt(qty),
+            subtotal: menuItem.price * parseInt(qty)
+        };
+        if (!session.orders) session.orders = [];
+        session.orders.push(order);
+        
+        // Adjust stock
+        menuItem.stock = (menuItem.stock || 0) - qty;
+        
+        writeDB(db);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ message: 'Session or Menu not found' });
+    }
+});
+
+app.post('/api/sessions/:id/stop', (req, res) => {
+    const db = readDB();
+    const sessionIdx = db.sessions.findIndex(s => s.id == req.params.id);
+    if (sessionIdx === -1) return res.status(404).json({ message: 'Not found' });
+
+    const session = db.sessions[sessionIdx];
+    const stopTime = new Date();
+    const durationMs = stopTime - new Date(session.startTime);
+    const durationHours = durationMs / (1000 * 60 * 60);
+    const tableAmount = Math.ceil(durationHours * session.hourlyRate);
+    const ordersTotal = session.orders ? session.orders.reduce((acc, o) => acc + o.subtotal, 0) : 0;
+
+    const transaction = {
+        id: Date.now(),
+        ...session,
+        endTime: stopTime,
+        durationMinutes: Math.round(durationMs / 60000),
+        tableAmount,
+        ordersAmount: ordersTotal,
+        amount: tableAmount + ordersTotal,
+        date: stopTime.toISOString().split('T')[0],
+        isArchived: false
+    };
+
+    db.transactions.push(transaction);
+    const table = db.tables.find(t => t.id == session.tableId);
+    if (table) table.status = 'available';
+    
+    db.sessions.splice(sessionIdx, 1);
+    writeDB(db);
+    res.json(transaction);
+});
+
+// --- TRANSACTIONS API ---
+app.get('/api/transactions', (req, res) => res.json(readDB().transactions));
+
+app.delete('/api/transactions/:id', (req, res) => {
+    const db = readDB();
+    db.transactions = db.transactions.filter(t => t.id != req.params.id);
+    writeDB(db);
+    res.json({ success: true });
+});
+
+app.post('/api/transactions/close-shift', (req, res) => {
+    const db = readDB();
+    let count = 0;
+    db.transactions.forEach(t => {
+        if (!t.isArchived) {
+            t.isArchived = true;
+            count++;
+        }
+    });
+    writeDB(db);
+    res.json({ success: true, archivedCount: count });
+});
+
+// --- EMPLOYEES & ATTENDANCE ---
+app.get('/api/employees', (req, res) => res.json(readDB().employees));
+
+app.post('/api/employees', (req, res) => {
+    const db = readDB();
+    const newEmp = { id: Date.now(), ...req.body };
+    db.employees.push(newEmp);
+    writeDB(db);
+    res.json(newEmp);
+});
+
+app.delete('/api/employees/:id', (req, res) => {
+    const db = readDB();
+    db.employees = db.employees.filter(e => e.id != req.params.id);
+    writeDB(db);
+    res.json({ success: true });
+});
+
+app.get('/api/attendance', (req, res) => res.json(readDB().attendance));
+
+app.post('/api/attendance', (req, res) => {
+    const { employeeId, type } = req.body;
+    const db = readDB();
+    const emp = db.employees.find(e => e.id == employeeId);
+    const record = {
+        id: Date.now(),
+        employeeId,
+        employeeName: emp ? emp.name : 'Unknown',
+        type,
+        timestamp: new Date(),
+        date: new Date().toISOString().split('T')[0]
+    };
+    db.attendance.push(record);
+    writeDB(db);
+    res.json(record);
+});
+
+app.post('/api/attendance/close-shift', (req, res) => {
+    const db = readDB();
+    const today = new Date().toISOString().split('T')[0];
+    const beforeCount = db.attendance.length;
+    db.attendance = db.attendance.filter(a => a.date !== today);
+    writeDB(db);
+    res.json({ success: true, deletedCount: beforeCount - db.attendance.length });
+});
+
+app.post('/api/restart', (req, res) => {
+    res.json({ success: true });
+    setTimeout(() => process.exit(0), 1000);
+});
 
 app.listen(PORT, () => {
     console.log(`Server running at port ${PORT}`);

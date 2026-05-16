@@ -35,7 +35,7 @@
             </div>
             
             <div style="background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--glass-border);">
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <table class="admin-table-container" style="width: 100%; border-collapse: collapse; text-align: left;">
                     <thead>
                         <tr>
                             <th style="padding: 1rem; background: rgba(255,255,255,0.05); color: var(--text-dim);">Kategori</th>
@@ -150,11 +150,11 @@
                     row.style.borderBottom = '1px solid var(--glass-border)';
                     const stockClass = (item.stock || 0) <= 5 ? 'style="color: var(--danger); font-weight: bold;"' : '';
                     row.innerHTML = `
-                        <td style="padding: 1rem; color: var(--text-dim);">${item.category}</td>
-                        <td style="padding: 1rem; font-weight: bold;">${item.name}</td>
-                        <td style="padding: 1rem; color: var(--accent-gold);">${formatRupiah(item.price)}</td>
-                        <td style="padding: 1rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <td data-label="Kategori" style="padding: 1rem; color: var(--text-dim);">${item.category}</td>
+                        <td data-label="Nama Menu" style="padding: 1rem; font-weight: bold;">${item.name}</td>
+                        <td data-label="Harga" style="padding: 1rem; color: var(--accent-gold);">${formatRupiah(item.price)}</td>
+                        <td data-label="Stok" style="padding: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
                                 <button class="btn btn-outline" style="width: 25px; height: 25px; padding: 0;" onclick="adjustStock(${item.id}, -1)">-</button>
                                 <input type="number" value="${item.stock || 0}" 
                                     style="width: 50px; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 4px; color: white; padding: 2px;"
@@ -162,7 +162,7 @@
                                 <button class="btn btn-outline" style="width: 25px; height: 25px; padding: 0;" onclick="adjustStock(${item.id}, 1)">+</button>
                             </div>
                         </td>
-                        <td style="padding: 1rem;">
+                        <td data-label="Aksi" style="padding: 1rem;">
                             <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231, 76, 60, 0.2);" onclick="deleteMenu(${item.id})">Hapus</button>
                         </td>
                     `;

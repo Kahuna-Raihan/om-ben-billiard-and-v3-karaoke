@@ -69,7 +69,7 @@
                 </div>
                 
                 <div class="scroll-box">
-                    <table style="width: 100%; border-collapse: collapse;">
+                    <table class="admin-table-container" style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="position: sticky; top: 0; background: #1a1a2e; z-index: 1;">
                                 <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Nama</th>
@@ -88,7 +88,7 @@
             <section>
                 <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Riwayat Absensi (Semua)</h2>
                 <div class="scroll-box">
-                    <table style="width: 100%; border-collapse: collapse;">
+                    <table class="admin-table-container" style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="position: sticky; top: 0; background: #1a1a2e; z-index: 1;">
                                 <th style="padding: 1rem; text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--glass-border);">Tanggal</th>
@@ -146,9 +146,9 @@
                 const row = document.createElement('tr');
                 row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
                 row.innerHTML = `
-                    <td style="padding: 1rem; font-weight: 600;">${emp.name}</td>
-                    <td style="padding: 1rem; color: var(--text-dim); font-size: 0.85rem;">${emp.role}</td>
-                    <td style="padding: 1rem; text-align: right;">
+                    <td data-label="Nama" style="padding: 1rem; font-weight: 600;">${emp.name}</td>
+                    <td data-label="Posisi" style="padding: 1rem; color: var(--text-dim); font-size: 0.85rem;">${emp.role}</td>
+                    <td data-label="Aksi" style="padding: 1rem; text-align: right;">
                         <button class="btn btn-outline" style="width:auto; padding: 0.3rem 0.6rem; font-size:0.75rem; color:var(--danger);" onclick="deleteEmployee(${emp.id})">Hapus</button>
                     </td>
                 `;
@@ -163,12 +163,12 @@
                 row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
                 const date = new Date(a.timestamp);
                 row.innerHTML = `
-                    <td style="padding: 1rem; font-size: 0.85rem;">
+                    <td data-label="Tanggal" style="padding: 1rem; font-size: 0.85rem;">
                         ${date.toLocaleDateString('id-ID')} <br>
                         <small style="color:var(--text-dim)">${date.toLocaleTimeString('id-ID')}</small>
                     </td>
-                    <td style="padding: 1rem;">${a.employeeName}</td>
-                    <td style="padding: 1rem; text-align: center;">
+                    <td data-label="Nama" style="padding: 1rem;">${a.employeeName}</td>
+                    <td data-label="Tipe" style="padding: 1rem; text-align: center;">
                         <span style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 6px; background: ${a.type === 'in' ? 'rgba(0,243,255,0.1)' : 'rgba(250,204,21,0.1)'}; color: ${a.type === 'in' ? 'var(--success)' : 'var(--accent-gold)'}">
                             ${a.type === 'in' ? 'MASUK' : 'KELUAR'}
                         </span>
