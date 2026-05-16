@@ -179,16 +179,27 @@ function printReceipt(data) {
     const timeStr = now.toLocaleTimeString('id-ID');
 
     let itemsHtml = '';
-    if (data.type === 'billiard' || data.type === 'karaoke') {
+    if (data.type === 'billiard' || data.type === 'karaoke' || data.tableName) {
         itemsHtml = `
             <div class="item-row">
-                <span>Sewa ${data.tableName}</span>
-                <span>${formatRupiah(data.amount)}</span>
+                <span>Sewa ${data.tableName || 'Ruangan'}</span>
+                <span>${formatRupiah(data.tableAmount || data.amount)}</span>
             </div>
             <div class="item-row">
-                <span>Durasi: ${data.durationMinutes} menit</span>
+                <p>Durasi: ${data.durationMinutes} menit</p>
             </div>
         `;
+        if (data.orders && data.orders.length > 0) {
+            itemsHtml += '<div class="divider"></div>';
+            data.orders.forEach(item => {
+                itemsHtml += `
+                    <div class="item-row">
+                        <span>${item.name} x${item.qty}</span>
+                        <span>${formatRupiah(item.subtotal)}</span>
+                    </div>
+                `;
+            });
+        }
     } else {
         // F&B POS Receipt
         data.items.forEach(item => {
@@ -202,11 +213,9 @@ function printReceipt(data) {
     }
 
     printWindow.innerHTML = `
-        <div class="no-print" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999;"></div>
-        <div style="text-align:center;">
-            <h2 style="margin:0;">OM BEN BILLIARD</h2>
-            <p style="margin:2px 0;">X V3 KARAOKE</p>
-            <p style="font-size:8pt;">Jl. Contoh No. 123, Kota</p>
+        <div style="text-align:center; margin-bottom: 2mm;">
+            <h2 style="margin:0; font-size: 14pt;">OM BEN BILLIARD</h2>
+            <p style="margin:0; font-size: 10pt;">X V3 KARAOKE</p>
         </div>
         <div class="divider"></div>
         <p>No: TR-${Date.now().toString().slice(-6)}</p>

@@ -487,27 +487,71 @@ nav a.active-admin {
 
 /* --- Print Styles --- */
 @media print {
+    @page {
+        margin: 0;
+        size: auto;
+    }
+    
     .no-print { display: none !important; }
-    body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; }
-    .container { padding: 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; }
+    
+    body { 
+        background: white !important; 
+        color: black !important; 
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact; 
+    }
+
+    .container { display: none !important; } /* Hide the main app container when printing receipt */
     
     /* Thermal Receipt Styling */
     .thermal-receipt {
-        width: 58mm; /* Adjust for 58mm or 80mm printers */
-        margin: 0 auto;
-        padding: 5mm;
-        font-family: 'Courier New', Courier, monospace; /* Classic receipt font */
-        font-size: 10pt;
-        line-height: 1.2;
+        display: block !important;
+        width: 58mm !important;
+        margin: 0 !important;
+        padding: 2mm !important;
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: 9pt !important;
+        line-height: 1.2 !important;
         color: black !important;
+        background: white !important;
     }
     
-    .thermal-receipt h2 { font-size: 14pt; margin-bottom: 2mm; text-align: center; color: black !important; }
-    .thermal-receipt p { margin: 1mm 0; font-size: 9pt; }
-    .thermal-receipt .divider { border-top: 1px dashed black; margin: 3mm 0; }
-    .thermal-receipt .item-row { display: flex; justify-content: space-between; margin: 1mm 0; }
-    .thermal-receipt .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 11pt; margin-top: 2mm; }
-    .thermal-receipt .footer { text-align: center; font-size: 8pt; margin-top: 5mm; }
-    
-    .logo-section h1, .stat-card .value { -webkit-text-fill-color: black !important; color: black !important; }
+    .thermal-receipt h2 { 
+        font-size: 12pt !important; 
+        margin-bottom: 1mm !important; 
+        text-align: center !important; 
+        color: black !important;
+        font-weight: bold !important;
+    }
+    .thermal-receipt p { 
+        margin: 0.5mm 0 !important; 
+        font-size: 8pt !important; 
+        color: black !important;
+    }
+    .thermal-receipt .divider { 
+        border-top: 1px dashed black !important; 
+        margin: 2mm 0 !important; 
+        height: 0 !important;
+    }
+    .thermal-receipt .item-row { 
+        display: flex !important; 
+        justify-content: space-between !important; 
+        margin: 0.5mm 0 !important; 
+    }
+    .thermal-receipt .total-row { 
+        display: flex !important; 
+        justify-content: space-between !important; 
+        font-weight: bold !important; 
+        font-size: 10pt !important; 
+        margin-top: 2mm !important; 
+        border-top: 1px solid black !important;
+        padding-top: 1mm !important;
+    }
+    .thermal-receipt .footer { 
+        text-align: center !important; 
+        font-size: 7pt !important; 
+        margin-top: 4mm !important; 
+        line-height: 1.1 !important;
+    }
 }
