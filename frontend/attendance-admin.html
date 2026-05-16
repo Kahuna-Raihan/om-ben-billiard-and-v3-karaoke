@@ -290,15 +290,20 @@
             const attendance = await fetchData('/attendance');
             
             // Only update if data actually changed to prevent flicker
-            if (JSON.stringify(allEmployees) !== JSON.stringify(employees)) {
+            const empChanged = JSON.stringify(allEmployees) !== JSON.stringify(employees);
+            const attChanged = JSON.stringify(allAttendance) !== JSON.stringify(attendance);
+
+            if (empChanged) {
                 allEmployees = employees;
                 renderEmployees();
             }
-            if (JSON.stringify(allAttendance) !== JSON.stringify(attendance)) {
+            if (attChanged) {
                 allAttendance = attendance;
                 renderAttendance();
             }
-            updateTopStats();
+            if (empChanged || attChanged) {
+                updateTopStats();
+            }
         }
 
         function updateTopStats() {
