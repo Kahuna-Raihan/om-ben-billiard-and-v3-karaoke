@@ -63,12 +63,13 @@ function readDB() {
         if (!data.stockLogs) data.stockLogs = [];
         if (!data.bookings) data.bookings = [];
         if (!data.menu) data.menu = [];
-        if (!data.settings) data.settings = { shopOpen: true };
+        if (!data.settings) data.settings = { shopOpen: true, onlineBookingOpen: true };
+        if (data.settings.onlineBookingOpen === undefined) data.settings.onlineBookingOpen = true;
         data.menu.forEach(item => { if (item.stock === undefined) item.stock = 0; });
         return data;
     } catch (err) {
         console.error('Error reading DB:', err);
-        return { users: [], tables: [], rooms: [], sessions: [], transactions: [], menu: [], employees: [], attendance: [], stockLogs: [], settings: { shopOpen: true } };
+        return { users: [], tables: [], rooms: [], sessions: [], transactions: [], menu: [], employees: [], attendance: [], stockLogs: [], settings: { shopOpen: true, onlineBookingOpen: true } };
     }
 }
 
@@ -868,17 +869,23 @@ app.delete('/api/users/:id', (req, res) => {
 app.get('/api/settings', (req, res) => {
     const db = readDB();
     if (!db.settings) {
-        db.settings = { shopOpen: true };
+        db.settings = { shopOpen: true, onlineBookingOpen: true };
+    }
+    if (db.settings.onlineBookingOpen === undefined) {
+        db.settings.onlineBookingOpen = true;
     }
     res.json(db.settings);
 });
 
 app.post('/api/settings', (req, res) => {
     const db = readDB();
-    if (!db.settings) db.settings = { shopOpen: true };
+    if (!db.settings) db.settings = { shopOpen: true, onlineBookingOpen: true };
     
     if (req.body.shopOpen !== undefined) {
         db.settings.shopOpen = req.body.shopOpen === true || req.body.shopOpen === 'true';
+    }
+    if (req.body.onlineBookingOpen !== undefined) {
+        db.settings.onlineBookingOpen = req.body.onlineBookingOpen === true || req.body.onlineBookingOpen === 'true';
     }
     writeDB(db);
     res.json({ success: true, settings: db.settings });
@@ -894,6 +901,13 @@ app.post('/api/bookings', (req, res) => {
         return res.status(400).json({
             success: false,
             message: 'Maaf su! Toko sedang tutup hari ini. Sistem tidak menerima reservasi online baru saat ini.'
+        });
+    }
+
+    if (db.settings && (db.settings.onlineBookingOpen === false || db.settings.onlineBookingOpen === 'false')) {
+        return res.status(400).json({
+            success: false,
+            message: 'Maaf su! Layanan booking online sedang ditutup sementara oleh Admin. Sistem tidak menerima reservasi online baru saat ini.'
         });
     }
 
