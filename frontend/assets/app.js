@@ -173,29 +173,43 @@ function printReceipt(data) {
 
 // --- CROSS-TAB ALARM SYSTEM & BROADCAST CHANNEL ---
 
-// Injection of Alarm Alert CSS
-const alarmStyle = document.createElement('style');
-alarmStyle.textContent = `
-    @keyframes pulseAlarm {
-        0% { transform: translate(-50%, 0) scale(1); box-shadow: 0 10px 30px rgba(255,0,0,0.5); }
-        50% { transform: translate(-50%, 0) scale(1.05); box-shadow: 0 10px 50px rgba(255,0,0,0.8); }
-        100% { transform: translate(-50%, 0) scale(1); box-shadow: 0 10px 30px rgba(255,0,0,0.5); }
-    }
-    .pulse-danger {
-        animation: pulseDanger 1s infinite alternate;
-    }
-    @keyframes pulseDanger {
-        from { background-color: rgba(255, 0, 0, 0.2); }
-        to { background-color: rgba(255, 0, 0, 0.6); }
-    }
-`;
-document.head.appendChild(alarmStyle);
+// Define admin pages to bypass the alarm system completely
+const isAdminPage = 
+    window.location.href.includes('db-admin.html') || 
+    window.location.href.includes('admin.html') || 
+    window.location.href.includes('users-admin.html') || 
+    window.location.href.includes('attendance-admin.html') || 
+    window.location.href.includes('finance.html') || 
+    window.location.href.includes('karaoke-settings.html') || 
+    window.location.href.includes('rental.html') ||
+    window.location.href.includes('stock-history.html');
+
+if (!isAdminPage) {
+    // Injection of Alarm Alert CSS
+    const alarmStyle = document.createElement('style');
+    alarmStyle.textContent = `
+        @keyframes pulseAlarm {
+            0% { transform: translate(-50%, 0) scale(1); box-shadow: 0 10px 30px rgba(255,0,0,0.5); }
+            50% { transform: translate(-50%, 0) scale(1.05); box-shadow: 0 10px 50px rgba(255,0,0,0.8); }
+            100% { transform: translate(-50%, 0) scale(1); box-shadow: 0 10px 30px rgba(255,0,0,0.5); }
+        }
+        .pulse-danger {
+            animation: pulseDanger 1s infinite alternate;
+        }
+        @keyframes pulseDanger {
+            from { background-color: rgba(255, 0, 0, 0.2); }
+            to { background-color: rgba(255, 0, 0, 0.6); }
+        }
+    `;
+    document.head.appendChild(alarmStyle);
+}
 
 let alarmAudioCtx = null;
 let alarmInterval = null;
 
 // Unlocking Web Audio API on mobile devices on first user gesture
 function unlockAudioContext() {
+    if (isAdminPage) return;
     if (!alarmAudioCtx) {
         alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
@@ -208,10 +222,14 @@ function unlockAudioContext() {
     document.removeEventListener('click', unlockAudioContext);
     document.removeEventListener('touchstart', unlockAudioContext);
 }
-document.addEventListener('click', unlockAudioContext, { passive: true });
-document.addEventListener('touchstart', unlockAudioContext, { passive: true });
+
+if (!isAdminPage) {
+    document.addEventListener('click', unlockAudioContext, { passive: true });
+    document.addEventListener('touchstart', unlockAudioContext, { passive: true });
+}
 
 function startAlarmSound() {
+    if (isAdminPage) return;
     if (alarmInterval) return; // already running
     
     if (!alarmAudioCtx) {
@@ -271,6 +289,7 @@ const alarmChannel = new BroadcastChannel('v3-billiard-karaoke-alarms');
 
 // Inject the custom notification banner UI
 function injectAlarmBanner() {
+    if (isAdminPage) return;
     if (document.getElementById('alarm-notification-banner')) return;
     const banner = document.createElement('div');
     banner.id = 'alarm-notification-banner';
@@ -308,13 +327,16 @@ function injectAlarmBanner() {
     };
 }
 
-if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', injectAlarmBanner);
-} else {
-    injectAlarmBanner();
+if (!isAdminPage) {
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', injectAlarmBanner);
+    } else {
+        injectAlarmBanner();
+    }
 }
 
 function showExpirationAlert(tableName, customerName, targetType, sessionId) {
+    if (isAdminPage) return;
     const banner = document.getElementById('alarm-notification-banner');
     const msgEl = document.getElementById('alarm-banner-message');
     if (banner && msgEl) {
@@ -336,6 +358,7 @@ function hideExpirationAlert() {
 
 // Public global triggers called by individual timers
 function triggerSessionExpired(session) {
+    if (isAdminPage) return;
     if (alarmedSessions.has(session.id)) return;
     
     // Play locally
@@ -362,23 +385,26 @@ function dismissActiveAlarm() {
 }
 
 // Listen to other tabs
-alarmChannel.onmessage = (event) => {
-    const { type, sessionId, tableName, customerName, targetType } = event.data;
-    if (type === 'SESSION_EXPIRED') {
-        if (!alarmedSessions.has(sessionId)) {
-            showExpirationAlert(tableName, customerName, targetType, sessionId);
+if (!isAdminPage) {
+    alarmChannel.onmessage = (event) => {
+        const { type, sessionId, tableName, customerName, targetType } = event.data;
+        if (type === 'SESSION_EXPIRED') {
+            if (!alarmedSessions.has(sessionId)) {
+                showExpirationAlert(tableName, customerName, targetType, sessionId);
+            }
+        } else if (type === 'DISMISS_ALARM') {
+            stopAlarmSound();
+            hideExpirationAlert();
         }
-    } else if (type === 'DISMISS_ALARM') {
-        stopAlarmSound();
-        hideExpirationAlert();
-    }
-};
+    };
+}
 
 // --- GLOBAL BACKGROUND ALARM POLLER ---
 // Periodically checks the backend server so alarms trigger across different devices/browsers
 let globalSessionPollInterval = null;
 
 async function startGlobalAlarmPoller() {
+    if (isAdminPage) return;
     if (globalSessionPollInterval) return;
     
     const checkSessions = async () => {
@@ -428,8 +454,8 @@ async function startGlobalAlarmPoller() {
     globalSessionPollInterval = setInterval(checkSessions, 5000);
 }
 
-// Only start background poller on non-public, non-login screens
-if (!window.location.href.includes('reservasi.html') && !window.location.href.includes('login.html')) {
+// Only start background poller on non-public, non-login, non-admin screens
+if (!isAdminPage && !window.location.href.includes('reservasi.html') && !window.location.href.includes('login.html')) {
     startGlobalAlarmPoller();
 }
 
