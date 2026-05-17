@@ -170,7 +170,11 @@
                 if (btnResetHistory) btnResetHistory.style.display = 'inline-block';
             }
             
+            setupDraftAutoSave();
             loadBookings();
+            
+            // Auto Refresh every 1 second
+            setInterval(loadBookings, 1000);
         }
 
         function loadTargets() {
@@ -335,6 +339,44 @@
             });
         }
 
+        function setupDraftAutoSave() {
+            const inputs = {
+                'customer-name': 'booking_draft_customer_name',
+                'target-select': 'booking_draft_target_select',
+                'booking-time': 'booking_draft_booking_time',
+                'notes': 'booking_draft_notes'
+            };
+
+            // Restore drafts
+            Object.keys(inputs).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const savedVal = localStorage.getItem(inputs[id]);
+                    if (savedVal) el.value = savedVal;
+
+                    // Save on input change
+                    el.addEventListener('input', () => {
+                        localStorage.setItem(inputs[id], el.value);
+                    });
+                    
+                    // Save on change event (selects/datetime)
+                    el.addEventListener('change', () => {
+                        localStorage.setItem(inputs[id], el.value);
+                    });
+                }
+            });
+        }
+
+        function clearDraft() {
+            const inputs = [
+                'booking_draft_customer_name',
+                'booking_draft_target_select',
+                'booking_draft_booking_time',
+                'booking_draft_notes'
+            ];
+            inputs.forEach(key => localStorage.removeItem(key));
+        }
+
         document.getElementById('booking-form').onsubmit = async (e) => {
             e.preventDefault();
             const targetVal = document.getElementById('target-select').value;
@@ -351,6 +393,7 @@
 
             const res = await postData('/bookings', data);
             if (res && res.success !== false) {
+                clearDraft();
                 alert('Booking Berhasil Disimpan!');
                 location.reload();
             } else {
