@@ -84,7 +84,7 @@
                     <input type="number" id="menu-price" required placeholder="5000">
                 </div>
                 <div class="form-group" id="stock-group">
-                    <label>Stok Awal</label>
+                    <label id="stock-label">Stok Awal</label>
                     <input type="number" id="menu-stock" required placeholder="100" value="0">
                 </div>
                 <div style="display: flex; gap: 1rem; margin-top: 2rem;">
@@ -190,7 +190,7 @@
             document.getElementById('menu-form').reset();
             document.getElementById('modal-title').textContent = 'Tambah Menu F&B';
             document.getElementById('menu-id').value = '';
-            document.getElementById('stock-group').style.display = 'block';
+            document.getElementById('stock-label').textContent = 'Stok Awal';
             document.getElementById('menu-stock').required = true;
             document.getElementById('menu-modal').style.display = 'flex';
         }
@@ -202,8 +202,9 @@
             document.getElementById('menu-category').value = item.category;
             document.getElementById('menu-name').value = item.name;
             document.getElementById('menu-price').value = item.price;
-            document.getElementById('stock-group').style.display = 'none';
-            document.getElementById('menu-stock').required = false;
+            document.getElementById('stock-label').textContent = 'Jumlah Stok';
+            document.getElementById('menu-stock').value = item.stock || 0;
+            document.getElementById('menu-stock').required = true;
             document.getElementById('menu-modal').style.display = 'flex';
         }
 
@@ -213,14 +214,14 @@
             const data = {
                 category: document.getElementById('menu-category').value,
                 name: document.getElementById('menu-name').value,
-                price: parseInt(document.getElementById('menu-price').value)
+                price: parseInt(document.getElementById('menu-price').value),
+                stock: parseInt(document.getElementById('menu-stock').value) || 0
             };
 
             let res;
             if (isEditMode) {
                 res = await putData(`/menu/${id}`, data);
             } else {
-                data.stock = parseInt(document.getElementById('menu-stock').value) || 0;
                 res = await postData(`/menu?user=${localStorage.getItem('auth_user')}`, data);
             }
 

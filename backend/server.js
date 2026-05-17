@@ -146,10 +146,12 @@ app.put('/api/menu/:id', (req, res) => {
     const idx = db.menu.findIndex(m => String(m.id) === String(req.params.id));
     if (idx !== -1) {
         const price = req.body.price !== undefined ? parseInt(req.body.price) : db.menu[idx].price;
+        const stock = req.body.stock !== undefined ? parseInt(req.body.stock) : db.menu[idx].stock;
         db.menu[idx] = { 
             ...db.menu[idx], 
             ...req.body,
-            price: price
+            price: price,
+            stock: stock
         };
         writeDB(db);
         res.json(db.menu[idx]);
