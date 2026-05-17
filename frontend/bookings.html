@@ -171,6 +171,15 @@
             }
             
             setupDraftAutoSave();
+            
+            // Auto-select target from URL query parameter (e.g. ?target=table|1)
+            const params = new URLSearchParams(window.location.search);
+            const targetParam = params.get('target');
+            if (targetParam) {
+                const select = document.getElementById('target-select');
+                if (select) select.value = targetParam;
+            }
+
             loadBookings();
             
             // Auto Refresh every 2 seconds

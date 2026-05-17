@@ -73,7 +73,8 @@ function renderRooms() {
             </div>
             <div class="table-footer" style="display: flex; gap: 0.5rem;">
                 ${room.status === 'available' 
-                    ? `<button class="btn btn-primary" onclick="openStartModal(${room.id})">Mulai Sewa Ruangan</button>`
+                    ? `<button class="btn btn-primary" style="flex: 1.2;" onclick="openStartModal(${room.id})">Mulai Sewa</button>
+                       <button class="btn btn-outline" style="flex: 0.8; color: var(--accent-gold); border-color: rgba(240, 192, 64, 0.3);" onclick="goToBookingPage('room', ${room.id})">📅 Booking</button>`
                     : (room.status === 'booked' 
                         ? `<button class="btn btn-primary" onclick="openStartModal(${room.id})">Cek-in Booking</button>`
                         : `<button class="btn btn-outline" style="flex: 1;" onclick="openOrderModal(${session ? session.id : 0})">Order F&B</button>
@@ -253,3 +254,7 @@ window.addEventListener('load', () => {
         }, 500);
     }
 });
+
+function goToBookingPage(type, id) {
+    window.location.href = `bookings.html?target=${type}|${id}`;
+}
