@@ -194,6 +194,28 @@
             const select = document.getElementById('target-select');
             select.innerHTML = '<option value="">-- Pilih Meja/Ruangan --</option>';
             
+            if (allTables.length === 0 && allRooms.length === 0) {
+                const formCard = document.querySelector('.form-card');
+                if (formCard && !document.getElementById('api-fail-banner')) {
+                    const banner = document.createElement('div');
+                    banner.id = 'api-fail-banner';
+                    banner.style.background = 'rgba(231, 76, 60, 0.15)';
+                    banner.style.border = '1px dashed #e74c3c';
+                    banner.style.borderRadius = '12px';
+                    banner.style.padding = '1rem';
+                    banner.style.marginBottom = '1.5rem';
+                    banner.style.color = '#e74c3c';
+                    banner.style.fontSize = '0.9rem';
+                    banner.style.lineHeight = '1.5';
+                    banner.innerHTML = `<strong>⚠️ Koneksi API Gagal!</strong><br>Sistem tidak dapat memuat data meja/ruangan. Pastikan server backend Anda aktif di port 3001 dan database cloud terhubung.`;
+                    formCard.insertBefore(banner, formCard.firstChild);
+                }
+                return;
+            } else {
+                const banner = document.getElementById('api-fail-banner');
+                if (banner) banner.remove();
+            }
+            
             // SHOW ALL TABLES
             allTables.forEach(t => {
                 const opt = document.createElement('option');
