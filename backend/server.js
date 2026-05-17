@@ -145,14 +145,23 @@ app.put('/api/menu/:id', (req, res) => {
     const db = readDB();
     const idx = db.menu.findIndex(m => String(m.id) === String(req.params.id));
     if (idx !== -1) {
-        const price = req.body.price !== undefined ? parseInt(req.body.price) : db.menu[idx].price;
-        const stock = req.body.stock !== undefined ? parseInt(req.body.stock) : db.menu[idx].stock;
+        const oldItem = db.menu[idx];
+        const oldStock = oldItem.stock || 0;
+        const price = req.body.price !== undefined ? parseInt(req.body.price) : oldItem.price;
+        const stock = req.body.stock !== undefined ? parseInt(req.body.stock) : oldItem.stock;
+        
         db.menu[idx] = { 
-            ...db.menu[idx], 
+            ...oldItem, 
             ...req.body,
             price: price,
             stock: stock
         };
+        
+        const diff = stock - oldStock;
+        if (diff !== 0) {
+            logStock(db, oldItem.name, diff > 0 ? 'in' : 'out', Math.abs(diff), 'Update via Edit Menu Modal', req.body.user || req.query.user || 'Admin');
+        }
+        
         writeDB(db);
         res.json(db.menu[idx]);
     } else {
