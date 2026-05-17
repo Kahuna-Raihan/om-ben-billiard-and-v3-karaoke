@@ -194,6 +194,23 @@ document.head.appendChild(alarmStyle);
 let alarmAudioCtx = null;
 let alarmInterval = null;
 
+// Unlocking Web Audio API on mobile devices on first user gesture
+function unlockAudioContext() {
+    if (!alarmAudioCtx) {
+        alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (alarmAudioCtx && alarmAudioCtx.state === 'suspended') {
+        alarmAudioCtx.resume().then(() => {
+            console.log("AudioContext successfully unlocked!");
+        }).catch(e => console.error("AudioContext unlock failed:", e));
+    }
+    // Remove listeners once successfully initialized
+    document.removeEventListener('click', unlockAudioContext);
+    document.removeEventListener('touchstart', unlockAudioContext);
+}
+document.addEventListener('click', unlockAudioContext, { passive: true });
+document.addEventListener('touchstart', unlockAudioContext, { passive: true });
+
 function startAlarmSound() {
     if (alarmInterval) return; // already running
     
@@ -253,7 +270,8 @@ const alarmedSessions = new Set();
 const alarmChannel = new BroadcastChannel('v3-billiard-karaoke-alarms');
 
 // Inject the custom notification banner UI
-window.addEventListener('DOMContentLoaded', () => {
+function injectAlarmBanner() {
+    if (document.getElementById('alarm-notification-banner')) return;
     const banner = document.createElement('div');
     banner.id = 'alarm-notification-banner';
     banner.style.cssText = `
@@ -288,7 +306,13 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dismiss-alarm-btn').onclick = () => {
         dismissActiveAlarm();
     };
-});
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', injectAlarmBanner);
+} else {
+    injectAlarmBanner();
+}
 
 function showExpirationAlert(tableName, customerName, targetType, sessionId) {
     const banner = document.getElementById('alarm-notification-banner');
