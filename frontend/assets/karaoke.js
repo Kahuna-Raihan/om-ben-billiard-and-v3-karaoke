@@ -181,7 +181,7 @@ async function openStopModal(sessionId, roomId) {
     const diff = calculateTimeDiff(session.startTime);
     
     const durationMs = getSyncedNow() - new Date(session.startTime);
-    const tableAmount = Math.ceil((durationMs / 3600000) * session.hourlyRate);
+    const tableAmount = (durationMs <= 5 * 60 * 1000) ? 0 : Math.ceil((durationMs / 3600000) * session.hourlyRate);
     const ordersAmount = session.orders ? session.orders.reduce((acc, o) => acc + o.subtotal, 0) : 0;
     const totalAmount = tableAmount + ordersAmount;
 
