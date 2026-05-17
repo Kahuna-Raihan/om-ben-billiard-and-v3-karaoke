@@ -250,6 +250,17 @@ function renderNavbar(active) {
                 <span class="cloud-dot" style="display: inline-block; width: 5px; height: 5px; background: #2ecc71; border-radius: 50%; animation: navCloudPulse 2s infinite;"></span>
                 <span>☁️ <span class="cloud-text">Tersimpan Otomatis</span></span>
             </div>
+            
+            <!-- DIRECT BLUETOOTH PRINTER BUTTON -->
+            <button id="btn-connect-bluetooth" onclick="connectBluetoothPrinter()" style="display: flex; align-items: center; gap: 0.3rem; 
+                background: ${window.bleCharacteristic ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.08)'}; 
+                border: 1.5px solid ${window.bleCharacteristic ? '#2ecc71' : 'rgba(231, 76, 60, 0.3)'}; 
+                border-radius: 30px; padding: 0.25rem 0.55rem; margin-right: 0.5rem; 
+                color: ${window.bleCharacteristic ? '#2ecc71' : '#e74c3c'}; 
+                font-size: 0.65rem; font-weight: bold; font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.3s ease; white-space: nowrap;">
+                <span>${window.bleCharacteristic ? '🖨️ Printer Konek' : '🔌 Konek Printer'}</span>
+            </button>
+            
             ${role === 'admin' ? `<a href="users-admin.html" class="${active === 'users-admin' ? 'active-admin' : ''}" style="color: var(--primary-color);">⚙️</a>` : ''}
             <a href="profile.html" class="profile-link ${active === 'profile' ? 'active' : ''}">
                 <img src="${profilePic}" class="nav-avatar">
@@ -261,9 +272,208 @@ function renderNavbar(active) {
     nav.innerHTML = html;
 }
 
+// --- WEB BLUETOOTH DIRECT PRINTING SYSTEM (VANILLA JS) ---
+window.bleDevice = null;
+window.bleCharacteristic = null;
+
+async function connectBluetoothPrinter() {
+    try {
+        // Enforce user click gesture for Web Bluetooth API
+        window.bleDevice = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: [
+                '000018f0-0000-1000-8000-00805f9b34fb', // Standard POS BLE UUID
+                '0000e7e1-0000-1000-8000-00805f9b34fb', // generic printer
+                '49535343-fe7d-4ae5-8fa9-9fafd205e455'  // microprinter BLE UUID
+            ]
+        });
+
+        console.log("[WebBluetooth] Printer terpilih:", window.bleDevice.name);
+        const server = await window.bleDevice.gatt.connect();
+
+        let service = null;
+        let characteristic = null;
+
+        // Common Printer Service UUIDs
+        const uuids = [
+            '000018f0-0000-1000-8000-00805f9b34fb',
+            '0000e7e1-0000-1000-8000-00805f9b34fb',
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455'
+        ];
+
+        for (const uuid of uuids) {
+            try {
+                service = await server.getPrimaryService(uuid);
+                if (service) break;
+            } catch (e) {}
+        }
+
+        if (!service) {
+            // Try getting first available primary service
+            const services = await server.getPrimaryServices();
+            if (services.length > 0) service = services[0];
+        }
+
+        if (service) {
+            const characteristics = await service.getCharacteristics();
+            // Find characteristic with WRITE or WRITE_WITHOUT_RESPONSE property
+            characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
+            if (!characteristic && characteristics.length > 0) {
+                characteristic = characteristics[0];
+            }
+        }
+
+        if (!characteristic) throw new Error("Karakteristik data tulis (GATT Write) tidak ditemukan.");
+
+        window.bleCharacteristic = characteristic;
+        alert(`🎉 Sukses terhubung ke printer: ${window.bleDevice.name}!`);
+        updateBluetoothButtonState(true);
+
+        window.bleDevice.addEventListener('gattserverdisconnected', onBluetoothDisconnected);
+    } catch (err) {
+        console.error("[WebBluetooth] Gagal menghubungkan printer:", err);
+        alert("⚠️ Gagal terhubung: " + err.message);
+        updateBluetoothButtonState(false);
+    }
+}
+
+function onBluetoothDisconnected() {
+    alert("🔌 Printer Bluetooth terputus!");
+    window.bleDevice = null;
+    window.bleCharacteristic = null;
+    updateBluetoothButtonState(false);
+}
+
+function updateBluetoothButtonState(connected) {
+    const btn = document.getElementById('btn-connect-bluetooth');
+    if (!btn) return;
+    if (connected) {
+        btn.innerHTML = '<span>🖨️ Printer Konek</span>';
+        btn.style.background = 'rgba(46, 204, 113, 0.15)';
+        btn.style.borderColor = '#2ecc71';
+        btn.style.color = '#2ecc71';
+    } else {
+        btn.innerHTML = '<span>🔌 Konek Printer</span>';
+        btn.style.background = 'rgba(231, 76, 60, 0.08)';
+        btn.style.borderColor = 'rgba(231, 76, 60, 0.3)';
+        btn.style.color = '#e74c3c';
+    }
+}
+
+async function writeBLEData(dataArray) {
+    const chunkSize = 20; // BLE packets maximum payload is 20 bytes
+    for (let i = 0; i < dataArray.length; i += chunkSize) {
+        const chunk = dataArray.slice(i, i + chunkSize);
+        await window.bleCharacteristic.writeValue(new Uint8Array(chunk));
+        await new Promise(resolve => setTimeout(resolve, 25)); // 25ms delay to prevent buffer overflows
+    }
+}
+
+async function printDirectBluetooth(data) {
+    if (!window.bleCharacteristic) return false;
+
+    try {
+        const now = getSyncedNow();
+        const encoder = new TextEncoder();
+        let esc = [];
+
+        // 1. Initialize printer
+        esc.push(0x1B, 0x40);
+
+        // 2. Align Center
+        esc.push(0x1B, 0x61, 1);
+        
+        // Double width + height for Title
+        esc.push(0x1B, 0x21, 0x30);
+        esc.push(...encoder.encode("OM BEN BILLIARD\n"));
+
+        // Standard text size
+        esc.push(0x1B, 0x21, 0x00);
+        esc.push(0x1B, 0x45, 1); // Bold on
+        esc.push(...encoder.encode("X V3 KARAOKE\n"));
+        esc.push(0x1B, 0x45, 0); // Bold off
+
+        esc.push(...encoder.encode(`${now.toLocaleString('id-ID')}\n`));
+        esc.push(...encoder.encode("--------------------------------\n"));
+
+        // 3. Align Left
+        esc.push(0x1B, 0x61, 0);
+        esc.push(...encoder.encode(`Kasir:      ${(localStorage.getItem('auth_user') || 'Kasir').padEnd(16)}\n`));
+        esc.push(...encoder.encode(`Pelanggan:  ${(data.customerName || 'Customer').padEnd(16)}\n`));
+        esc.push(...encoder.encode("--------------------------------\n"));
+
+        // 4. Print Items
+        if (data.tableName) {
+            esc.push(...encoder.encode(`Sewa ${data.tableName}\n`));
+            const durText = `Durasi: ${data.durationMinutes || 0} Menit`;
+            const priceText = formatRupiah(data.tableAmount || data.amount);
+            esc.push(...encoder.encode(`${durText.padEnd(18)} ${priceText.padStart(13)}\n`));
+
+            if (data.orders && data.orders.length > 0) {
+                esc.push(...encoder.encode("- - - - - - - - - - - - - - - - \n"));
+                data.orders.forEach(o => {
+                    const nameQty = `${o.name} x${o.qty}`;
+                    const subtotal = formatRupiah(o.subtotal);
+                    if (nameQty.length > 18) {
+                        esc.push(...encoder.encode(`${nameQty}\n`));
+                        esc.push(...encoder.encode(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`));
+                    } else {
+                        esc.push(...encoder.encode(`${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`));
+                    }
+                });
+            }
+        } else if (data.orders) {
+            data.orders.forEach(o => {
+                const nameQty = `${o.name} x${o.qty || o.quantity}`;
+                const subtotal = formatRupiah(o.subtotal);
+                if (nameQty.length > 18) {
+                    esc.push(...encoder.encode(`${nameQty}\n`));
+                    esc.push(...encoder.encode(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`));
+                } else {
+                    esc.push(...encoder.encode(`${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`));
+                }
+            });
+        }
+
+        esc.push(...encoder.encode("--------------------------------\n"));
+
+        // 5. Total
+        esc.push(0x1B, 0x45, 1); // Bold on
+        const totVal = formatRupiah(data.amount || data.totalAmount);
+        esc.push(...encoder.encode(`TOTAL: ${(totVal).padStart(25)}\n`));
+        esc.push(0x1B, 0x45, 0); // Bold off
+
+        esc.push(...encoder.encode("--------------------------------\n"));
+
+        // 6. Footer Center
+        esc.push(0x1B, 0x61, 1);
+        esc.push(0x1B, 0x45, 1);
+        esc.push(...encoder.encode("Terima Kasih!\n"));
+        esc.push(0x1B, 0x45, 0);
+        esc.push(...encoder.encode("Selamat Datang Kembali\n\n"));
+
+        // 7. Paper Feed lines
+        esc.push(0x1B, 0x64, 4);
+
+        // Send raw ESC/POS bytes over BLE
+        await writeBLEData(esc);
+        return true;
+    } catch (e) {
+        console.error("[WebBluetooth] Gagal mengirim data cetak:", e);
+        alert("⚠️ Gagal cetak Bluetooth: " + e.message);
+        return false;
+    }
+}
+
 // --- NEW ROBUST PRINT SYSTEM ---
-function printReceipt(data) {
+async function printReceipt(data) {
     if (!data) return alert('Data struk tidak tersedia!');
+    
+    // Check if direct Web Bluetooth printer is connected and active
+    if (window.bleCharacteristic) {
+        const directSuccess = await printDirectBluetooth(data);
+        if (directSuccess) return; // Print complete, exit cleanly!
+    }
     
     const now = getSyncedNow();
     let itemsHtml = '';
