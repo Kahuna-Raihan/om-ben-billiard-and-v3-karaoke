@@ -107,7 +107,36 @@ app.post('/api/login', (req, res) => {
 });
 
 // --- TABLES API (Billiard) ---
-app.get('/api/tables', (req, res) => res.json(readDB().tables));
+app.get('/api/tables', (req, res) => {
+    const db = readDB();
+    const tables = db.tables.map(t => {
+        // 1. Check if occupied by an active session
+        const hasActiveSession = db.sessions.some(s => s.tableId == t.id && (s.targetType === 'table' || !s.targetType));
+        if (hasActiveSession) {
+            return { ...t, status: 'occupied' };
+        }
+        
+        // 2. Check if there is a pending booking today
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`; // local date string YYYY-MM-DD
+        
+        const hasBookingToday = (db.bookings || []).some(b => 
+            b.targetType === 'table' && 
+            b.targetId == t.id && 
+            b.bookingTime && b.bookingTime.substring(0, 10) === todayStr
+        );
+        
+        if (hasBookingToday) {
+            return { ...t, status: 'booked' };
+        }
+        
+        return { ...t, status: 'available' };
+    });
+    res.json(tables);
+});
 app.post('/api/tables', (req, res) => {
     const db = readDB();
     const newTable = { id: Date.now(), ...req.body, status: 'available' };
@@ -134,7 +163,36 @@ app.delete('/api/tables/:id', (req, res) => {
 });
 
 // --- ROOMS API (Karaoke) ---
-app.get('/api/rooms', (req, res) => res.json(readDB().rooms || []));
+app.get('/api/rooms', (req, res) => {
+    const db = readDB();
+    const rooms = (db.rooms || []).map(r => {
+        // 1. Check if occupied by an active session
+        const hasActiveSession = db.sessions.some(s => s.tableId == r.id && s.targetType === 'room');
+        if (hasActiveSession) {
+            return { ...r, status: 'occupied' };
+        }
+        
+        // 2. Check if there is a pending booking today
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`; // local date string YYYY-MM-DD
+        
+        const hasBookingToday = (db.bookings || []).some(b => 
+            b.targetType === 'room' && 
+            b.targetId == r.id && 
+            b.bookingTime && b.bookingTime.substring(0, 10) === todayStr
+        );
+        
+        if (hasBookingToday) {
+            return { ...r, status: 'booked' };
+        }
+        
+        return { ...r, status: 'available' };
+    });
+    res.json(rooms);
+});
 app.post('/api/rooms', (req, res) => {
     const db = readDB();
     const newRoom = { id: Date.now(), ...req.body, status: 'available' };
@@ -717,13 +775,6 @@ app.post('/api/bookings', (req, res) => {
     const newBooking = { id: Date.now(), customerName, targetId, targetType, bookingTime, notes, status: 'pending' };
     db.bookings.push(newBooking);
     
-    // Update status of table/room to 'booked'
-    let item = null;
-    if (targetType === 'room') item = db.rooms.find(r => r.id == targetId);
-    else item = db.tables.find(t => t.id == targetId);
-    
-    if (item) item.status = 'booked';
-    
     writeDB(db);
     res.json({ success: true, ...newBooking });
 });
@@ -731,12 +782,6 @@ app.delete('/api/bookings/:id', (req, res) => {
     const db = readDB();
     const booking = db.bookings.find(b => b.id == req.params.id);
     if (booking) {
-        // Reset status if canceling
-        let item = null;
-        if (booking.targetType === 'room') item = db.rooms.find(r => r.id == booking.targetId);
-        else item = db.tables.find(t => t.id == booking.targetId);
-        if (item) item.status = 'available';
-        
         db.bookings = db.bookings.filter(b => b.id != req.params.id);
         writeDB(db);
     }
