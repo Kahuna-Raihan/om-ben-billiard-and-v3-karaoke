@@ -153,7 +153,7 @@
 
     <script>
         window.onerror = function(msg, url, line, col, err) {
-            alert(`⚠️ JS ERROR: ${msg}\nLine: ${line}:${col}\nURL: ${url}`);
+            console.error(`⚠️ JS ERROR: ${msg}\nLine: ${line}:${col}\nURL: ${url}`);
             return false;
         };
 
@@ -627,7 +627,8 @@
         }
 
         // Close modal handlers
-        document.getElementById('close-history-modal').onclick = closeHistoryModal;
+        const closeBtn = document.getElementById('close-history-modal') || document.getElementById('close-history-modal-btn');
+        if (closeBtn) closeBtn.onclick = closeHistoryModal;
 
         // Close modal clicking outside content
         window.addEventListener('click', (e) => {
