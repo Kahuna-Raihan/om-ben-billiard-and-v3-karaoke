@@ -58,16 +58,15 @@
                     <label>Nama Penyewa</label>
                     <input type="text" id="customer-name" placeholder="Contoh: Budi" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="display: none;">
                     <label>Tipe Sewa</label>
                     <select id="rental-type">
-                        <option value="open">Open Time (Bayar belakangan)</option>
-                        <option value="duration">Durasi (Tentukan waktu)</option>
+                        <option value="duration" selected>Durasi (Tentukan waktu)</option>
                     </select>
                 </div>
-                <div id="duration-group" class="form-group" style="display: none;">
+                <div id="duration-group" class="form-group" style="display: block;">
                     <label>Durasi (Menit)</label>
-                    <input type="number" id="duration-minutes" placeholder="60">
+                    <input type="number" id="duration-minutes" placeholder="60" required>
                 </div>
                 <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                     <button type="button" class="btn btn-outline" id="close-modal">Batal</button>

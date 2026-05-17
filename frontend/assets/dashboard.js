@@ -11,7 +11,7 @@ const durationGroup = document.getElementById('duration-group');
 async function init() {
     await refreshData();
     setInterval(updateTimers, 1000);
-    setInterval(refreshData, 30000); // REFRESH DATA SETIAP 30 DETIK
+    setInterval(refreshData, 1000); // REFRESH DATA SETIAP 1 DETIK
 }
 
 let menuItems = [];
