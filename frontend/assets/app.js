@@ -213,6 +213,17 @@ function renderNavbar(active) {
     const profilePic = localStorage.getItem('auth_profile_pic') || 'assets/logo.png';
     html += `
         <li class="nav-user-section">
+            <style>
+                @keyframes navCloudPulse {
+                    0% { transform: scale(0.9); opacity: 0.6; }
+                    50% { transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 4px #2ecc71); }
+                    100% { transform: scale(0.9); opacity: 0.6; }
+                }
+            </style>
+            <div class="cloud-indicator" style="display: flex; align-items: center; gap: 0.4rem; background: rgba(46, 204, 113, 0.08); border: 1.5px solid rgba(46, 204, 113, 0.25); border-radius: 30px; padding: 0.35rem 0.85rem; margin-right: 0.8rem; color: #2ecc71; font-size: 0.72rem; font-weight: bold; font-family: 'Inter', system-ui, sans-serif; letter-spacing: 0.2px;">
+                <span class="cloud-dot" style="display: inline-block; width: 6px; height: 6px; background: #2ecc71; border-radius: 50%; animation: navCloudPulse 2s infinite;"></span>
+                <span>☁️ Tersimpan Otomatis</span>
+            </div>
             ${role === 'admin' ? `<a href="users-admin.html" class="${active === 'users-admin' ? 'active-admin' : ''}" style="color: var(--primary-color);">⚙️</a>` : ''}
             <a href="profile.html" class="profile-link ${active === 'profile' ? 'active' : ''}">
                 <img src="${profilePic}" class="nav-avatar">
