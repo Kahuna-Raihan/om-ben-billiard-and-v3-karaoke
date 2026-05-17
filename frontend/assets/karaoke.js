@@ -97,6 +97,9 @@ function updateTimers() {
                 if (countdown.isExpired) {
                     timerEl.style.color = 'var(--danger)';
                     timerEl.classList.add('pulse');
+                    if (typeof triggerSessionExpired === 'function') {
+                        triggerSessionExpired(session);
+                    }
                 } else {
                     timerEl.style.color = 'var(--accent-gold)';
                     timerEl.classList.remove('pulse');

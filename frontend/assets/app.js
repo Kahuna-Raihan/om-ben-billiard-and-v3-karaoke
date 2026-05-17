@@ -170,3 +170,183 @@ function printReceipt(data) {
     `);
     printWindow.document.close();
 }
+
+// --- CROSS-TAB ALARM SYSTEM & BROADCAST CHANNEL ---
+
+// Injection of Alarm Alert CSS
+const alarmStyle = document.createElement('style');
+alarmStyle.textContent = `
+    @keyframes pulseAlarm {
+        0% { transform: translate(-50%, 0) scale(1); box-shadow: 0 10px 30px rgba(255,0,0,0.5); }
+        50% { transform: translate(-50%, 0) scale(1.05); box-shadow: 0 10px 50px rgba(255,0,0,0.8); }
+        100% { transform: translate(-50%, 0) scale(1); box-shadow: 0 10px 30px rgba(255,0,0,0.5); }
+    }
+    .pulse-danger {
+        animation: pulseDanger 1s infinite alternate;
+    }
+    @keyframes pulseDanger {
+        from { background-color: rgba(255, 0, 0, 0.2); }
+        to { background-color: rgba(255, 0, 0, 0.6); }
+    }
+`;
+document.head.appendChild(alarmStyle);
+
+let alarmAudioCtx = null;
+let alarmInterval = null;
+
+function startAlarmSound() {
+    if (alarmInterval) return; // already running
+    
+    if (!alarmAudioCtx) {
+        alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    if (alarmAudioCtx.state === 'suspended') {
+        alarmAudioCtx.resume();
+    }
+
+    const playBeep = (timeOffset, duration) => {
+        const osc1 = alarmAudioCtx.createOscillator();
+        const osc2 = alarmAudioCtx.createOscillator();
+        const gainNode = alarmAudioCtx.createGain();
+
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(880, alarmAudioCtx.currentTime + timeOffset); // A5 note (piercing)
+        
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1320, alarmAudioCtx.currentTime + timeOffset); // E6 note (Fifth harmonic, sharp)
+
+        gainNode.gain.setValueAtTime(0.85, alarmAudioCtx.currentTime + timeOffset); // Very loud
+        gainNode.gain.exponentialRampToValueAtTime(0.01, alarmAudioCtx.currentTime + timeOffset + duration - 0.02);
+
+        osc1.connect(gainNode);
+        osc2.connect(gainNode);
+        gainNode.connect(alarmAudioCtx.destination);
+
+        osc1.start(alarmAudioCtx.currentTime + timeOffset);
+        osc1.stop(alarmAudioCtx.currentTime + timeOffset + duration);
+        
+        osc2.start(alarmAudioCtx.currentTime + timeOffset);
+        osc2.stop(alarmAudioCtx.currentTime + timeOffset + duration);
+    };
+
+    // Rhythmic double-beep: Beep 1 at 0s, Beep 2 at 0.22s, repeats every 1.0s
+    alarmInterval = setInterval(() => {
+        try {
+            playBeep(0, 0.18);
+            playBeep(0.22, 0.18);
+        } catch (e) {
+            console.error("Audio alarm play error:", e);
+        }
+    }, 1000);
+}
+
+function stopAlarmSound() {
+    if (alarmInterval) {
+        clearInterval(alarmInterval);
+        alarmInterval = null;
+    }
+}
+
+// Global cross-tab tracking
+const alarmedSessions = new Set();
+const alarmChannel = new BroadcastChannel('v3-billiard-karaoke-alarms');
+
+// Inject the custom notification banner UI
+window.addEventListener('DOMContentLoaded', () => {
+    const banner = document.createElement('div');
+    banner.id = 'alarm-notification-banner';
+    banner.style.cssText = `
+        display: none;
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translate(-50%, 0);
+        z-index: 10000;
+        background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+        border: 3px solid #fff;
+        border-radius: 20px;
+        padding: 1.5rem 2rem;
+        box-shadow: 0 15px 40px rgba(255,0,0,0.6);
+        width: 90%;
+        max-width: 550px;
+        text-align: center;
+        color: white;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        animation: pulseAlarm 1.2s infinite;
+    `;
+    
+    banner.innerHTML = `
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🚨</div>
+        <h2 style="margin: 0 0 0.5rem 0; font-size: 1.6rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Waktu Habis!</h2>
+        <p id="alarm-banner-message" style="margin: 0 0 1.5rem 0; font-size: 1.2rem; font-weight: bold; line-height: 1.4; background: rgba(0,0,0,0.15); padding: 0.8rem; border-radius: 10px;"></p>
+        <button id="dismiss-alarm-btn" style="background: white; color: #ff0844; border: none; padding: 0.8rem 2.5rem; border-radius: 50px; font-weight: 900; cursor: pointer; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px;">MATIKAN ALARM 🔕</button>
+    `;
+    
+    document.body.appendChild(banner);
+    
+    document.getElementById('dismiss-alarm-btn').onclick = () => {
+        dismissActiveAlarm();
+    };
+});
+
+function showExpirationAlert(tableName, customerName, targetType, sessionId) {
+    const banner = document.getElementById('alarm-notification-banner');
+    const msgEl = document.getElementById('alarm-banner-message');
+    if (banner && msgEl) {
+        const typeLabel = (targetType === 'room') ? '🎤 KARAOKE' : '🎱 BILLIARD';
+        msgEl.innerHTML = `<span style="color: #ffeb3b; font-weight: 900;">[${typeLabel}]</span><br>Sewa <strong style="font-size: 1.3rem;">${tableName}</strong> oleh <strong>${customerName || 'Pelanggan'}</strong> telah selesai!`;
+        banner.style.display = 'block';
+    }
+    
+    if (sessionId) alarmedSessions.add(sessionId);
+    startAlarmSound();
+}
+
+function hideExpirationAlert() {
+    const banner = document.getElementById('alarm-notification-banner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
+}
+
+// Public global triggers called by individual timers
+function triggerSessionExpired(session) {
+    if (alarmedSessions.has(session.id)) return;
+    
+    // Play locally
+    showExpirationAlert(session.tableName, session.customerName, session.targetType || 'table', session.id);
+    
+    // Broadcast to other tabs
+    alarmChannel.postMessage({
+        type: 'SESSION_EXPIRED',
+        sessionId: session.id,
+        tableName: session.tableName,
+        customerName: session.customerName,
+        targetType: session.targetType || 'table'
+    });
+}
+
+function dismissActiveAlarm() {
+    stopAlarmSound();
+    hideExpirationAlert();
+    
+    // Broadcast dismiss to other tabs
+    alarmChannel.postMessage({
+        type: 'DISMISS_ALARM'
+    });
+}
+
+// Listen to other tabs
+alarmChannel.onmessage = (event) => {
+    const { type, sessionId, tableName, customerName, targetType } = event.data;
+    if (type === 'SESSION_EXPIRED') {
+        if (!alarmedSessions.has(sessionId)) {
+            showExpirationAlert(tableName, customerName, targetType, sessionId);
+        }
+    } else if (type === 'DISMISS_ALARM') {
+        stopAlarmSound();
+        hideExpirationAlert();
+    }
+};
+

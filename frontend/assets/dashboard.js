@@ -88,25 +88,6 @@ function renderTables() {
     updateTimers();
 }
 
-let audioCtx;
-function playAlarm() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.3);
-}
-
-const alarmingSessions = new Set();
-
 function updateTimers() {
     activeSessions.forEach(session => {
         const timerEl = document.getElementById(`timer-${session.tableId}`);
@@ -117,9 +98,8 @@ function updateTimers() {
                 if (countdown.isExpired) {
                     timerEl.style.color = 'var(--danger)';
                     timerEl.classList.add('pulse');
-                    if (!alarmingSessions.has(session.id)) {
-                        alarmingSessions.add(session.id);
-                        playAlarm();
+                    if (typeof triggerSessionExpired === 'function') {
+                        triggerSessionExpired(session);
                     }
                 } else {
                     timerEl.style.color = 'var(--accent-gold)';
