@@ -685,6 +685,15 @@ app.post('/api/settings', (req, res) => {
 app.get('/api/bookings', (req, res) => res.json(readDB().bookings || []));
 app.post('/api/bookings', (req, res) => {
     const db = readDB();
+    
+    // Check if store settings block online bookings
+    if (db.settings && (db.settings.shopOpen === false || db.settings.shopOpen === 'false')) {
+        return res.status(400).json({
+            success: false,
+            message: 'Maaf su! Toko sedang tutup hari ini. Sistem tidak menerima reservasi online baru saat ini.'
+        });
+    }
+
     const { customerName, targetId, targetType, bookingTime, notes } = req.body;
     
     // Check if duplicate booking on same calendar day

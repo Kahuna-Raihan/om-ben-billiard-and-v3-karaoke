@@ -19,6 +19,70 @@ function getSyncedNow() {
     return new Date(Date.now() + serverTimeOffset);
 }
 
+// --- SHOP SETTINGS LOCK GUARD ---
+async function checkShopStatusLock() {
+    // Only apply shop status lock to CASHIER/OPERATOR dashboards
+    // Admin, db-admin, and public reservasi are exempt or handled separately
+    const isCashierPage = 
+        window.location.href.includes('index.html') || 
+        window.location.href.includes('karaoke.html') ||
+        window.location.href.includes('pos.html');
+        
+    if (isCashierPage) {
+        try {
+            const res = await fetch(`${API_BASE}/settings`);
+            const settings = await res.json();
+            if (settings && (settings.shopOpen === false || settings.shopOpen === 'false')) {
+                // Cashier server/dashboard is turned off / locked!
+                // Create a full page glassmorphic overlay that cannot be closed.
+                const lockOverlay = document.createElement('div');
+                lockOverlay.style.position = 'fixed';
+                lockOverlay.style.top = '0';
+                lockOverlay.style.left = '0';
+                lockOverlay.style.width = '100vw';
+                lockOverlay.style.height = '100vh';
+                lockOverlay.style.background = 'rgba(10, 10, 20, 0.98)';
+                lockOverlay.style.backdropFilter = 'blur(20px)';
+                lockOverlay.style.display = 'flex';
+                lockOverlay.style.flexDirection = 'column';
+                lockOverlay.style.justifyContent = 'center';
+                lockOverlay.style.alignItems = 'center';
+                lockOverlay.style.zIndex = '999999';
+                lockOverlay.style.color = '#ffffff';
+                lockOverlay.style.textAlign = 'center';
+                lockOverlay.style.padding = '2rem';
+                
+                lockOverlay.innerHTML = `
+                    <div style="max-width: 600px; background: rgba(231, 76, 60, 0.05); border: 2px solid rgba(231, 76, 60, 0.4); border-radius: 24px; padding: 3rem 2rem; box-shadow: 0 0 50px rgba(231,76,60,0.25);">
+                        <div style="font-size: 5rem; margin-bottom: 1.5rem; animation: pulse 2s infinite;">🔒</div>
+                        <h1 style="color: #e74c3c; font-family: var(--font-heading); margin-bottom: 1.5rem; font-weight: 900; letter-spacing: 1px; font-size: 2rem; text-shadow: 0 0 20px rgba(231,76,60,0.3);">
+                            SISTEM OPERASIONAL NONAKTIF
+                        </h1>
+                        <p style="font-size: 1.1rem; line-height: 1.6; color: #eceff1; margin-bottom: 1.5rem;">
+                            Saat ini status toko diatur **TUTUP (Operasional Dinonaktifkan)** oleh Administrator / Manager.
+                        </p>
+                        <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-dim); margin-bottom: 2.5rem;">
+                            Semua fitur kasir, pemesanan F&B, dan transaksi rental meja billiard/karaoke telah dikunci demi keamanan. Silakan hubungi Administrator untuk mengubah status menjadi BUKA agar sistem dapat digunakan kembali.
+                        </p>
+                        <div style="display: flex; gap: 1rem; justify-content: center;">
+                            <button onclick="window.location.reload()" class="btn btn-outline" style="width: auto; padding: 0.6rem 1.5rem; font-weight: bold; border-color: rgba(255,255,255,0.2); color: white; cursor: pointer;">
+                                ↻ Coba Muat Ulang
+                            </button>
+                            <button onclick="logout()" class="btn btn-primary" style="width: auto; padding: 0.6rem 1.5rem; font-weight: bold; background: #e74c3c; border-color: #e74c3c; cursor: pointer;">
+                                🚪 Keluar Akun
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(lockOverlay);
+            }
+        } catch (e) {
+            console.error("Failed to verify store operational lock status:", e);
+        }
+    }
+}
+checkShopStatusLock();
+
 // --- AUTH GUARD ---
 if (!window.location.href.includes('login.html') && !window.location.href.includes('attendance.html') && !window.location.href.includes('reservasi.html')) {
     if (!localStorage.getItem('auth_role')) window.location.href = 'login.html';
