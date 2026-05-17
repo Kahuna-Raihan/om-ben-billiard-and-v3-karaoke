@@ -83,6 +83,45 @@ async function checkShopStatusLock() {
 }
 checkShopStatusLock();
 
+// --- AUTO-SAVE DATABASE MIRROR TO BROWSER LOCALSTORAGE ---
+async function startAutoDatabaseMirrorSync() {
+    // Only run this on cashier or admin dashboards, not on the public reservasi portal
+    const isDashboardPage = 
+        window.location.href.includes('index.html') || 
+        window.location.href.includes('karaoke.html') ||
+        window.location.href.includes('pos.html') ||
+        window.location.href.includes('admin.html') ||
+        window.location.href.includes('db-admin.html');
+        
+    if (isDashboardPage) {
+        // Sync immediately on load, then every 10 seconds
+        const syncMirror = async () => {
+            try {
+                const statsRes = await fetch(`${API_BASE}/db/stats`);
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    if (stats.counts.menu > 0 || stats.counts.transactions > 0) {
+                        const rawRes = await fetch(`${API_BASE}/db/download`);
+                        if (rawRes.ok) {
+                            const dbData = await rawRes.text();
+                            localStorage.setItem('offline_db_mirror', dbData);
+                            localStorage.setItem('offline_db_mirror_time', new Date().toISOString());
+                            console.log("[Auto-Save] Database mirrored successfully in browser storage.");
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error("[Auto-Save] Local mirror sync failed:", e);
+            }
+        };
+        
+        // Run first sync after 2 seconds, then every 10 seconds
+        setTimeout(syncMirror, 2000);
+        setInterval(syncMirror, 10000);
+    }
+}
+startAutoDatabaseMirrorSync();
+
 // --- AUTH GUARD ---
 if (!window.location.href.includes('login.html') && !window.location.href.includes('attendance.html') && !window.location.href.includes('reservasi.html')) {
     if (!localStorage.getItem('auth_role')) window.location.href = 'login.html';
