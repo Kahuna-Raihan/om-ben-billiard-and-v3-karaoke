@@ -147,6 +147,28 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'frontend', 'login.html'));
 });
 
+// --- DIAGNOSTIC DEBUG API ---
+app.get('/api/debug-db', (req, res) => {
+    try {
+        const dbExists = fs.existsSync(DB_PATH);
+        let dbContent = null;
+        if (dbExists) {
+            dbContent = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+        }
+        res.json({
+            isMongoConnected,
+            dbExists,
+            dbPath: DB_PATH,
+            tablesCount: dbContent && dbContent.tables ? dbContent.tables.length : 0,
+            roomsCount: dbContent && dbContent.rooms ? dbContent.rooms.length : 0,
+            usersCount: dbContent && dbContent.users ? dbContent.users.length : 0,
+            keys: dbContent ? Object.keys(dbContent) : []
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message, stack: err.stack });
+    }
+});
+
 // --- TIME SYNC API ---
 app.get('/api/time', (req, res) => {
     res.json({ serverTime: Date.now() });
