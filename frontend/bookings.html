@@ -135,13 +135,22 @@
             const bookings = await fetchData('/bookings');
             const container = document.getElementById('booking-list');
             
-            if (bookings.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 4rem; color: var(--text-dim);">Belum ada jadwal booking.</div>';
+            // Get today's local YYYY-MM-DD date string
+            const now = (typeof getSyncedNow === 'function') ? getSyncedNow() : new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${yyyy}-${mm}-${dd}`;
+
+            const todayBookings = bookings.filter(b => b.bookingTime && b.bookingTime.substring(0, 10) === todayStr);
+            
+            if (todayBookings.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 4rem; color: var(--text-dim);">Belum ada jadwal booking hari ini.</div>';
                 return;
             }
 
             container.innerHTML = '';
-            bookings.sort((a,b) => new Date(a.bookingTime) - new Date(b.bookingTime)).forEach(b => {
+            todayBookings.sort((a,b) => new Date(a.bookingTime) - new Date(b.bookingTime)).forEach(b => {
                 const date = new Date(b.bookingTime);
                 const item = document.createElement('div');
                 item.className = 'booking-item';
