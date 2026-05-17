@@ -119,11 +119,15 @@ let currentSessionForOrder = null;
 function openOrderModal(sessionId) {
     currentSessionForOrder = sessionId;
     const session = activeSessions.find(s => s.id == sessionId);
-    const select = document.getElementById('menu-select');
+    
+    const input = document.getElementById('menu-input');
+    if (input) input.value = '';
+    
+    const select = document.getElementById('menu-options');
     select.innerHTML = '';
     menuItems.forEach(m => {
         if ((m.stock || 0) > 0) {
-            select.innerHTML += `<option value="${m.id}">${m.name} - ${formatRupiah(m.price)}</option>`;
+            select.innerHTML += `<option value="${m.name} - ${formatRupiah(m.price)}"></option>`;
         }
     });
 
@@ -140,12 +144,18 @@ function openOrderModal(sessionId) {
 }
 
 async function addOrderToSession() {
-    const menuId = document.getElementById('menu-select').value;
+    const menuVal = document.getElementById('menu-input').value;
     const qty = parseInt(document.getElementById('menu-qty').value) || 0;
-    if (!menuId || qty <= 0) return;
+    if (!menuVal || qty <= 0) return;
 
-    const menuItem = menuItems.find(m => m.id == menuId);
-    if (menuItem && qty > (menuItem.stock || 0)) {
+    const menuItem = menuItems.find(m => `${m.name} - ${formatRupiah(m.price)}` === menuVal || m.name.toLowerCase() === menuVal.toLowerCase());
+    if (!menuItem) {
+        alert("Pilih menu yang valid dari daftar!");
+        return;
+    }
+    const menuId = menuItem.id;
+
+    if (qty > (menuItem.stock || 0)) {
         alert(`Maaf, stok ${menuItem.name} tidak mencukupi (Tersisa: ${menuItem.stock || 0}).`);
         return;
     }
