@@ -146,7 +146,6 @@ app.put('/api/menu/:id', (req, res) => {
     const idx = db.menu.findIndex(m => String(m.id) === String(req.params.id));
     if (idx !== -1) {
         const oldItem = db.menu[idx];
-        const oldStock = oldItem.stock || 0;
         const price = req.body.price !== undefined ? parseInt(req.body.price) : oldItem.price;
         const stock = req.body.stock !== undefined ? parseInt(req.body.stock) : oldItem.stock;
         
@@ -157,9 +156,11 @@ app.put('/api/menu/:id', (req, res) => {
             stock: stock
         };
         
-        const diff = stock - oldStock;
-        if (diff !== 0) {
-            logStock(db, oldItem.name, diff > 0 ? 'in' : 'out', Math.abs(diff), 'Update via Edit Menu Modal', req.body.user || req.query.user || 'Admin');
+        if (req.body.stock !== undefined) {
+            const diff = parseInt(req.body.stock) || 0;
+            if (diff !== 0) {
+                logStock(db, oldItem.name, 'in', diff, 'Update via Edit Menu Modal', req.body.user || req.query.user || 'Admin');
+            }
         }
         
         writeDB(db);
@@ -187,21 +188,20 @@ app.post('/api/menu/:id/set-stock', (req, res) => {
     const item = db.menu.find(m => m.id == req.params.id);
     if (!item) return res.status(404).json({ error: 'Item not found' });
 
-    const addedQty = parseInt(stock);
-    const oldStock = item.stock || 0;
+    const newStock = parseInt(stock) || 0;
     
-    // User wants to "count from 0", meaning the input is the delta
-    item.stock = oldStock + addedQty;
+    // Set stock directly to the entered value
+    item.stock = newStock;
 
-    // Log the change
+    // Log the change starting from 0 (meaning delta is the exact newStock)
     db.stockLogs.push({
         id: Date.now(),
         itemId: item.id,
         itemName: item.name,
         itemCategory: item.category || 'Uncategorized',
-        type: addedQty >= 0 ? 'in' : 'out',
-        delta: Math.abs(addedQty),
-        reason: `${reason || 'Update Manual'}: (Stok awal ${oldStock} + ${addedQty})`,
+        type: 'in',
+        delta: newStock,
+        reason: `${reason || 'Update Manual'}: (Direct set to ${newStock})`,
         user: user || 'Admin',
         timestamp: new Date().toISOString()
     });
