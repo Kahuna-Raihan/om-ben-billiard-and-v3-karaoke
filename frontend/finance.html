@@ -212,15 +212,15 @@
                     const startOfRange = new Date();
                     startOfRange.setHours(0,0,0,0);
                     startOfRange.setDate(startOfRange.getDate() - 6); // Total 7 days including today
-                    allForRekap = allForRekap.filter(t => new Date(t.endTime) >= startOfRange);
+                    allForRekap = allForRekap.filter(t => new Date(t.endTime || t.timestamp || t.id) >= startOfRange);
                     document.getElementById('report-title').textContent = "Total Pendapatan 7 Hari Terakhir";
                 } else if (currentFilter === 'month') {
                     const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-                    allForRekap = allForRekap.filter(t => new Date(t.endTime) >= oneMonthAgo);
+                    allForRekap = allForRekap.filter(t => new Date(t.endTime || t.timestamp || t.id) >= oneMonthAgo);
                     document.getElementById('report-title').textContent = "Total Pendapatan 30 Hari Terakhir";
                 } else if (currentFilter === 'year') {
                     const oneYearAgo = new Date(now.getFullYear(), 0, 1);
-                    allForRekap = allForRekap.filter(t => new Date(t.endTime) >= oneYearAgo);
+                    allForRekap = allForRekap.filter(t => new Date(t.endTime || t.timestamp || t.id) >= oneYearAgo);
                     document.getElementById('report-title').textContent = "Total Pendapatan Tahun Ini";
                 } else if (currentFilter === 'all') {
                     document.getElementById('report-title').textContent = "Total Semua Pendapatan";
@@ -246,13 +246,13 @@
         }
 
         function renderTable(data, targetEl, withActions) {
-            data.sort((a,b) => new Date(b.endTime) - new Date(a.endTime)).forEach(t => {
+            data.sort((a,b) => new Date(b.endTime || b.timestamp || b.id) - new Date(a.endTime || a.timestamp || a.id)).forEach(t => {
                 let typeLabel = 'Billiard';
                 if (t.type === 'karaoke') typeLabel = '<span style="color:var(--secondary-color);font-weight:bold;">Karaoke</span>';
                 if (t.type === 'pos' || t.tableId === 'POS') typeLabel = '<span style="color:var(--primary-color);">F&B POS</span>';
 
                 const row = document.createElement('tr');
-                const tDate = t.endTime ? new Date(t.endTime) : null;
+                const tDate = t.endTime || t.timestamp || t.id ? new Date(t.endTime || t.timestamp || t.id) : null;
                 const dayName = tDate && !isNaN(tDate.getTime()) ? tDate.toLocaleDateString('id-ID', { weekday: 'long' }) : '-';
                 const dateStr = tDate && !isNaN(tDate.getTime()) ? tDate.toLocaleDateString('id-ID') : '-';
                 const timeStr = tDate && !isNaN(tDate.getTime()) ? tDate.toLocaleTimeString('id-ID') : '--:--';
@@ -306,7 +306,7 @@
             const groups = {};
 
             transactions.forEach(t => {
-                const d = new Date(t.endTime);
+                const d = new Date(t.endTime || t.timestamp || t.id);
                 let key;
                 if (groupBy === 'day') {
                     key = d.toLocaleDateString('id-ID', { weekday: 'long' });
