@@ -374,3 +374,62 @@ alarmChannel.onmessage = (event) => {
     }
 };
 
+// --- GLOBAL BACKGROUND ALARM POLLER ---
+// Periodically checks the backend server so alarms trigger across different devices/browsers
+let globalSessionPollInterval = null;
+
+async function startGlobalAlarmPoller() {
+    if (globalSessionPollInterval) return;
+    
+    const checkSessions = async () => {
+        try {
+            const response = await fetch(`${API_BASE}/sessions`);
+            if (!response.ok) return;
+            const sessions = await response.json();
+            
+            let hasActiveAlarm = false;
+            let currentExpiredSession = null;
+            let anyExpiredActive = false;
+            
+            (sessions || []).forEach(session => {
+                if (session.type === 'duration' && session.endTime) {
+                    const end = new Date(session.endTime);
+                    const now = new Date(Date.now() + serverTimeOffset);
+                    const diff = end - now;
+                    
+                    if (diff <= 0) {
+                        anyExpiredActive = true;
+                        if (!alarmedSessions.has(session.id)) {
+                            currentExpiredSession = session;
+                            hasActiveAlarm = true;
+                        }
+                    }
+                }
+            });
+            
+            if (hasActiveAlarm && currentExpiredSession) {
+                showExpirationAlert(
+                    currentExpiredSession.tableName, 
+                    currentExpiredSession.customerName, 
+                    currentExpiredSession.targetType || 'table', 
+                    currentExpiredSession.id
+                );
+            } else if (!anyExpiredActive && alarmInterval) {
+                // If no expired sessions exist on backend (e.g. cashier stopped/saved transaction), auto-silence
+                stopAlarmSound();
+                hideExpirationAlert();
+            }
+        } catch (e) {
+            console.error("Global alarm poller error:", e);
+        }
+    };
+    
+    checkSessions();
+    globalSessionPollInterval = setInterval(checkSessions, 5000);
+}
+
+// Only start background poller on non-public, non-login screens
+if (!window.location.href.includes('reservasi.html') && !window.location.href.includes('login.html')) {
+    startGlobalAlarmPoller();
+}
+
