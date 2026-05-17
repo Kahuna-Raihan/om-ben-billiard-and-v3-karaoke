@@ -256,6 +256,9 @@ app.post('/api/sessions/:id/order', (req, res) => {
     const menuItem = db.menu.find(m => m.id == menuId);
     if (session && menuItem) {
         const q = parseInt(qty);
+        if ((menuItem.stock || 0) < q) {
+            return res.status(400).json({ success: false, message: `Stok ${menuItem.name} tidak mencukupi` });
+        }
         const order = { menuId, name: menuItem.name, price: menuItem.price, qty: q, subtotal: menuItem.price * q };
         if (!session.orders) session.orders = [];
         session.orders.push(order);

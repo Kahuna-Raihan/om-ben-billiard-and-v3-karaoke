@@ -21,6 +21,8 @@ async function refreshData() {
     const allSessions = await fetchData('/sessions');
     const newMenu = await fetchData('/menu');
     
+    menuItems = newMenu;
+    
     // FILTER ONLY TABLE SESSIONS
     const tableSessions = allSessions.filter(s => s.targetType === 'table' || !s.targetType);
     
@@ -28,7 +30,6 @@ async function refreshData() {
     if (JSON.stringify(tables) !== JSON.stringify(newTables) || JSON.stringify(activeSessions) !== JSON.stringify(tableSessions)) {
         tables = newTables;
         activeSessions = tableSessions;
-        menuItems = newMenu;
 
         const todayStr = getSyncedNow().toISOString().split('T')[0];
         const allTransactions = await fetchData(`/transactions`);
@@ -145,7 +146,9 @@ function openOrderModal(sessionId) {
     const select = document.getElementById('menu-select');
     select.innerHTML = '';
     menuItems.forEach(m => {
-        select.innerHTML += `<option value="${m.id}">${m.name} - ${formatRupiah(m.price)}</option>`;
+        if ((m.stock || 0) > 0) {
+            select.innerHTML += `<option value="${m.id}">${m.name} - ${formatRupiah(m.price)}</option>`;
+        }
     });
 
     const list = document.getElementById('session-orders-list');
@@ -162,17 +165,25 @@ function openOrderModal(sessionId) {
 
 async function addOrderToSession() {
     const menuId = document.getElementById('menu-select').value;
-    const qty = document.getElementById('menu-qty').value;
-    if (!menuId) return;
+    const qty = parseInt(document.getElementById('menu-qty').value) || 0;
+    if (!menuId || qty <= 0) return;
+
+    const menuItem = menuItems.find(m => m.id == menuId);
+    if (menuItem && qty > (menuItem.stock || 0)) {
+        alert(`Maaf, stok ${menuItem.name} tidak mencukupi (Tersisa: ${menuItem.stock || 0}).`);
+        return;
+    }
 
     const res = await postData(`/sessions/${currentSessionForOrder}/order`, { 
         menuId, 
         qty,
         user: localStorage.getItem('auth_user') 
     });
-    if (res) {
+    if (res && res.success) {
         await refreshData();
         openOrderModal(currentSessionForOrder);
+    } else if (res && res.message) {
+        alert(res.message);
     }
 }
 
