@@ -265,10 +265,9 @@ function renderNavbar(active) {
 function printReceipt(data) {
     if (!data) return alert('Data struk tidak tersedia!');
     
-    const printWindow = window.open('', '_blank', 'width=300,height=600');
     const now = getSyncedNow();
-    
     let itemsHtml = '';
+    
     if (data.tableName) {
         itemsHtml = `
             <div class="row"><span>Sewa ${data.tableName}</span> <span>${formatRupiah(data.tableAmount || data.amount)}</span></div>
@@ -286,45 +285,114 @@ function printReceipt(data) {
         });
     }
 
-    printWindow.document.write(`
+    // Create an invisible iframe to bypass popup blockers 100% on both HP and PC
+    let iframe = document.getElementById('receipt-print-iframe');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'receipt-print-iframe';
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+    }
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+        <!DOCTYPE html>
         <html>
         <head>
             <title>Struk Pembayaran</title>
             <style>
-                @page { margin: 0; size: 58mm auto; }
-                body { font-family: 'Courier New', monospace; padding: 5mm; width: 48mm; font-size: 11px; line-height: 1.4; }
-                .text-center { text-align: center; }
-                .divider { border-top: 1px dashed #000; margin: 5px 0; }
-                .row { display: flex; justify-content: space-between; }
-                .bold { font-weight: bold; }
-                .total { font-size: 14px; margin-top: 5px; border-top: 1px solid #000; padding-top: 5px; }
+                @page {
+                    margin: 0;
+                    size: 58mm auto;
+                }
+                * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                }
+                body {
+                    font-family: 'Courier New', Courier, monospace;
+                    width: 58mm;
+                    padding: 2mm 3mm;
+                    font-size: 11px;
+                    line-height: 1.3;
+                    color: #000;
+                    background: #fff;
+                }
+                .text-center {
+                    text-align: center;
+                }
+                .divider {
+                    border-top: 1px dashed #000;
+                    margin: 6px 0;
+                    width: 100%;
+                }
+                .row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    width: 100%;
+                    word-break: break-word;
+                }
+                .bold {
+                    font-weight: bold;
+                }
+                .total {
+                    font-size: 13px;
+                    margin-top: 5px;
+                    border-top: 1px dashed #000;
+                    padding-top: 5px;
+                }
+                .logo-title {
+                    font-size: 14px;
+                    font-weight: bold;
+                    letter-spacing: 0.5px;
+                }
             </style>
         </head>
         <body>
             <div class="text-center">
-                <h2 style="margin:0; font-size:16px;">OM BEN BILLIARD</h2>
-                <p style="margin:2px 0;">X V3 KARAOKE</p>
-                <p style="font-size:9px;">${now.toLocaleString('id-ID')}</p>
+                <div class="logo-title">OM BEN BILLIARD</div>
+                <div style="font-size: 10px; font-weight: bold; margin-top: 1px;">X V3 KARAOKE</div>
+                <div style="font-size: 8px; color: #555; margin-top: 2px;">${now.toLocaleString('id-ID')}</div>
             </div>
+            
             <div class="divider"></div>
-            <div class="row"><span>Kasir:</span> <span>${localStorage.getItem('auth_user')}</span></div>
-            <div class="row"><span>Pelanggan:</span> <span>${data.customerName || 'Customer'}</span></div>
+            
+            <div class="row"><span>Kasir:</span> <span>${localStorage.getItem('auth_user') || 'Kasir'}</span></div>
+            <div class="row"><span>Pelanggan:</span> <span>${data.customerName || 'Pelanggan'}</span></div>
+            
             <div class="divider"></div>
+            
             ${itemsHtml}
+            
             <div class="divider"></div>
+            
             <div class="row bold total"><span>TOTAL</span> <span>${formatRupiah(data.amount || data.totalAmount)}</span></div>
+            
             <div class="divider"></div>
-            <div class="text-center" style="margin-top:10px;">
-                <p>Terima Kasih!</p>
+            
+            <div class="text-center" style="margin-top: 8px; font-size: 9px;">
+                <p style="font-weight: bold;">Terima Kasih!</p>
                 <p>Selamat Datang Kembali</p>
             </div>
+            
             <script>
-                window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
+                window.onload = function() {
+                    window.focus();
+                    window.print();
+                }
             <\/script>
         </body>
         </html>
     `);
-    printWindow.document.close();
+    doc.close();
 }
 
 // --- CROSS-TAB ALARM SYSTEM & BROADCAST CHANNEL ---
