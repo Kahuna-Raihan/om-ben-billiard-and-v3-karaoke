@@ -94,7 +94,7 @@
                     <h2 id="list-title" style="font-family: var(--font-heading); margin: 0;">Daftar Reservasi Hari Ini</h2>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-outline" id="btn-history-bookings" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--accent-gold); border-color: rgba(240,192,64,0.3); font-weight: bold;" onclick="openHistoryModal()">📜 Histori</button>
-                        <button class="btn btn-outline" id="btn-reset-bookings" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231,76,60,0.3); font-weight: bold;" onclick="resetBookings()">🗑️ Reset</button>
+                        <button class="btn btn-outline" id="btn-reset-bookings" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231,76,60,0.3); font-weight: bold; display: none;" onclick="resetBookings()">🗑️ Reset</button>
                     </div>
                 </div>
                 
@@ -143,6 +143,10 @@
                         };
                     });
                 }
+                
+                // Show Admin-only reset button
+                const btnReset = document.getElementById('btn-reset-bookings');
+                if (btnReset) btnReset.style.display = 'inline-block';
             }
             
             loadBookings();
