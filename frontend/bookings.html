@@ -189,9 +189,11 @@
             };
 
             const res = await postData('/bookings', data);
-            if (res) {
+            if (res && res.success !== false) {
                 alert('Booking Berhasil Disimpan!');
                 location.reload();
+            } else {
+                alert(res && res.message ? res.message : 'Gagal menyimpan reservasi.');
             }
         };
 

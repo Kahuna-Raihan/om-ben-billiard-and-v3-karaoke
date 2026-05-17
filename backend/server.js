@@ -665,6 +665,25 @@ app.get('/api/bookings', (req, res) => res.json(readDB().bookings || []));
 app.post('/api/bookings', (req, res) => {
     const db = readDB();
     const { customerName, targetId, targetType, bookingTime, notes } = req.body;
+    
+    // Check if duplicate booking on same calendar day
+    const targetDate = bookingTime ? bookingTime.substring(0, 10) : '';
+    if (targetDate) {
+        const isDuplicate = (db.bookings || []).some(b => 
+            b.targetType === targetType && 
+            b.targetId == targetId && 
+            b.bookingTime && b.bookingTime.substring(0, 10) === targetDate
+        );
+        
+        if (isDuplicate) {
+            const unitName = targetType === 'room' ? 'Ruangan' : 'Meja';
+            return res.status(400).json({ 
+                success: false, 
+                message: `Waduh! ${unitName} ${targetId} sudah dipesan oleh pelanggan lain pada tanggal tersebut (${targetDate}). Silakan pilih unit lain atau tanggal yang berbeda.` 
+            });
+        }
+    }
+
     const newBooking = { id: Date.now(), customerName, targetId, targetType, bookingTime, notes, status: 'pending' };
     db.bookings.push(newBooking);
     
@@ -676,7 +695,7 @@ app.post('/api/bookings', (req, res) => {
     if (item) item.status = 'booked';
     
     writeDB(db);
-    res.json(newBooking);
+    res.json({ success: true, ...newBooking });
 });
 app.delete('/api/bookings/:id', (req, res) => {
     const db = readDB();

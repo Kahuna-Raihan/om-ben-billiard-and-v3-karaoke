@@ -595,13 +595,13 @@
             };
 
             const res = await postData('/bookings', data);
-            if (res) {
-                alert(`Reservasi berhasil dibuat!\n\nAtas nama: ${customerName}\nUnit: ${targetType === 'table' ? 'Meja ' + targetId : 'Ruang ' + targetId}\n\nSilakan datang tepat waktu ya! Terima kasih.`);
-                // Reset form and reload
+            if (res && res.success !== false) {
+                const unitLabel = targetType === 'table' ? 'Meja ' + targetId : 'Ruangan ' + targetId;
+                alert(`🎉 Reservasi berhasil dibuat!\n\nAtas nama: ${customerName}\nUnit: ${unitLabel}\n\nSilakan datang tepat waktu ya! Terima kasih.`);
                 document.getElementById('client-booking-form').reset();
                 initDashboard();
             } else {
-                alert('Waduh, terjadi kesalahan saat menyimpan reservasi. Coba lagi ya.');
+                alert(res && res.message ? res.message : 'Waduh, terjadi kesalahan saat menyimpan reservasi. Coba lagi ya.');
             }
         };
 
