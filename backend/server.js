@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,6 +13,50 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 const DB_PATH = path.join(__dirname, 'data', 'db.json');
+
+// --- MONGODB AUTO-SYNC DATABASE SYSTEM ---
+let isMongoConnected = false;
+
+const JSONDBSchema = new mongoose.Schema({
+    _id: { type: String, default: 'billiard_db' },
+    data: { type: mongoose.Schema.Types.Mixed, required: true }
+}, { timestamps: true });
+
+const JSONDB = mongoose.models.JSONDB || mongoose.model('JSONDB', JSONDBSchema);
+
+async function syncFromMongoDB() {
+    if (!process.env.MONGO_URL) {
+        console.log('[MongoDB Sync] MONGO_URL tidak ditemukan di .env. Sinkronisasi MongoDB dilewati.');
+        return;
+    }
+    try {
+        console.log('[MongoDB Sync] Menghubungkan ke Database Cloud MongoDB Railway...');
+        await mongoose.connect(process.env.MONGO_URL, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        });
+        isMongoConnected = true;
+        console.log('[MongoDB Sync] Sukses Terhubung ke Database Cloud MongoDB!');
+
+        const record = await JSONDB.findById('billiard_db');
+        if (record && record.data) {
+            const dbDir = path.dirname(DB_PATH);
+            if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+            
+            fs.writeFileSync(DB_PATH, JSON.stringify(record.data, null, 2));
+            console.log('[MongoDB Sync] Sukses Mengunduh & Memulihkan seluruh data aktivitas terakhir dari Cloud!');
+        } else {
+            console.log('[MongoDB Sync] Tidak ada data di Cloud. Menginisialisasi data pertama dari db.json lokal...');
+            if (fs.existsSync(DB_PATH)) {
+                const localData = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+                await JSONDB.create({ _id: 'billiard_db', data: localData });
+                console.log('[MongoDB Sync] Inisialisasi awal database cloud berhasil.');
+            }
+        }
+    } catch (err) {
+        console.error('[MongoDB Sync] Kegagalan koneksi atau sinkronisasi database cloud:', err);
+    }
+}
 
 // Helper to read/write DB
 function readDB() {
@@ -34,6 +79,17 @@ function readDB() {
 let lastBackupTime = 0;
 function writeDB(data) {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+    
+    // Auto sync to MongoDB in real-time
+    if (isMongoConnected) {
+        JSONDB.findByIdAndUpdate('billiard_db', { data: data }, { upsert: true })
+            .then(() => {
+                console.log('[MongoDB Sync] Transaksi & sesi berhasil dicadangkan di Cloud secara Real-time.');
+            })
+            .catch(err => {
+                console.error('[MongoDB Sync] Gagal sinkronisasi data ke cloud:', err);
+            });
+    }
     
     // Auto rolling backup every 15 minutes of write activity
     const now = Date.now();
@@ -832,4 +888,7 @@ app.post('/api/bookings/reset', (req, res) => {
     res.json({ success: true });
 });
 
-app.listen(PORT, () => console.log(`Server running at port ${PORT}`));
+// Synchronously initialize MongoDB and then listen to port
+syncFromMongoDB().then(() => {
+    app.listen(PORT, () => console.log(`Server running at port ${PORT}`));
+});
