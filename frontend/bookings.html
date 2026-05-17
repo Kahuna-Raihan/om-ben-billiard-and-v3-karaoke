@@ -237,7 +237,7 @@
                             <strong style="font-size: 1.1rem;">${b.customerName}</strong>
                         </div>
                         <div style="color: var(--text-dim); font-size: 0.85rem;">
-                            📍 ${targetName} | ⏰ ${date.toLocaleDateString('id-ID')} - ${date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}
+                            📍 ${targetName} | ⏰ ${date.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} - ${date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}
                         </div>
                         ${b.notes ? `<div style="font-size: 0.75rem; color: var(--accent-gold); margin-top: 0.4rem;">📝 ${b.notes}</div>` : ''}
                     </div>

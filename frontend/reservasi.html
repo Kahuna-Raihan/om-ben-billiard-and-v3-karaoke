@@ -566,7 +566,7 @@
                     : b.customerName[0] + '*';
 
                 const formattedTime = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                const formattedDate = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                const formattedDate = date.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
 
                 item.innerHTML = `
                     <div class="info-side">
