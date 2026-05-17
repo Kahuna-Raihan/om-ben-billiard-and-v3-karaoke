@@ -181,19 +181,21 @@
             const select = document.getElementById('target-select');
             select.innerHTML = '<option value="">-- Pilih Meja/Ruangan --</option>';
             
-            // ONLY SHOW AVAILABLE TABLES
-            allTables.filter(t => t.status === 'available').forEach(t => {
+            // SHOW ALL TABLES
+            allTables.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = `table|${t.id}`;
-                opt.textContent = `🎱 Meja ${t.id} (Siap)`;
+                const statusText = t.status === 'occupied' ? 'Bermain' : 'Siap';
+                opt.textContent = `🎱 Meja ${t.id} (${statusText})`;
                 select.appendChild(opt);
             });
 
-            // ONLY SHOW AVAILABLE ROOMS
-            allRooms.filter(r => r.status === 'available').forEach(r => {
+            // SHOW ALL ROOMS
+            allRooms.forEach(r => {
                 const opt = document.createElement('option');
                 opt.value = `room|${r.id}`;
-                opt.textContent = `🎤 Ruang ${r.name} (Siap)`;
+                const statusText = r.status === 'occupied' ? 'Digunakan' : 'Siap';
+                opt.textContent = `🎤 Ruang ${r.name} (${statusText})`;
                 select.appendChild(opt);
             });
         }
