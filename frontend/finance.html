@@ -283,9 +283,19 @@
 
         async function closeShift() {
             if (confirm('Tutup shift kasir sekarang? Data hari ini akan diarsipkan (tampilan dashboard hari ini akan bersih, tapi tetap terekap di laporan mingguan/bulanan).')) {
+                try {
+                    // Auto-download db.json as a backup file!
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = '/api/db/download';
+                    downloadLink.download = `db_backup_closeshift_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                } catch(e) { console.error("Auto download failed:", e); }
+
                 const res = await postData('/transactions/close-shift', {});
                 if (res) {
-                    alert(`Shift berhasil ditutup. ${res.archivedCount} transaksi telah diarsipkan.`);
+                    alert(`Shift berhasil ditutup. ${res.archivedCount} transaksi telah diarsipkan. File database (db.json) otomatis terunduh ke komputermu demi keamanan data!`);
                     loadReport();
                 }
             }
