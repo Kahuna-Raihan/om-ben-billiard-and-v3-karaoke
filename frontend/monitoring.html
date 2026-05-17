@@ -21,6 +21,11 @@
             50% { border-color: rgba(0, 243, 255, 0.8); }
             100% { border-color: rgba(0, 243, 255, 0.3); }
         }
+        @keyframes pulse-pink-border {
+            0% { border-color: rgba(236, 0, 140, 0.3); }
+            50% { border-color: rgba(236, 0, 140, 0.8); }
+            100% { border-color: rgba(236, 0, 140, 0.3); }
+        }
     </style>
 </head>
 <body>
@@ -41,12 +46,12 @@
 
         <section>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h2 style="font-family: var(--font-heading); margin: 0;">Status Meja & Ruangan Aktif</h2>
-                <div style="font-size: 0.9rem; color: var(--text-dim);">Auto Refresh: <span id="refresh-timer">10</span>s</div>
+                <h2 style="font-family: var(--font-heading); margin: 0;">Status Ketersediaan Meja & Ruangan</h2>
+                <div style="font-size: 0.9rem; color: var(--text-dim);">Auto Refresh: <span id="refresh-timer">1</span>s</div>
             </div>
 
             <div class="monitor-grid" id="monitor-container">
-                <!-- Active sessions injected here -->
+                <!-- All tables and rooms injected here dynamically -->
             </div>
         </section>
     </div>
@@ -57,73 +62,197 @@
         }
 
         async function updateMonitor() {
-            const sessions = await fetchData('/sessions');
-            const tables = await fetchData('/tables');
-            const rooms = await fetchData('/rooms');
-            
-            const container = document.getElementById('monitor-container');
-            container.innerHTML = '';
+            try {
+                const sessions = await fetchData('/sessions');
+                const tables = await fetchData('/tables');
+                const rooms = await fetchData('/rooms');
+                const bookings = await fetchData('/bookings');
+                
+                // Get today's local YYYY-MM-DD date string
+                const now = (typeof getSyncedNow === 'function') ? getSyncedNow() : new Date();
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const todayStr = `${yyyy}-${mm}-${dd}`;
+                
+                const container = document.getElementById('monitor-container');
+                container.innerHTML = '';
 
-            if (sessions.length === 0) {
-                container.innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center; padding: 5rem; background: var(--card-bg); border-radius: 20px; color: var(--text-dim);">
-                        <h3>Tidak ada meja atau ruangan yang aktif saat ini.</h3>
-                    </div>
-                `;
-                return;
+                // --- 1. BILLIARD TABLES SECTION ---
+                const billiardHeader = document.createElement('div');
+                billiardHeader.style.cssText = 'grid-column: 1/-1; margin-top: 1rem; border-bottom: 2px solid rgba(0, 243, 255, 0.1); padding-bottom: 0.5rem; margin-bottom: 1rem;';
+                billiardHeader.innerHTML = `<h3 style="font-family: var(--font-heading); margin: 0; color: var(--primary-color); font-size: 1.2rem; letter-spacing: 1px;">🎱 AREA MEJA BILLIARD</h3>`;
+                container.appendChild(billiardHeader);
+
+                tables.forEach(table => {
+                    const session = sessions.find(s => (s.targetType === 'table' || !s.targetType) && s.tableId == table.id);
+                    const tableBooking = bookings.find(b => b.targetType === 'table' && b.targetId == table.id && b.bookingTime.startsWith(todayStr));
+                    
+                    const card = document.createElement('div');
+                    
+                    let statusClass = 'available';
+                    let statusLabel = 'Tersedia';
+                    let statusColor = 'var(--secondary-color)'; // Green neon (#2ecc71)
+                    let timerHtml = '00:00:00';
+                    let detailsHtml = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); font-size: 0.8rem;">🟢 Meja Kosong / Siap digunakan</div>';
+                    
+                    if (session) {
+                        statusClass = 'active-card';
+                        statusLabel = 'Digunakan';
+                        statusColor = 'var(--primary-color)'; // Cyan neon
+                        const timer = session.type === 'duration' 
+                            ? calculateCountdown(session.endTime)
+                            : calculateTimeDiff(session.startTime);
+                        timerHtml = timer.formatted;
+                        detailsHtml = `
+                            <div>
+                                <div style="color: var(--text-dim); font-size: 0.75rem;">Pelanggan</div>
+                                <div style="font-weight: bold; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${session.customerName}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: var(--text-dim); font-size: 0.75rem;">Mulai</div>
+                                <div style="font-weight: bold; font-size: 0.85rem;">${formatTime(session.startTime)}</div>
+                            </div>
+                        `;
+                    } else if (table.status === 'booked' || tableBooking) {
+                        statusClass = 'booked-card';
+                        statusLabel = 'Dipesan';
+                        statusColor = 'var(--accent-gold)'; // Gold neon
+                        timerHtml = 'RESERVED';
+                        const bookTime = tableBooking ? formatTime(tableBooking.bookingTime) : 'Hari Ini';
+                        const bookCust = tableBooking ? tableBooking.customerName : 'Pelanggan';
+                        detailsHtml = `
+                            <div style="grid-column: 1/-1; text-align: center;">
+                                <div style="color: var(--text-dim); font-size: 0.75rem;">Booking untuk Jam: ${bookTime}</div>
+                                <div style="font-weight: bold; color: var(--accent-gold);">${bookCust}</div>
+                            </div>
+                        `;
+                    }
+
+                    card.className = `table-card ${statusClass}`;
+                    card.style.position = 'relative';
+                    
+                    if (statusClass === 'available') {
+                        card.style.background = 'rgba(46, 204, 113, 0.03)';
+                        card.style.borderColor = 'rgba(46, 204, 113, 0.2)';
+                    } else if (statusClass === 'booked-card') {
+                        card.style.background = 'rgba(241, 196, 15, 0.03)';
+                        card.style.borderColor = 'rgba(241, 196, 15, 0.2)';
+                    }
+
+                    card.innerHTML = `
+                        <div class="table-header">
+                            <div class="table-info">
+                                <span style="font-size: 0.7rem; color: ${statusColor}; font-weight: bold; text-transform: uppercase;">Meja Billiard</span>
+                                <h2>${table.name}</h2>
+                                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">• ${table.description || 'Standard'}</div>
+                            </div>
+                            <span class="status-badge" style="background: ${statusColor}; color: var(--bg-dark); font-weight: 800; font-size: 0.7rem;">${statusLabel}</span>
+                        </div>
+                        <div class="timer-display" style="color: ${statusColor}; font-size: 2.8rem; margin: 1rem 0; font-family: monospace; font-weight: bold; text-align: center;">${timerHtml}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 0.8rem;">
+                            ${detailsHtml}
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                // --- 2. KARAOKE ROOMS SECTION ---
+                const karaokeHeader = document.createElement('div');
+                karaokeHeader.style.cssText = 'grid-column: 1/-1; margin-top: 3rem; border-bottom: 2px solid rgba(236, 0, 140, 0.1); padding-bottom: 0.5rem; margin-bottom: 1rem;';
+                karaokeHeader.innerHTML = `<h3 style="font-family: var(--font-heading); margin: 0; color: #ec008c; font-size: 1.2rem; letter-spacing: 1px;">🎤 ROOM KARAOKE V3</h3>`;
+                container.appendChild(karaokeHeader);
+
+                rooms.forEach(room => {
+                    const session = sessions.find(s => s.targetType === 'room' && s.tableId == room.id);
+                    const roomBooking = bookings.find(b => b.targetType === 'room' && b.targetId == room.id && b.bookingTime.startsWith(todayStr));
+                    
+                    const card = document.createElement('div');
+                    
+                    let statusClass = 'available';
+                    let statusLabel = 'Tersedia';
+                    let statusColor = 'var(--secondary-color)'; // Green neon (#2ecc71)
+                    let timerHtml = '00:00:00';
+                    let detailsHtml = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); font-size: 0.8rem;">🟢 Ruangan Kosong / Siap digunakan</div>';
+                    
+                    if (session) {
+                        statusClass = 'active-card';
+                        statusLabel = 'Digunakan';
+                        statusColor = '#ec008c'; // Hot pink neon
+                        const timer = session.type === 'duration' 
+                            ? calculateCountdown(session.endTime)
+                            : calculateTimeDiff(session.startTime);
+                        timerHtml = timer.formatted;
+                        detailsHtml = `
+                            <div>
+                                <div style="color: var(--text-dim); font-size: 0.75rem;">Pelanggan</div>
+                                <div style="font-weight: bold; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${session.customerName}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: var(--text-dim); font-size: 0.75rem;">Mulai</div>
+                                <div style="font-weight: bold; font-size: 0.85rem;">${formatTime(session.startTime)}</div>
+                            </div>
+                        `;
+                    } else if (room.status === 'booked' || roomBooking) {
+                        statusClass = 'booked-card';
+                        statusLabel = 'Dipesan';
+                        statusColor = 'var(--accent-gold)'; // Gold neon
+                        timerHtml = 'RESERVED';
+                        const bookTime = roomBooking ? formatTime(roomBooking.bookingTime) : 'Hari Ini';
+                        const bookCust = roomBooking ? roomBooking.customerName : 'Pelanggan';
+                        detailsHtml = `
+                            <div style="grid-column: 1/-1; text-align: center;">
+                                <div style="color: var(--text-dim); font-size: 0.75rem;">Booking untuk Jam: ${bookTime}</div>
+                                <div style="font-weight: bold; color: var(--accent-gold);">${bookCust}</div>
+                            </div>
+                        `;
+                    }
+
+                    card.className = `table-card ${statusClass}`;
+                    card.style.position = 'relative';
+                    
+                    if (statusClass === 'available') {
+                        card.style.background = 'rgba(46, 204, 113, 0.03)';
+                        card.style.borderColor = 'rgba(46, 204, 113, 0.2)';
+                    } else if (statusClass === 'booked-card') {
+                        card.style.background = 'rgba(241, 196, 15, 0.03)';
+                        card.style.borderColor = 'rgba(241, 196, 15, 0.2)';
+                    } else if (statusClass === 'active-card') {
+                        card.style.background = 'rgba(236, 0, 140, 0.05)';
+                        card.style.borderColor = 'rgba(236, 0, 140, 0.3)';
+                        card.style.animation = 'pulse-pink-border 2s infinite';
+                    }
+
+                    card.innerHTML = `
+                        <div class="table-header">
+                            <div class="table-info">
+                                <span style="font-size: 0.7rem; color: ${statusColor}; font-weight: bold; text-transform: uppercase;">Room Karaoke</span>
+                                <h2>Ruang ${room.name}</h2>
+                                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">• ${room.description || 'Standard'}</div>
+                            </div>
+                            <span class="status-badge" style="background: ${statusColor}; color: var(--bg-dark); font-weight: 800; font-size: 0.7rem;">${statusLabel}</span>
+                        </div>
+                        <div class="timer-display" style="color: ${statusColor}; font-size: 2.8rem; margin: 1rem 0; font-family: monospace; font-weight: bold; text-align: center;">${timerHtml}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 0.8rem;">
+                            ${detailsHtml}
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Monitor load error:", err);
             }
-
-            sessions.forEach(session => {
-                const isBilliard = session.targetType !== 'room';
-                
-                // Find description from source list
-                let sourceItem = isBilliard 
-                    ? tables.find(t => t.id == session.tableId)
-                    : rooms.find(r => r.id == session.tableId);
-                
-                const typeName = sourceItem ? (sourceItem.description || '-') : '-';
-
-                const timer = session.type === 'duration' 
-                    ? calculateCountdown(session.endTime)
-                    : calculateTimeDiff(session.startTime);
-
-                const card = document.createElement('div');
-                card.className = 'table-card active-card';
-                card.innerHTML = `
-                    <div class="table-header">
-                        <div class="table-info">
-                            <span style="font-size: 0.7rem; color: var(--primary-color); font-weight: bold;">${isBilliard ? 'BILLIARD' : 'KARAOKE'}</span>
-                            <h2>${session.tableName}</h2>
-                            <div style="font-size: 0.75rem; color: var(--neon-gold); margin-top: 2px;">• ${typeName}</div>
-                        </div>
-                        <span class="status-badge" style="background: var(--primary-color); color: var(--bg-dark);">AKTIF</span>
-                    </div>
-                    <div class="timer-display" style="color: var(--primary-color); font-size: 3rem;">${timer.formatted}</div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 1rem; font-size: 0.9rem;">
-                        <div>
-                            <div style="color: var(--text-dim);">Pelanggan</div>
-                            <div>${session.customerName}</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="color: var(--text-dim);">Mulai</div>
-                            <div>${formatTime(session.startTime)}</div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
         }
 
-        // Auto Refresh
-        let timeLeft = 30;
+        // Auto Refresh - Set countdown/polling interval to 1s
+        let timeLeft = 1;
         setInterval(() => {
             timeLeft--;
             if (timeLeft <= 0) {
-                timeLeft = 30;
-                updateMonitor();
+                timeLeft = 1;
             }
             document.getElementById('refresh-timer').textContent = timeLeft;
-            updateMonitor(); // Also update the small timers every second
+            updateMonitor();
         }, 1000);
 
         updateMonitor();
