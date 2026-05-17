@@ -173,8 +173,8 @@
             setupDraftAutoSave();
             loadBookings();
             
-            // Auto Refresh every 1 second
-            setInterval(loadBookings, 1000);
+            // Auto Refresh every 2 seconds
+            setInterval(loadBookings, 2000);
         }
 
         function loadTargets() {
@@ -226,9 +226,19 @@
             loadBookings();
         }
 
+        let lastBookingsJson = '';
         async function loadBookings() {
             const bookings = await fetchData('/bookings');
             const container = document.getElementById('booking-list');
+            
+            const range = currentFilterRange;
+
+            // Stability check: only render if data has changed
+            const currentJson = JSON.stringify(bookings) + '_' + range;
+            if (currentJson === lastBookingsJson) {
+                return; // SKIP RENDER TO PREVENT FLICKERING/LAG/DELAY!
+            }
+            lastBookingsJson = currentJson;
             
             // Get today's local YYYY-MM-DD date string
             const now = (typeof getSyncedNow === 'function') ? getSyncedNow() : new Date();
@@ -236,8 +246,6 @@
             const mm = String(now.getMonth() + 1).padStart(2, '0');
             const dd = String(now.getDate()).padStart(2, '0');
             const todayStr = `${yyyy}-${mm}-${dd}`;
-
-            const range = currentFilterRange;
             
             const todayStart = new Date(yyyy, now.getMonth(), now.getDate(), 0, 0, 0);
             const oneWeekLater = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
