@@ -5,6 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Om Ben Billiard</title>
     <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .category-tab-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            display: inline-block;
+            font-family: var(--font-body);
+        }
+        .category-tab-btn:hover {
+            color: var(--text-light);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .category-tab-btn.active {
+            background: var(--primary-color);
+            color: var(--bg-dark);
+            font-weight: 700;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -36,6 +66,17 @@
                 <div class="value" id="today-revenue">Rp 0</div>
             </div>
         </section>
+
+        <!-- Search & Category Filters (Premium Design) -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; background: var(--card-bg); padding: 1rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+            <div id="dashboard-category-tabs" style="display: flex; gap: 0.5rem; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 0.2rem;">
+                <!-- Category tabs dynamically injected here -->
+            </div>
+            <div style="position: relative; min-width: 200px; flex: 1; max-width: 300px;">
+                <input type="text" id="search-dashboard-input" placeholder="Cari meja..." oninput="handleSearchFilter()" style="width: 100%; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 0.6rem 1rem 0.6rem 2.2rem; color: white; border: 1px solid var(--glass-border); outline: none;">
+                <span style="position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.9rem;">🔍</span>
+            </div>
+        </div>
 
         <section class="table-grid" id="table-container">
             <!-- Table cards will be injected here -->

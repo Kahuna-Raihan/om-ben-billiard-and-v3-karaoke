@@ -1,5 +1,6 @@
 let activeSessions = [];
 let rooms = [];
+let activeCategory = 'Semua';
 
 const tableContainer = document.getElementById('table-container');
 const startModal = document.getElementById('start-modal');
@@ -34,6 +35,7 @@ async function refreshData() {
         const allTransactions = await fetchData(`/transactions`);
         const todayTransactions = allTransactions.filter(t => t.date === todayStr);
         
+        renderCategoryTabs();
         renderRooms();
         updateStats(todayTransactions);
     }
@@ -49,9 +51,48 @@ function updateStats(transactions) {
     document.getElementById('today-revenue').textContent = formatRupiah(revenue);
 }
 
+function renderCategoryTabs() {
+    const tabsContainer = document.getElementById('dashboard-category-tabs');
+    if (!tabsContainer) return;
+    
+    const descriptions = [...new Set(rooms.map(r => r.description || 'Standar'))];
+    const allCategories = ['Semua', ...descriptions];
+    
+    if (!allCategories.includes(activeCategory)) {
+        activeCategory = 'Semua';
+    }
+    
+    tabsContainer.innerHTML = '';
+    allCategories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `category-tab-btn ${activeCategory.toLowerCase() === cat.toLowerCase() ? 'active' : ''}`;
+        btn.textContent = cat.toUpperCase();
+        btn.onclick = () => {
+            activeCategory = cat;
+            renderCategoryTabs();
+            renderRooms();
+        };
+        tabsContainer.appendChild(btn);
+    });
+}
+
+function handleSearchFilter() {
+    renderRooms();
+}
+
 function renderRooms() {
     tableContainer.innerHTML = '';
-    rooms.forEach(room => {
+    
+    const searchVal = document.getElementById('search-dashboard-input') ? document.getElementById('search-dashboard-input').value.toLowerCase() : '';
+    
+    const filtered = rooms.filter(room => {
+        const cat = room.description || 'Standar';
+        const matchesCategory = activeCategory === 'Semua' || cat.toLowerCase() === activeCategory.toLowerCase();
+        const matchesSearch = room.name.toLowerCase().includes(searchVal) || cat.toLowerCase().includes(searchVal);
+        return matchesCategory && matchesSearch;
+    });
+
+    filtered.forEach(room => {
         const session = activeSessions.find(s => s.tableId == room.id);
         const card = document.createElement('div');
         card.className = `table-card ${room.status}`;
