@@ -782,9 +782,30 @@ app.delete('/api/bookings/:id', (req, res) => {
     const db = readDB();
     const booking = db.bookings.find(b => b.id == req.params.id);
     if (booking) {
+        // Archive booking into bookingsHistory
+        const actionType = req.query.action === 'checkin' ? 'checked_in' : 'cancelled';
+        db.bookingsHistory = db.bookingsHistory || [];
+        db.bookingsHistory.push({
+            ...booking,
+            status: actionType,
+            archivedAt: new Date().toISOString()
+        });
+        
         db.bookings = db.bookings.filter(b => b.id != req.params.id);
         writeDB(db);
     }
+    res.json({ success: true });
+});
+
+app.get('/api/bookings/history', (req, res) => {
+    const db = readDB();
+    res.json(db.bookingsHistory || []);
+});
+
+app.post('/api/bookings/reset', (req, res) => {
+    const db = readDB();
+    db.bookings = [];
+    writeDB(db);
     res.json({ success: true });
 });
 

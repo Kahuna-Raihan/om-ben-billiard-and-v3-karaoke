@@ -93,11 +93,15 @@
                 <h2 id="list-title" style="font-family: var(--font-heading); margin-bottom: 1.5rem;">Daftar Reservasi Hari Ini</h2>
                 
                 <!-- Admin Filter Tabs (Hanya Muncul di Dashboard Admin) -->
-                <div id="admin-filter-container" style="display: none; margin-bottom: 1.5rem; gap: 0.5rem; flex-wrap: wrap;">
+                <div id="admin-filter-container" style="display: none; margin-bottom: 1.5rem; gap: 0.5rem; flex-wrap: wrap; align-items: center; width: 100%;">
                     <button class="btn btn-primary filter-btn" data-range="today" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Hari Ini</button>
                     <button class="btn btn-outline filter-btn" data-range="week" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">1 Minggu</button>
                     <button class="btn btn-outline filter-btn" data-range="month" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">1 Bulan</button>
                     <button class="btn btn-outline filter-btn" data-range="all" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Semua</button>
+                    
+                    <!-- Action Buttons for Admin -->
+                    <button class="btn btn-outline" id="btn-history-bookings" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--accent-gold); border-color: rgba(240,192,64,0.3); font-weight: bold; margin-left: auto;" onclick="openHistoryModal()">📜 Histori</button>
+                    <button class="btn btn-outline" id="btn-reset-bookings" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231,76,60,0.3); font-weight: bold;" onclick="resetBookings()">🗑️ Reset</button>
                 </div>
 
                 <div id="booking-list">
@@ -275,15 +279,16 @@
 
         async function cancelBooking(id) {
             if (confirm('Batalkan reservasi ini?')) {
-                await deleteData(`/bookings/${id}`);
+                // Delete triggers auto-archive as 'cancelled'
+                await deleteData(`/bookings/${id}?action=cancel`);
                 location.reload();
             }
         }
 
         async function checkInBooking(bookingId, type, targetId, customerName) {
             if (confirm(`Mulai sesi sewa untuk ${customerName}?`)) {
-                // 1. Delete booking
-                await deleteData(`/bookings/${bookingId}`);
+                // 1. Delete booking with action=checkin to archive in history
+                await deleteData(`/bookings/${bookingId}?action=checkin`);
                 
                 // 2. Start session (Redirect to respective dashboard with params)
                 const page = type === 'room' ? 'karaoke.html' : 'index.html';
@@ -291,7 +296,132 @@
             }
         }
 
+        // Admin: Reset all active bookings
+        async function resetBookings() {
+            if (!confirm("⚠️ KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MENGHAPUS SEMUA DATA RESERVASI AKTIF?\n\nTindakan ini bersifat permanen dan tidak dapat dibatalkan!")) return;
+            
+            const pass = prompt("🔑 VERIFIKASI ADMIN:\n\nMasukkan kata sandi Admin Anda untuk menghapus seluruh data reservasi:");
+            if (pass === null) return;
+            if (pass.trim() === "") {
+                alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
+                return;
+            }
+            if (pass !== "1231" && pass.toLowerCase() !== "om ben") {
+                alert("❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!");
+                return;
+            }
+            
+            try {
+                const res = await postData('/bookings/reset', {});
+                if (res && res.success) {
+                    alert("BERHASIL: Semua data reservasi aktif telah dihapus sepenuhnya!");
+                    location.reload();
+                } else {
+                    alert("Gagal mengosongkan data reservasi.");
+                }
+            } catch (err) {
+                alert("Terjadi kesalahan koneksi ke server.");
+            }
+        }
+
+        // Admin: History Modal Logic
+        async function openHistoryModal() {
+            const modal = document.getElementById('history-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                await loadHistory();
+            }
+        }
+
+        function closeHistoryModal() {
+            const modal = document.getElementById('history-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function loadHistory() {
+            const history = await fetchData('/bookings/history');
+            const tbody = document.getElementById('history-list-body');
+            if (!tbody) return;
+
+            if (!history || history.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-dim);">
+                            🍃 Belum ada riwayat reservasi (check-in / batal).
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            // Sort by archived time (newest first)
+            history.sort((a, b) => new Date(b.archivedAt || b.id) - new Date(a.archivedAt || a.id)).forEach(h => {
+                const date = new Date(h.bookingTime);
+                const archivedDate = h.archivedAt ? new Date(h.archivedAt) : new Date();
+                
+                let targetName = h.targetType === 'room' ? 'Ruang' : 'Meja';
+                if (h.targetType === 'room') {
+                    const r = allRooms.find(rx => rx.id == h.targetId);
+                    targetName = r ? `Ruang ${r.name}` : `Ruang #${h.targetId}`;
+                } else {
+                    targetName = `Meja ${h.targetId}`;
+                }
+
+                const statusBadge = h.status === 'checked_in' 
+                    ? `<span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase;">Check-In</span>`
+                    : `<span style="background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase;">Batal</span>`;
+
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); color: white; transition: background 0.2s;">
+                        <td style="padding: 1rem 0.8rem; color: var(--text-dim);">${archivedDate.toLocaleDateString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</td>
+                        <td style="padding: 1rem 0.8rem;"><strong>${h.customerName}</strong></td>
+                        <td style="padding: 1rem 0.8rem;"><span class="badge-type ${h.targetType === 'room' ? 'type-room' : 'type-table'}">${h.targetType}</span> ${targetName}</td>
+                        <td style="padding: 1rem 0.8rem; color: var(--accent-gold);">${date.toLocaleDateString('id-ID', {weekday: 'short', day: 'numeric', month: 'short'})} - ${date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</td>
+                        <td style="padding: 1rem 0.8rem; text-align: center;">${statusBadge}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Close modal handlers
+        document.getElementById('close-history-modal').onclick = closeHistoryModal;
+
+        // Close modal clicking outside content
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('history-modal');
+            if (e.target === modal) closeHistoryModal();
+        });
+
         init();
     </script>
+
+    <!-- Reservation History Modal -->
+    <div class="modal" id="history-modal" style="display: none; z-index: 100000; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px);">
+        <div class="modal-content" style="max-width: 800px; width: 90%; background: var(--card-bg); border: 1.5px solid var(--glass-border); border-radius: 24px; padding: 2.5rem; backdrop-filter: blur(20px); position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+            <h2 style="font-family: var(--font-heading); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--accent-gold); font-size: 1.6rem; letter-spacing: 0.5px;">
+                📜 Histori Reservasi (Check-in & Batal)
+            </h2>
+            <div style="max-height: 400px; overflow-y: auto; margin-bottom: 2rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); padding: 0.5rem;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); font-weight: bold; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <th style="padding: 0.8rem;">Tanggal Arsip</th>
+                            <th style="padding: 0.8rem;">Pelanggan</th>
+                            <th style="padding: 0.8rem;">Unit</th>
+                            <th style="padding: 0.8rem;">Waktu Pilihan</th>
+                            <th style="padding: 0.8rem; text-align: center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-list-body">
+                        <!-- History items will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" id="close-history-modal-btn" style="width: auto; padding: 0.6rem 2.5rem; border-radius: 12px; font-weight: bold; color: white;" onclick="closeHistoryModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
