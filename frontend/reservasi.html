@@ -357,7 +357,7 @@
         <!-- Booking Workspace -->
         <section class="booking-workspace">
             <!-- Left: Reservasi Form -->
-            <div class="booking-panel">
+            <div class="booking-panel" id="booking-form-wrapper">
                 <h2 style="font-family: var(--font-heading); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     ✍️ Formulir Reservasi
                 </h2>
@@ -431,6 +431,32 @@
         document.getElementById('c-time').min = now.toISOString().slice(0, 16);
 
         async function initDashboard() {
+            // Load store status
+            try {
+                const settingsRes = await fetch('/api/settings');
+                const settings = await settingsRes.json();
+                if (settings && (settings.shopOpen === false || settings.shopOpen === 'false')) {
+                    // Inject beautiful closed status card
+                    const wrapper = document.getElementById('booking-form-wrapper');
+                    if (wrapper) {
+                        wrapper.innerHTML = `
+                            <div style="background: rgba(231, 76, 60, 0.05); border: 1.5px dashed rgba(231, 76, 60, 0.4); border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 0 35px rgba(231,76,60,0.1); margin-top: 1rem;">
+                                <div style="font-size: 3.5rem; margin-bottom: 1rem; animation: pulse 2s infinite;">🔒</div>
+                                <h2 style="color: #e74c3c; font-family: var(--font-heading); margin-bottom: 1rem; font-weight: 800; text-shadow: 0 0 15px rgba(231,76,60,0.2);">RESERVASI ONLINE TUTUP</h2>
+                                <p style="color: var(--text-light); font-size: 0.95rem; line-height: 1.6; margin-bottom: 0.8rem;">
+                                    Maaf, saat ini Om Ben Billiard & V3 Karaoke sedang **tidak menerima booking online baru** karena toko sedang tutup.
+                                </p>
+                                <p style="color: var(--text-dim); font-size: 0.85rem; line-height: 1.5;">
+                                    Silakan hubungi staf operasional toko kami secara langsung atau coba akses kembali halaman reservasi ini saat operasional toko telah dibuka kembali. Terima kasih atas pengertian Anda!
+                                </p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to check shop settings:", err);
+            }
+
             // Load tables, rooms, and bookings from APIs
             allTables = await fetchData('/tables');
             allRooms = await fetchData('/rooms');

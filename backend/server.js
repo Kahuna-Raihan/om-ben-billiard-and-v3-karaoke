@@ -22,11 +22,12 @@ function readDB() {
         if (!data.stockLogs) data.stockLogs = [];
         if (!data.bookings) data.bookings = [];
         if (!data.menu) data.menu = [];
+        if (!data.settings) data.settings = { shopOpen: true };
         data.menu.forEach(item => { if (item.stock === undefined) item.stock = 0; });
         return data;
     } catch (err) {
         console.error('Error reading DB:', err);
-        return { users: [], tables: [], rooms: [], sessions: [], transactions: [], menu: [], employees: [], attendance: [], stockLogs: [] };
+        return { users: [], tables: [], rooms: [], sessions: [], transactions: [], menu: [], employees: [], attendance: [], stockLogs: [], settings: { shopOpen: true } };
     }
 }
 
@@ -658,6 +659,26 @@ app.delete('/api/users/:id', (req, res) => {
     db.users = db.users.filter(u => String(u.id) !== String(req.params.id));
     writeDB(db);
     res.json({ success: true });
+});
+
+// --- SHOP SETTINGS API ---
+app.get('/api/settings', (req, res) => {
+    const db = readDB();
+    if (!db.settings) {
+        db.settings = { shopOpen: true };
+    }
+    res.json(db.settings);
+});
+
+app.post('/api/settings', (req, res) => {
+    const db = readDB();
+    if (!db.settings) db.settings = { shopOpen: true };
+    
+    if (req.body.shopOpen !== undefined) {
+        db.settings.shopOpen = req.body.shopOpen === true || req.body.shopOpen === 'true';
+    }
+    writeDB(db);
+    res.json({ success: true, settings: db.settings });
 });
 
 // --- BOOKING API ---

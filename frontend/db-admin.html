@@ -88,6 +88,25 @@
                 Sistem database POS disimpan lokal dalam file server <code>db.json</code>. Agar data transaksi harian Anda 100% aman dari resiko kehilangan akibat eror sistem, pembaruan aplikasi, atau reset server, pastikan untuk <strong>secara berkala mengunduh backup database ke komputer Anda</strong> menggunakan tombol di bawah ini.
             </div>
 
+            <!-- KONTROL OPERASIONAL TOKO CARD -->
+            <div class="stat-box" style="text-align: left; margin-bottom: 2rem; border-color: rgba(0, 243, 255, 0.2); background: rgba(20, 20, 35, 0.9); padding: 1.5rem 2rem; border-radius: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 style="color: var(--primary-color); font-size: 1.1rem; margin-bottom: 0.3rem;">⚙️ KONTROL OPERASIONAL TOKO</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0;">Atur status operasional toko untuk membuka atau menutup layanan booking online pelanggan.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1.5rem;">
+                        <div id="shop-status-badge" style="font-weight: 800; font-size: 1rem; padding: 0.5rem 1.2rem; border-radius: 12px; transition: all 0.3s;">
+                            ... LOADING ...
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="btn-open-shop" class="btn" style="width: auto; padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: bold; background: #2ecc71; border-color: #2ecc71; color: white;" onclick="toggleShopStatus(true)">BUKA TOKO</button>
+                            <button id="btn-close-shop" class="btn" style="width: auto; padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: bold; background: #e74c3c; border-color: #e74c3c; color: white;" onclick="toggleShopStatus(false)">TUTUP TOKO</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                 <h2 style="font-family: var(--font-heading); margin: 0;">SISTEM BACKUP & PEMULIHAN</h2>
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -176,6 +195,9 @@
                 document.getElementById('count-menu').textContent = stats.counts.menu;
                 document.getElementById('count-transactions').textContent = stats.counts.transactions;
                 document.getElementById('count-bookings').textContent = stats.counts.bookings;
+
+                // Load shop status
+                fetchShopStatus();
 
                 // Sync current state as a backup mirror in browser cache (if not empty)
                 if (stats.counts.menu > 0 || stats.counts.transactions > 0) {
@@ -326,6 +348,71 @@
                 } catch(err) {
                     alert('Gagal memproses data cache browser.');
                 }
+            }
+        }
+
+        async function fetchShopStatus() {
+            try {
+                const res = await fetch('/api/settings');
+                const settings = await res.json();
+                updateShopUI(settings.shopOpen);
+            } catch (err) {
+                console.error("Failed to load shop status:", err);
+            }
+        }
+
+        function updateShopUI(isOpen) {
+            const badge = document.getElementById('shop-status-badge');
+            const btnOpen = document.getElementById('btn-open-shop');
+            const btnClose = document.getElementById('btn-close-shop');
+            
+            if (isOpen) {
+                badge.style.background = 'rgba(46, 204, 113, 0.15)';
+                badge.style.color = '#2ecc71';
+                badge.style.border = '1px solid rgba(46, 204, 113, 0.4)';
+                badge.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.2)';
+                badge.textContent = '🟢 TOKO BUKA';
+                
+                // Styling active Buka button, inactive Tutup button
+                btnOpen.style.opacity = '1';
+                btnOpen.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.4)';
+                btnClose.style.opacity = '0.4';
+                btnClose.style.background = 'transparent';
+                btnClose.style.color = '#e74c3c';
+                btnClose.style.borderColor = 'rgba(231, 76, 60, 0.4)';
+                btnClose.style.boxShadow = 'none';
+            } else {
+                badge.style.background = 'rgba(231, 76, 60, 0.15)';
+                badge.style.color = '#e74c3c';
+                badge.style.border = '1px solid rgba(231, 76, 60, 0.4)';
+                badge.style.boxShadow = '0 0 15px rgba(231, 76, 60, 0.2)';
+                badge.textContent = '🔴 TOKO TUTUP';
+                
+                // Styling active Tutup button, inactive Buka button
+                btnClose.style.opacity = '1';
+                btnClose.style.boxShadow = '0 0 15px rgba(231, 76, 60, 0.4)';
+                btnOpen.style.opacity = '0.4';
+                btnOpen.style.background = 'transparent';
+                btnOpen.style.color = '#2ecc71';
+                btnOpen.style.borderColor = 'rgba(46, 204, 113, 0.4)';
+                btnOpen.style.boxShadow = 'none';
+            }
+        }
+
+        async function toggleShopStatus(isOpen) {
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ shopOpen: isOpen })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateShopUI(data.settings.shopOpen);
+                    alert(`Status toko berhasil diubah menjadi: ${isOpen ? 'BUKA' : 'TUTUP'}`);
+                }
+            } catch (err) {
+                alert("Gagal mengubah status operasional toko.");
             }
         }
 
