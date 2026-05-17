@@ -90,6 +90,18 @@
             pwdInput.style.opacity = '0.5';
             pwdInput.placeholder = 'Dikunci (Hubungi Admin)';
             document.getElementById('pwd-notice').style.display = 'block';
+
+            const userInput = document.getElementById('new-username');
+            userInput.disabled = true;
+            userInput.style.opacity = '0.5';
+            userInput.placeholder = 'Dikunci (Hubungi Admin)';
+
+            const userNotice = document.createElement('p');
+            userNotice.style.fontSize = '0.75rem';
+            userNotice.style.color = 'var(--danger)';
+            userNotice.style.marginTop = '0.5rem';
+            userNotice.textContent = '* Hanya Admin yang dapat mengganti username.';
+            userInput.parentNode.appendChild(userNotice);
         }
 
         let base64Photo = null;

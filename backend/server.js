@@ -774,6 +774,16 @@ app.put('/api/users/update', (req, res) => {
     
     const user = db.users[userIndex];
 
+    // Enforce role restrictions: Cashiers cannot change their username or password
+    if (user.role !== 'admin') {
+        if (newUsername && newUsername !== oldUsername) {
+            return res.status(403).json({ success: false, message: 'Kasir tidak diperbolehkan mengganti username.' });
+        }
+        if (newPassword) {
+            return res.status(403).json({ success: false, message: 'Kasir tidak diperbolehkan mengganti password.' });
+        }
+    }
+
     // Check if new password is same as old
     if (newPassword && user.password === newPassword) {
         return res.status(400).json({ success: false, message: 'Password tidak boleh sama dengan yg kemarin' });
