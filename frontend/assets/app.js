@@ -128,7 +128,9 @@ if (!window.location.href.includes('login.html') && !window.location.href.includ
 }
 
 function logout() {
-    localStorage.clear();
+    localStorage.removeItem('auth_role');
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_name');
     window.location.href = 'login.html';
 }
 
