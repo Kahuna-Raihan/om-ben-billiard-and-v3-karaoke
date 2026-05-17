@@ -182,7 +182,10 @@ const isAdminPage =
     window.location.href.includes('finance.html') || 
     window.location.href.includes('karaoke-settings.html') || 
     window.location.href.includes('rental.html') ||
-    window.location.href.includes('stock-history.html');
+    window.location.href.includes('stock-history.html') ||
+    window.location.href.includes('monitoring.html') ||
+    window.location.href.includes('cctv.html') ||
+    window.location.href.includes('bookings.html');
 
 if (!isAdminPage) {
     // Injection of Alarm Alert CSS
