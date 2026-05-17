@@ -477,8 +477,8 @@ app.post('/api/sessions/:id/stop', (req, res) => {
     const session = db.sessions[sessionIdx];
     const stopTime = new Date();
     const durationMs = stopTime - new Date(session.startTime);
-    const durationHours = durationMs / (1000 * 60 * 60);
-    const tableAmount = (durationMs <= 5 * 60 * 1000) ? 0 : Math.ceil(durationHours * session.hourlyRate);
+    const durationHours = Math.ceil(durationMs / (1000 * 60 * 60));
+    const tableAmount = (durationMs <= 5 * 60 * 1000) ? 0 : durationHours * session.hourlyRate;
     const ordersTotal = session.orders ? session.orders.reduce((acc, o) => acc + o.subtotal, 0) : 0;
     const transaction = {
         id: Date.now(), ...session, endTime: stopTime, durationMinutes: Math.round(durationMs / 60000), tableAmount, ordersAmount: ordersTotal, amount: tableAmount + ordersTotal, date: stopTime.toISOString().split('T')[0], isArchived: false
