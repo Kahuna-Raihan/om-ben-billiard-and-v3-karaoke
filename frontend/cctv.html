@@ -141,7 +141,7 @@
             <div style="margin-top: 2rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 15px; border: 1px dashed var(--glass-border);">
                 <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Info CCTV</h3>
                 <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.6;">
-                    Untuk menghubungkan CCTV, pastikan IP Camera su berada di jaringan (WiFi/LAN) yang sama dengan laptop ini. Masukkan URL MJPEG stream dari aplikasi CCTV su (misal: iVMS, HikVision, atau IP Cam Adapter).
+                    Untuk menghubungkan CCTV, pastikan IP Camera berada di jaringan (WiFi/LAN) yang sama dengan perangkat ini. Masukkan URL MJPEG stream dari aplikasi CCTV (misal: iVMS, HikVision, atau IP Cam Adapter).
                 </p>
             </div>
         </section>
@@ -153,7 +153,7 @@
         }
 
         function setupCCTV() {
-            const url = prompt("Masukkan URL Stream IP Camera su (contoh: http://192.168.1.10:8080/video):");
+            const url = prompt("Masukkan URL Stream IP Camera (contoh: http://192.168.1.10:8080/video):");
             if (url) {
                 localStorage.setItem('cctv_url_1', url);
                 alert("URL Berhasil disimpan. Sistem akan mencoba menghubungkan...");
