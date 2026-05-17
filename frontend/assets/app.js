@@ -150,7 +150,9 @@ function logout() {
 
 const formatRupiah = (n) => {
     if (n === undefined || n === null) return 'Rp -';
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+    const formatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+    // Replace non-breaking spaces (\u00A0) with standard space (\u0020) to prevent thermal printer character glitched outputs (e.g. printing 'a' or 'â')
+    return formatted.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
 };
 
 const formatTime = (iso) => {
@@ -276,6 +278,14 @@ function renderNavbar(active) {
 window.bleDevice = null;
 window.bleCharacteristic = null;
 
+function cleanPrintText(str) {
+    if (!str) return '';
+    // Replace all non-breaking spaces, thin spaces, and special whitespaces with standard space (\u0020)
+    let cleaned = str.replace(/[\u00a0\u200b\u202f\u2007\u2008\u2009\u200a]/g, ' ');
+    // Filter out any non-ASCII characters to keep the byte layout 100% clean and correct for thermal printers
+    return cleaned.replace(/[^\x00-\x7F]/g, '');
+}
+
 async function connectBluetoothPrinter() {
     try {
         // Enforce user click gesture for Web Bluetooth API
@@ -385,40 +395,40 @@ async function printDirectBluetooth(data) {
         
         // Double width + height for Title
         esc.push(0x1B, 0x21, 0x30);
-        esc.push(...encoder.encode("OM BEN BILLIARD\n"));
+        esc.push(...encoder.encode(cleanPrintText("OM BEN BILLIARD\n")));
 
         // Standard text size
         esc.push(0x1B, 0x21, 0x00);
         esc.push(0x1B, 0x45, 1); // Bold on
-        esc.push(...encoder.encode("X V3 KARAOKE\n"));
+        esc.push(...encoder.encode(cleanPrintText("X V3 KARAOKE\n")));
         esc.push(0x1B, 0x45, 0); // Bold off
 
-        esc.push(...encoder.encode(`${now.toLocaleString('id-ID')}\n`));
-        esc.push(...encoder.encode("--------------------------------\n"));
+        esc.push(...encoder.encode(cleanPrintText(`${now.toLocaleString('id-ID')}\n`)));
+        esc.push(...encoder.encode(cleanPrintText("--------------------------------\n")));
 
         // 3. Align Left
         esc.push(0x1B, 0x61, 0);
-        esc.push(...encoder.encode(`Kasir:      ${(localStorage.getItem('auth_user') || 'Kasir').padEnd(16)}\n`));
-        esc.push(...encoder.encode(`Pelanggan:  ${(data.customerName || 'Customer').padEnd(16)}\n`));
-        esc.push(...encoder.encode("--------------------------------\n"));
+        esc.push(...encoder.encode(cleanPrintText(`Kasir:      ${(localStorage.getItem('auth_user') || 'Kasir').padEnd(16)}\n`)));
+        esc.push(...encoder.encode(cleanPrintText(`Pelanggan:  ${(data.customerName || 'Customer').padEnd(16)}\n`)));
+        esc.push(...encoder.encode(cleanPrintText("--------------------------------\n")));
 
         // 4. Print Items
         if (data.tableName) {
-            esc.push(...encoder.encode(`Sewa ${data.tableName}\n`));
+            esc.push(...encoder.encode(cleanPrintText(`Sewa ${data.tableName}\n`)));
             const durText = `Durasi: ${data.durationMinutes || 0} Menit`;
             const priceText = formatRupiah(data.tableAmount || data.amount);
-            esc.push(...encoder.encode(`${durText.padEnd(18)} ${priceText.padStart(13)}\n`));
+            esc.push(...encoder.encode(cleanPrintText(`${durText.padEnd(18)} ${priceText.padStart(13)}\n`)));
 
             if (data.orders && data.orders.length > 0) {
-                esc.push(...encoder.encode("- - - - - - - - - - - - - - - - \n"));
+                esc.push(...encoder.encode(cleanPrintText("- - - - - - - - - - - - - - - - \n")));
                 data.orders.forEach(o => {
                     const nameQty = `${o.name} x${o.qty}`;
                     const subtotal = formatRupiah(o.subtotal);
                     if (nameQty.length > 18) {
-                        esc.push(...encoder.encode(`${nameQty}\n`));
-                        esc.push(...encoder.encode(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`));
+                        esc.push(...encoder.encode(cleanPrintText(`${nameQty}\n`)));
+                        esc.push(...encoder.encode(cleanPrintText(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`)));
                     } else {
-                        esc.push(...encoder.encode(`${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`));
+                        esc.push(...encoder.encode(cleanPrintText(`${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`)));
                     }
                 });
             }
@@ -427,30 +437,30 @@ async function printDirectBluetooth(data) {
                 const nameQty = `${o.name} x${o.qty || o.quantity}`;
                 const subtotal = formatRupiah(o.subtotal);
                 if (nameQty.length > 18) {
-                    esc.push(...encoder.encode(`${nameQty}\n`));
-                    esc.push(...encoder.encode(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`));
+                    esc.push(...encoder.encode(cleanPrintText(`${nameQty}\n`)));
+                    esc.push(...encoder.encode(cleanPrintText(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`)));
                 } else {
-                    esc.push(...encoder.encode(`${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`));
+                    esc.push(...encoder.encode(cleanPrintText(`${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`)));
                 }
             });
         }
 
-        esc.push(...encoder.encode("--------------------------------\n"));
+        esc.push(...encoder.encode(cleanPrintText("--------------------------------\n")));
 
         // 5. Total
         esc.push(0x1B, 0x45, 1); // Bold on
         const totVal = formatRupiah(data.amount || data.totalAmount);
-        esc.push(...encoder.encode(`TOTAL: ${(totVal).padStart(25)}\n`));
+        esc.push(...encoder.encode(cleanPrintText(`TOTAL: ${(totVal).padStart(25)}\n`)));
         esc.push(0x1B, 0x45, 0); // Bold off
 
-        esc.push(...encoder.encode("--------------------------------\n"));
+        esc.push(...encoder.encode(cleanPrintText("--------------------------------\n")));
 
         // 6. Footer Center
         esc.push(0x1B, 0x61, 1);
         esc.push(0x1B, 0x45, 1);
-        esc.push(...encoder.encode("Terima Kasih!\n"));
+        esc.push(...encoder.encode(cleanPrintText("Terima Kasih!\n")));
         esc.push(0x1B, 0x45, 0);
-        esc.push(...encoder.encode("Selamat Datang Kembali\n\n"));
+        esc.push(...encoder.encode(cleanPrintText("Selamat Datang Kembali\n\n")));
 
         // 7. Paper Feed lines
         esc.push(0x1B, 0x64, 4);
