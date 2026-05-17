@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Database | Admin Om Ben</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .db-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .stat-box {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-box h3 { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-box .val { font-size: 1.8rem; font-weight: 800; }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        th {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        
+        .alert-box {
+            background: rgba(243, 156, 18, 0.1);
+            border: 1px solid rgba(243, 156, 18, 0.3);
+            color: #f39c12;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .badge-auto { background: rgba(52, 152, 219, 0.1); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+        .badge-manual { background: rgba(46, 204, 113, 0.1); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="assets/logo.png" alt="Logo" class="main-logo">
+                <div>
+                    <h1>OM BEN BILLIARD</h1>
+                    <p>X V3 KARAOKE Database Control Center</p>
+                </div>
+            </div>
+            <nav></nav>
+        </header>
+
+        <script src="assets/app.js"></script>
+        <script>renderNavbar('db-admin');</script>
+
+        <section>
+            <div class="alert-box">
+                <strong>⚠️ INFORMASI PENTING KEAMANAN DATA:</strong><br>
+                Sistem database POS disimpan lokal dalam file server <code>db.json</code>. Agar data transaksi harian Anda 100% aman dari resiko kehilangan akibat eror sistem, pembaruan aplikasi, atau reset server, pastikan untuk <strong>secara berkala mengunduh backup database ke komputer Anda</strong> menggunakan tombol di bawah ini.
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <h2 style="font-family: var(--font-heading); margin: 0;">SISTEM BACKUP & PEMULIHAN</h2>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="width: auto; background: #2ecc71; border-color: #2ecc71;" onclick="createBackup()">💾 BUAT BACKUP DI SERVER</button>
+                    <button class="btn btn-outline" style="width: auto;" onclick="loadData()">↻ REFRESH</button>
+                </div>
+            </div>
+
+            <!-- STATS GRID -->
+            <div class="db-stats">
+                <div class="stat-box">
+                    <h3>Ukuran Database</h3>
+                    <div class="val" id="db-size" style="color: var(--primary-color);">0 KB</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Total Menu F&B</h3>
+                    <div class="val" id="count-menu" style="color: var(--accent-gold);">0</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Transaksi Selesai</h3>
+                    <div class="val" id="count-transactions" style="color: #2ecc71;">0</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Total Booking</h3>
+                    <div class="val" id="count-bookings" style="color: #3498db;">0</div>
+                </div>
+            </div>
+
+            <!-- ACTION PANEL -->
+            <div class="action-grid">
+                <div class="stat-box" style="text-align: left;">
+                    <h3 style="color: var(--primary-color); font-size: 1rem; margin-bottom: 0.5rem;">1. Backup Mandiri (Ekspor Data)</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1.5rem; min-height: 40px;">Unduh salinan file database asli POS langsung ke folder komputer lokal Anda untuk disimpan di flashdisk atau drive pribadi.</p>
+                    <a href="/api/db/download" target="_blank" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none; padding: 0.6rem 0; width: 100%;">📥 Unduh db.json Sekarang</a>
+                </div>
+
+                <div class="stat-box" style="text-align: left;">
+                    <h3 style="color: #e74c3c; font-size: 1rem; margin-bottom: 0.5rem;">2. Restore Manual (Impor Data)</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1.5rem; min-height: 40px;">Punya file backup di komputer? Unggah file tersebut untuk memulihkan seluruh data POS ke kondisi semula.</p>
+                    <input type="file" id="upload-db-file" accept=".json" style="display: none;" onchange="handleFileUpload(event)">
+                    <button class="btn btn-outline" onclick="document.getElementById('upload-db-file').click()" style="width: 100%; border-color: #e74c3c; color: #e74c3c;">📁 Pilih File & Impor</button>
+                </div>
+
+                <div class="stat-box" style="text-align: left;">
+                    <h3 style="color: var(--accent-gold); font-size: 1rem; margin-bottom: 0.5rem;">3. Mirror Browser Cache</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1.5rem; min-height: 40px;">Sistem menyimpan bayangan data terakhir secara rahasia di browser Anda. Sangat membantu jika server tiba-tiba ter-reset kosong.</p>
+                    <button class="btn btn-outline" onclick="restoreFromCache()" style="width: 100%; border-color: var(--accent-gold); color: var(--accent-gold);">⚡ Pulihkan Dari Cache Browser</button>
+                </div>
+            </div>
+
+            <!-- BACKUPS TABLE -->
+            <div style="margin-top: 2rem;">
+                <h3 style="font-family: var(--font-heading); margin-bottom: 1rem; color: var(--primary-color);">Daftar Backup di Server</h3>
+                <div style="background: var(--card-bg); border-radius: 15px; overflow-x: auto; border: 1px solid var(--glass-border);">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.02);">
+                                <th>Hari & Waktu Pembuatan</th>
+                                <th>Nama File</th>
+                                <th>Jenis</th>
+                                <th>Ukuran File</th>
+                                <th style="text-align: right;">Aksi Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backup-list-body">
+                            <!-- Injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        if (localStorage.getItem('auth_role') !== 'admin') {
+            window.location.href = 'index.html';
+        }
+
+        async function loadData() {
+            try {
+                // Fetch stats
+                const statsRes = await fetch('/api/db/stats');
+                const stats = await statsRes.json();
+                
+                document.getElementById('db-size').textContent = (stats.sizeBytes / 1024).toFixed(2) + ' KB';
+                document.getElementById('count-menu').textContent = stats.counts.menu;
+                document.getElementById('count-transactions').textContent = stats.counts.transactions;
+                document.getElementById('count-bookings').textContent = stats.counts.bookings;
+
+                // Sync current state as a backup mirror in browser cache (if not empty)
+                if (stats.counts.menu > 0 || stats.counts.transactions > 0) {
+                    try {
+                        const rawRes = await fetch('/api/db/download');
+                        if (rawRes.ok) {
+                            const dbData = await rawRes.text();
+                            localStorage.setItem('offline_db_mirror', dbData);
+                            localStorage.setItem('offline_db_mirror_time', new Date().toISOString());
+                        }
+                    } catch(e) { console.error("Cache sync failed:", e); }
+                }
+
+                // Fetch backups
+                const backupsRes = await fetch('/api/backups');
+                const backups = await backupsRes.json();
+                
+                const tbody = document.getElementById('backup-list-body');
+                tbody.innerHTML = '';
+                
+                if (backups.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 3rem; color: var(--text-dim);">Belum ada file backup di server. Silakan klik "BUAT BACKUP DI SERVER".</td></tr>`;
+                    return;
+                }
+                
+                backups.forEach(b => {
+                    const row = document.createElement('tr');
+                    const date = new Date(b.createdAt);
+                    const isAuto = b.filename.includes('_auto_');
+                    const isPreImport = b.filename.includes('_preimport_');
+                    const isPreRestore = b.filename.includes('_prerestore_');
+                    
+                    let typeBadge = '';
+                    if (isAuto) {
+                        typeBadge = '<span class="badge-auto">Otomatis (15m)</span>';
+                    } else if (isPreImport || isPreRestore) {
+                        typeBadge = '<span class="badge-auto" style="background:rgba(155, 89, 182, 0.1); color:#9b59b6; border-color:rgba(155, 89, 182, 0.3);">Proteksi Sistem</span>';
+                    } else {
+                        typeBadge = '<span class="badge-manual">Manual (Admin)</span>';
+                    }
+
+                    row.innerHTML = `
+                        <td>
+                            <small style="color:var(--text-dim);">${date.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</small><br>
+                            <strong>${date.toLocaleTimeString('id-ID')}</strong>
+                        </td>
+                        <td style="font-family:monospace; font-size:0.8rem; color:var(--text-dim);">${b.filename}</td>
+                        <td>${typeBadge}</td>
+                        <td>${(b.sizeBytes / 1024).toFixed(2)} KB</td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button class="btn btn-outline" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem; border-color: #2ecc71; color: #2ecc71; margin-right: 0.3rem;" onclick="restoreBackup('${b.filename}')">Kembalikan</button>
+                            <button class="btn btn-outline" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem; border-color: rgba(231, 76, 60, 0.3); color: #e74c3c;" onclick="deleteBackup('${b.filename}')">Hapus</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                console.error("Load failed:", err);
+            }
+        }
+
+        async function createBackup() {
+            const res = await postData('/backups/create', {});
+            if (res && res.success) {
+                alert('Backup database berhasil dibuat di server:\n' + res.filename);
+                loadData();
+            } else {
+                alert('Gagal membuat backup di server.');
+            }
+        }
+
+        async function restoreBackup(filename) {
+            if (confirm(`!!! PERINGATAN KERAS !!!\n\nAnda akan memulihkan data database dari file: ${filename}\n\nSeluruh data POS saat ini akan ditimpa dengan data backup ini.\nSistem akan mencadangkan database saat ini terlebih dahulu demi keamanan.\n\nApakah Anda yakin ingin memulihkan data?`)) {
+                const res = await postData(`/backups/${filename}/restore`, {});
+                if (res && res.success) {
+                    alert('BERHASIL: Database berhasil dikembalikan ke titik backup!');
+                    loadData();
+                } else {
+                    alert('Gagal memulihkan database.');
+                }
+            }
+        }
+
+        async function deleteBackup(filename) {
+            if (confirm(`Hapus file backup "${filename}" dari server secara permanen?`)) {
+                const res = await deleteData(`/backups/${filename}`);
+                if (res && res.success) {
+                    loadData();
+                } else {
+                    alert('Gagal menghapus file backup.');
+                }
+            }
+        }
+
+        async function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    if (confirm('!!! KONFIRMASI IMPOR DATA !!!\n\nFile database lokal yang Anda pilih valid.\nApakah Anda yakin ingin mengunggah file ini untuk MENIMPA SELURUH DATA POS saat ini?')) {
+                        const res = await fetch('/api/db/import', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(parsed)
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            alert('BERHASIL: Database POS berhasil dipulihkan dari file lokal Anda!');
+                            loadData();
+                        } else {
+                            alert('Gagal mengimpor database: ' + result.message);
+                        }
+                    }
+                } catch(err) {
+                    alert('File tidak valid: Format JSON rusak atau bukan file database db.json yang benar.');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // reset input
+        }
+
+        async function restoreFromCache() {
+            const cache = localStorage.getItem('offline_db_mirror');
+            const time = localStorage.getItem('offline_db_mirror_time');
+            if (!cache) {
+                return alert('Cache mirror browser kosong atau belum pernah tersinkron.');
+            }
+
+            const formattedTime = new Date(time).toLocaleString('id-ID');
+            if (confirm(`!!! PEMULIHAN CACHE BROWSER !!!\n\nMenemukan data bayangan yang tersinkron otomatis pada:\n📅 ${formattedTime}\n\nApakah Anda yakin ingin memulihkan database server menggunakan data cache browser ini?`)) {
+                try {
+                    const parsed = JSON.parse(cache);
+                    const res = await fetch('/api/db/import', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(parsed)
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        alert('BERHASIL: Database berhasil dipulihkan dari Cache Browser!');
+                        loadData();
+                    } else {
+                        alert('Gagal memulihkan dari cache browser: ' + result.message);
+                    }
+                } catch(err) {
+                    alert('Gagal memproses data cache browser.');
+                }
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

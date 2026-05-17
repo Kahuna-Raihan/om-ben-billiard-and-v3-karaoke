@@ -30,8 +30,37 @@ function readDB() {
     }
 }
 
+let lastBackupTime = 0;
 function writeDB(data) {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+    
+    // Auto rolling backup every 15 minutes of write activity
+    const now = Date.now();
+    if (now - lastBackupTime > 15 * 60 * 1000) {
+        lastBackupTime = now;
+        try {
+            const backupDir = path.join(__dirname, 'data', 'backups');
+            if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+            
+            const d = new Date();
+            const timestamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}_` +
+                              `${String(d.getHours()).padStart(2,'0')}-${String(d.getMinutes()).padStart(2,'0')}-${String(d.getSeconds()).padStart(2,'0')}`;
+                              
+            fs.writeFileSync(path.join(backupDir, `db_backup_auto_${timestamp}.json`), JSON.stringify(data, null, 2));
+            
+            const files = fs.readdirSync(backupDir)
+                .filter(f => f.startsWith('db_backup_') && f.endsWith('.json'))
+                .map(f => ({ name: f, time: fs.statSync(path.join(backupDir, f)).mtime.getTime() }))
+                .sort((a, b) => b.time - a.time);
+            if (files.length > 30) {
+                for (let i = 30; i < files.length; i++) {
+                    fs.unlinkSync(path.join(backupDir, files[i].name));
+                }
+            }
+        } catch (err) {
+            console.error('Auto backup failed:', err);
+        }
+    }
 }
 
 // Logger for Stock
@@ -232,6 +261,149 @@ app.delete('/api/menu/:id', (req, res) => {
     res.json({ success: true });
 });
 app.get('/api/stock-logs', (req, res) => res.json(readDB().stockLogs || []));
+
+// --- DATABASE BACKUP & MANAGEMENT API ---
+app.get('/api/db/stats', (req, res) => {
+    try {
+        const db = readDB();
+        const stats = {
+            sizeBytes: fs.existsSync(DB_PATH) ? fs.statSync(DB_PATH).size : 0,
+            counts: {
+                menu: db.menu ? db.menu.length : 0,
+                sessions: db.sessions ? db.sessions.length : 0,
+                transactions: db.transactions ? db.transactions.length : 0,
+                stockLogs: db.stockLogs ? db.stockLogs.length : 0,
+                bookings: db.bookings ? db.bookings.length : 0,
+                employees: db.employees ? db.employees.length : 0,
+                attendance: db.attendance ? db.attendance.length : 0
+            }
+        };
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/db/download', (req, res) => {
+    if (fs.existsSync(DB_PATH)) {
+        res.download(DB_PATH, 'db.json');
+    } else {
+        res.status(404).send('Database file not found');
+    }
+});
+
+app.post('/api/db/import', (req, res) => {
+    try {
+        const data = req.body;
+        if (!data || typeof data !== 'object') {
+            return res.status(400).json({ success: false, message: 'Invalid data format' });
+        }
+        if (!data.menu && !data.tables && !data.users) {
+            return res.status(400).json({ success: false, message: 'Invalid database schema: Core keys missing' });
+        }
+        
+        const backupDir = path.join(__dirname, 'data', 'backups');
+        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+        const d = new Date();
+        const timestamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}_` +
+                          `${String(d.getHours()).padStart(2,'0')}-${String(d.getMinutes()).padStart(2,'0')}-${String(d.getSeconds()).padStart(2,'0')}`;
+        const currentDB = readDB();
+        fs.writeFileSync(path.join(backupDir, `db_backup_preimport_${timestamp}.json`), JSON.stringify(currentDB, null, 2));
+
+        writeDB(data);
+        res.json({ success: true, message: 'Database imported successfully! Previous database backed up.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+app.get('/api/backups', (req, res) => {
+    try {
+        const backupDir = path.join(__dirname, 'data', 'backups');
+        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+        
+        const files = fs.readdirSync(backupDir)
+            .filter(f => f.startsWith('db_backup_') && f.endsWith('.json'))
+            .map(f => {
+                const stat = fs.statSync(path.join(backupDir, f));
+                return {
+                    filename: f,
+                    sizeBytes: stat.size,
+                    createdAt: stat.mtime.toISOString()
+                };
+            })
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+        res.json(files);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/backups/create', (req, res) => {
+    try {
+        const db = readDB();
+        const backupDir = path.join(__dirname, 'data', 'backups');
+        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+        
+        const d = new Date();
+        const timestamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}_` +
+                          `${String(d.getHours()).padStart(2,'0')}-${String(d.getMinutes()).padStart(2,'0')}-${String(d.getSeconds()).padStart(2,'0')}`;
+        const filename = `db_backup_manual_${timestamp}.json`;
+        
+        fs.writeFileSync(path.join(backupDir, filename), JSON.stringify(db, null, 2));
+        res.json({ success: true, filename });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+app.post('/api/backups/:filename/restore', (req, res) => {
+    try {
+        const filename = req.params.filename;
+        if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
+            return res.status(400).json({ success: false, message: 'Invalid backup file name' });
+        }
+        
+        const filePath = path.join(__dirname, 'data', 'backups', filename);
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: 'Backup file not found' });
+        }
+        
+        const backupDir = path.join(__dirname, 'data', 'backups');
+        const d = new Date();
+        const timestamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}_` +
+                          `${String(d.getHours()).padStart(2,'0')}-${String(d.getMinutes()).padStart(2,'0')}-${String(d.getSeconds()).padStart(2,'0')}`;
+        const currentDB = readDB();
+        fs.writeFileSync(path.join(backupDir, `db_backup_prerestore_${timestamp}.json`), JSON.stringify(currentDB, null, 2));
+
+        const backupData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        writeDB(backupData);
+        
+        res.json({ success: true, message: 'Database successfully restored from backup!' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+app.delete('/api/backups/:filename', (req, res) => {
+    try {
+        const filename = req.params.filename;
+        if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
+            return res.status(400).json({ success: false, message: 'Invalid backup file name' });
+        }
+        
+        const filePath = path.join(__dirname, 'data', 'backups', filename);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ success: false, message: 'Backup file not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 
 // --- SESSIONS API ---
 app.get('/api/sessions', (req, res) => res.json(readDB().sessions));

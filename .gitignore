@@ -10,3 +10,4 @@ yarn-error.log*
 .pm2/
 logs/
 *.bat
+backend/data/backups/

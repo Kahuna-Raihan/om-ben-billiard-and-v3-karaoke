@@ -79,6 +79,7 @@ function renderNavbar(active) {
             <li><a href="finance.html" class="${active === 'finance' ? 'active-admin' : ''}">📊 LAPORAN</a></li>
             <li><a href="attendance-admin.html" class="${active === 'attendance-admin' ? 'active-admin' : ''}">👥 STAF</a></li>
             <li><a href="bookings.html" class="${active === 'bookings' ? 'active-admin' : ''}" style="color: var(--accent-gold)">📅 BOOKING</a></li>
+            <li><a href="db-admin.html" class="${active === 'db-admin' ? 'active-admin' : ''}" style="color: #00f3ff">💾 BACKUP</a></li>
         `;
     } else {
         html += `
