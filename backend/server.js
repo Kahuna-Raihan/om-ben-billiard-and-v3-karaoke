@@ -804,6 +804,27 @@ app.get('/api/bookings/history', (req, res) => {
     res.json(db.bookingsHistory || []);
 });
 
+app.delete('/api/bookings/history/:id', (req, res) => {
+    const db = readDB();
+    if (!db.bookingsHistory) db.bookingsHistory = [];
+    const initialCount = db.bookingsHistory.length;
+    db.bookingsHistory = db.bookingsHistory.filter(h => String(h.id) !== String(req.params.id));
+    
+    if (db.bookingsHistory.length === initialCount) {
+        return res.status(404).json({ success: false, message: 'Riwayat tidak ditemukan.' });
+    }
+    
+    writeDB(db);
+    res.json({ success: true });
+});
+
+app.post('/api/bookings/history/reset', (req, res) => {
+    const db = readDB();
+    db.bookingsHistory = [];
+    writeDB(db);
+    res.json({ success: true });
+});
+
 app.post('/api/bookings/reset', (req, res) => {
     const db = readDB();
     db.bookings = [];

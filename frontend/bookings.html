@@ -164,6 +164,10 @@
                 // Show Admin-only reset button
                 const btnReset = document.getElementById('btn-reset-bookings');
                 if (btnReset) btnReset.style.display = 'inline-block';
+
+                // Show Admin-only reset history button
+                const btnResetHistory = document.getElementById('btn-reset-history');
+                if (btnResetHistory) btnResetHistory.style.display = 'inline-block';
             }
             
             loadBookings();
@@ -415,15 +419,78 @@
             if (modal) modal.style.display = 'none';
         }
 
+        // Admin: Delete single history item
+        async function deleteHistoryItem(id) {
+            if (!confirm('⚠️ Hapus riwayat reservasi ini secara permanen?')) return;
+            
+            try {
+                const res = await deleteData(`/bookings/history/${id}`);
+                if (res && res.success !== false) {
+                    alert('BERHASIL: Riwayat telah dihapus.');
+                    await loadHistory(); // Refresh history table list
+                } else {
+                    alert('Gagal menghapus riwayat.');
+                }
+            } catch (err) {
+                alert('Terjadi kesalahan koneksi.');
+            }
+        }
+
+        // Admin: Reset all history items
+        async function resetHistory() {
+            if (!confirm('⚠️ KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MENGHAPUS SELURUH RIWAYAT RESERVASI?\n\nTindakan ini bersifat permanen dan tidak dapat dibatalkan!')) return;
+            
+            const pass = prompt('🔑 VERIFIKASI ADMIN:\n\nMasukkan kata sandi Admin Anda untuk menghapus seluruh riwayat:');
+            if (pass === null) return;
+            if (pass.trim() === '') {
+                alert('Gagal: Kata sandi verifikasi tidak boleh kosong!');
+                return;
+            }
+            if (pass !== '1231' && pass.toLowerCase() !== 'om ben') {
+                alert('❌ VERIFIKASI GAGAL: Kata sandi Admin salah!');
+                return;
+            }
+
+            try {
+                const res = await postData('/bookings/history/reset', {});
+                if (res && res.success) {
+                    alert('BERHASIL: Seluruh riwayat reservasi telah dibersihkan sepenuhnya!');
+                    await loadHistory(); // Refresh history table list
+                } else {
+                    alert('Gagal membersihkan riwayat.');
+                }
+            } catch (err) {
+                alert('Terjadi kesalahan koneksi.');
+            }
+        }
+
         async function loadHistory() {
             const history = await fetchData('/bookings/history');
             const tbody = document.getElementById('history-list-body');
             if (!tbody) return;
 
+            const isAdmin = localStorage.getItem('auth_role') === 'admin';
+            
+            // Dynamically manage admin history headers
+            const headerRow = document.getElementById('history-header-row');
+            if (headerRow) {
+                // Remove any existing action column first
+                const existingActionCol = headerRow.querySelector('.admin-history-col');
+                if (existingActionCol) existingActionCol.remove();
+
+                if (isAdmin) {
+                    const actionTh = document.createElement('th');
+                    actionTh.className = 'admin-history-col';
+                    actionTh.style.cssText = 'padding: 0.8rem; text-align: center;';
+                    actionTh.textContent = 'Aksi';
+                    headerRow.appendChild(actionTh);
+                }
+            }
+
             if (!history || history.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-dim);">
+                        <td colspan="${isAdmin ? 6 : 5}" style="text-align: center; padding: 3rem; color: var(--text-dim);">
                             🍃 Belum ada riwayat reservasi (check-in / batal).
                         </td>
                     </tr>
@@ -449,6 +516,10 @@
                     ? `<span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase;">Check-In</span>`
                     : `<span style="background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase;">Batal</span>`;
 
+                const deleteColHtml = isAdmin 
+                    ? `<td style="padding: 1rem 0.8rem; text-align: center;"><button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; color: var(--danger); border-color: rgba(231,76,60,0.2);" onclick="deleteHistoryItem('${h.id}')">🗑️ Hapus</button></td>`
+                    : '';
+
                 tbody.innerHTML += `
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); color: white; transition: background 0.2s;">
                         <td style="padding: 1rem 0.8rem; color: var(--text-dim);">${archivedDate.toLocaleDateString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</td>
@@ -456,6 +527,7 @@
                         <td style="padding: 1rem 0.8rem;"><span class="badge-type ${h.targetType === 'room' ? 'type-room' : 'type-table'}">${h.targetType}</span> ${targetName}</td>
                         <td style="padding: 1rem 0.8rem; color: var(--accent-gold);">${date.toLocaleDateString('id-ID', {weekday: 'short', day: 'numeric', month: 'short'})} - ${date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</td>
                         <td style="padding: 1rem 0.8rem; text-align: center;">${statusBadge}</td>
+                        ${deleteColHtml}
                     </tr>
                 `;
             });
@@ -475,14 +547,14 @@
 
     <!-- Reservation History Modal -->
     <div class="modal" id="history-modal" style="display: none; z-index: 100000; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px);">
-        <div class="modal-content" style="max-width: 800px; width: 90%; background: var(--card-bg); border: 1.5px solid var(--glass-border); border-radius: 24px; padding: 2.5rem; backdrop-filter: blur(20px); position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <div class="modal-content" style="max-width: 850px; width: 90%; background: var(--card-bg); border: 1.5px solid var(--glass-border); border-radius: 24px; padding: 2.5rem; backdrop-filter: blur(20px); position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
             <h2 style="font-family: var(--font-heading); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--accent-gold); font-size: 1.6rem; letter-spacing: 0.5px;">
                 📜 Histori Reservasi (Check-in & Batal)
             </h2>
             <div style="max-height: 400px; overflow-y: auto; margin-bottom: 2rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); padding: 0.5rem;">
                 <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
                     <thead>
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); font-weight: bold; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); font-weight: bold; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;" id="history-header-row">
                             <th style="padding: 0.8rem;">Tanggal Arsip</th>
                             <th style="padding: 0.8rem;">Pelanggan</th>
                             <th style="padding: 0.8rem;">Unit</th>
@@ -495,8 +567,13 @@
                     </tbody>
                 </table>
             </div>
-            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                <button type="button" class="btn btn-outline" id="close-history-modal-btn" style="width: auto; padding: 0.6rem 2.5rem; border-radius: 12px; font-weight: bold; color: white;" onclick="closeHistoryModal()">Tutup</button>
+            <div style="display: flex; gap: 1rem; justify-content: space-between; align-items: center; width: 100%;">
+                <div>
+                    <button type="button" class="btn btn-outline" id="btn-reset-history" style="display: none; width: auto; padding: 0.6rem 1.5rem; border-radius: 12px; font-weight: bold; color: var(--danger); border-color: rgba(231,76,60,0.3);" onclick="resetHistory()">🗑️ Kosongkan Histori</button>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-outline" id="close-history-modal-btn" style="width: auto; padding: 0.6rem 2.5rem; border-radius: 12px; font-weight: bold; color: white;" onclick="closeHistoryModal()">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
