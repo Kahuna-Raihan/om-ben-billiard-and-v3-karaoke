@@ -399,7 +399,23 @@
                         <textarea id="c-notes" placeholder="Contoh: Request stick billiard premium / set mic tambahan" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 12px; color: white; padding: 0.8rem; height: 80px; font-family: inherit; resize: none;"></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="margin-top: 1rem; font-size: 1.1rem; letter-spacing: 0.5px;">
+                    <!-- Keamanan Ganda (Human Verification Captcha) -->
+                    <div class="form-group" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); padding: 1rem; border-radius: 12px; margin-top: 1rem; margin-bottom: 1.5rem;">
+                        <label style="color: var(--accent-gold); display: flex; align-items: center; gap: 0.4rem; font-weight: bold; font-size: 0.85rem; margin-bottom: 0.5rem;">
+                            🛡️ KEAMANAN GANDA (Verifikasi Anti-Spam)
+                        </label>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div id="captcha-question" style="background: rgba(255,255,255,0.08); padding: 0.6rem 1rem; border-radius: 8px; font-weight: bold; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px; color: white;">
+                                0 + 0 = ?
+                            </div>
+                            <input type="number" id="captcha-answer" placeholder="Hasil..." style="flex: 1; padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; color: white; text-align: center; font-weight: bold; font-size: 1rem; font-family: inherit;" required>
+                            <button type="button" class="btn btn-outline" style="width: auto; padding: 0.6rem 0.8rem; margin: 0; font-size: 0.9rem;" onclick="generateCaptcha()">
+                                🔄
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem; font-size: 1.1rem; letter-spacing: 0.5px;">
                         KIRIM RESERVASI SEKARANG ⚡
                     </button>
                 </form>
@@ -464,6 +480,27 @@
             renderRealtimeGrid();
             populateTargets();
             loadPublicSchedule();
+            generateCaptcha();
+        }
+
+        // Dynamic CAPTCHA logic for Double Security
+        let captchaValA = 0;
+        let captchaValB = 0;
+        let captchaAnswer = 0;
+
+        function generateCaptcha() {
+            captchaValA = Math.floor(Math.random() * 9) + 1; // 1-9
+            captchaValB = Math.floor(Math.random() * 9) + 1; // 1-9
+            captchaAnswer = captchaValA + captchaValB;
+            
+            const element = document.getElementById('captcha-question');
+            if (element) {
+                element.textContent = `${captchaValA} + ${captchaValB} = ?`;
+            }
+            const input = document.getElementById('captcha-answer');
+            if (input) {
+                input.value = '';
+            }
         }
 
         function switchArea(area) {
@@ -611,6 +648,18 @@
         document.getElementById('client-booking-form').onsubmit = async (e) => {
             e.preventDefault();
 
+            // Dynamic CAPTCHA validation
+            const userAnswerVal = document.getElementById('captcha-answer').value;
+            if (!userAnswerVal) {
+                alert('🛡️ Harap isi jawaban Keamanan Ganda terlebih dahulu!');
+                return;
+            }
+            if (parseInt(userAnswerVal) !== captchaAnswer) {
+                alert('❌ Verifikasi Keamanan Ganda Gagal! Hasil penjumlahan salah. Silakan coba lagi.');
+                generateCaptcha();
+                return;
+            }
+
             const customerName = document.getElementById('c-name').value.trim();
             const targetType = document.getElementById('c-type').value;
             const targetId = document.getElementById('c-target').value;
@@ -634,6 +683,7 @@
                 const unitLabel = targetType === 'table' ? 'Meja ' + targetId : 'Ruangan ' + targetId;
                 alert(`🎉 Reservasi berhasil dibuat!\n\nAtas nama: ${customerName}\nUnit: ${unitLabel}\n\nSilakan datang tepat waktu ya! Terima kasih.`);
                 document.getElementById('client-booking-form').reset();
+                generateCaptcha();
                 initDashboard();
             } else {
                 alert(res && res.message ? res.message : 'Waduh, terjadi kesalahan saat menyimpan reservasi. Coba lagi ya.');

@@ -400,6 +400,27 @@
         }
 
         async function toggleShopStatus(isOpen) {
+            // Keamanan Ganda: Konfirmasi berlapis
+            const confirmMsg = isOpen 
+                ? "🔒 KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MEMBUKA operasional toko?\n\nSistem kasir dan formulir reservasi online pelanggan akan diaktifkan kembali."
+                : "⚠️ KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MENUTUP operasional toko?\n\nSistem kasir POS billiard & karaoke akan langsung dikunci/dinonaktifkan secara otomatis, dan pelanggan tidak akan bisa melakukan reservasi online baru hari ini!";
+                
+            if (!confirm(confirmMsg)) return;
+
+            // Double security password check for closing the store (premium!)
+            if (!isOpen) {
+                const pass = prompt("🔑 VERIFIKASI ADMIN:\n\nMasukkan kata sandi Admin Anda untuk mengonfirmasi penutupan toko:");
+                if (pass === null) return;
+                if (pass.trim() === "") {
+                    alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
+                    return;
+                }
+                if (pass.toLowerCase() !== "om ben") {
+                    alert("❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!");
+                    return;
+                }
+            }
+
             try {
                 const res = await fetch('/api/settings', {
                     method: 'POST',
