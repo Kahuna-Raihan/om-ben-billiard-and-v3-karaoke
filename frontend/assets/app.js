@@ -137,7 +137,11 @@ async function startAutoDatabaseMirrorSync() {
 startAutoDatabaseMirrorSync();
 
 // --- AUTH GUARD ---
-if (!window.location.href.includes('login.html') && !window.location.href.includes('attendance.html') && !window.location.href.includes('reservasi.html')) {
+if (!window.location.href.includes('login.html') && 
+    !window.location.href.includes('attendance.html') && 
+    !window.location.href.includes('absen') && 
+    !window.location.href.includes('presensi') && 
+    !window.location.href.includes('reservasi.html')) {
     if (!localStorage.getItem('auth_role')) window.location.href = 'login.html';
 }
 

@@ -147,6 +147,14 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'frontend', 'login.html'));
 });
 
+// Dedicated clean routes for staff attendance
+app.get('/absen', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'attendance.html'));
+});
+app.get('/presensi', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'attendance.html'));
+});
+
 // --- DIAGNOSTIC DEBUG API ---
 app.get('/api/debug-db', (req, res) => {
     try {
