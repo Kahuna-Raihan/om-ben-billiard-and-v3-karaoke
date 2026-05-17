@@ -789,6 +789,11 @@ app.put('/api/users/update', (req, res) => {
         return res.status(400).json({ success: false, message: 'Password tidak boleh sama dengan yg kemarin' });
     }
 
+    // Protect 'om ben' username from being changed in self-profile update
+    if (oldUsername === 'om ben' && newUsername && newUsername !== 'om ben') {
+        return res.status(403).json({ success: false, message: 'Username admin utama "om ben" tidak bisa diubah.' });
+    }
+
     // Update the username in the list
     if (newUsername && newUsername !== oldUsername) {
         // Check if new username already taken by another user
@@ -804,6 +809,52 @@ app.put('/api/users/update', (req, res) => {
     writeDB(db);
     res.json({ success: true, username: user.username, profilePic: user.profilePic });
 });
+
+app.put('/api/users/:id', (req, res) => {
+    const db = readDB();
+    const { username, password, role } = req.body;
+    const user = db.users.find(u => String(u.id) === String(req.params.id));
+    if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+
+    // Lock main admin account 'om ben' from being renamed or role changed
+    if (user.username === 'om ben') {
+        if (username && username !== 'om ben') {
+            return res.status(403).json({ success: false, message: 'Username admin utama "om ben" tidak bisa diubah.' });
+        }
+        if (role && role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Role admin utama "om ben" tidak bisa diubah.' });
+        }
+    }
+
+    if (username && username !== user.username) {
+        const exists = db.users.find(u => u.username === username);
+        if (exists) return res.status(400).json({ success: false, message: 'Username sudah digunakan oleh akun lain!' });
+        user.username = username;
+    }
+
+    if (password) {
+        user.password = password;
+    }
+
+    if (role) {
+        user.role = role;
+    }
+
+    writeDB(db);
+    res.json({ success: true });
+});
+
+app.put('/api/users/:id/password', (req, res) => {
+    const db = readDB();
+    const { newPassword } = req.body;
+    const user = db.users.find(u => String(u.id) === String(req.params.id));
+    if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+
+    user.password = newPassword;
+    writeDB(db);
+    res.json({ success: true });
+});
+
 app.delete('/api/users/:id', (req, res) => {
     const db = readDB();
     const user = db.users.find(u => String(u.id) === String(req.params.id));
