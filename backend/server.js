@@ -141,6 +141,22 @@ app.post('/api/menu', (req, res) => {
     writeDB(db);
     res.json(newItem);
 });
+app.put('/api/menu/:id', (req, res) => {
+    const db = readDB();
+    const idx = db.menu.findIndex(m => String(m.id) === String(req.params.id));
+    if (idx !== -1) {
+        const price = req.body.price !== undefined ? parseInt(req.body.price) : db.menu[idx].price;
+        db.menu[idx] = { 
+            ...db.menu[idx], 
+            ...req.body,
+            price: price
+        };
+        writeDB(db);
+        res.json(db.menu[idx]);
+    } else {
+        res.status(404).json({ message: 'Menu item not found' });
+    }
+});
 app.post('/api/menu/:id/adjust-stock', (req, res) => {
     const db = readDB();
     const item = db.menu.find(m => String(m.id) === String(req.params.id));
