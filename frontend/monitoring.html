@@ -92,7 +92,7 @@
                     
                     let statusClass = 'available';
                     let statusLabel = 'Tersedia';
-                    let statusColor = 'var(--secondary-color)'; // Green neon (#2ecc71)
+                    let statusColor = '#2ecc71'; // Green (#2ecc71)
                     let timerHtml = '00:00:00';
                     let detailsHtml = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); font-size: 0.8rem;">🟢 Meja Kosong / Siap digunakan</div>';
                     
@@ -147,9 +147,9 @@
                                 <h2>${table.name}</h2>
                                 <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">• ${table.description || 'Standard'}</div>
                             </div>
-                            <span class="status-badge" style="background: ${statusColor}; color: var(--bg-dark); font-weight: 800; font-size: 0.7rem;">${statusLabel}</span>
+                            <span class="status-badge" style="background: ${statusColor}; color: ${statusClass === 'available' ? '#ffffff' : 'var(--bg-dark)'}; font-weight: 800; font-size: 0.7rem;">${statusLabel}</span>
                         </div>
-                        <div class="timer-display" style="color: ${statusColor}; font-size: 2.8rem; margin: 1rem 0; font-family: monospace; font-weight: bold; text-align: center;">${timerHtml}</div>
+                        <div class="timer-display" style="color: ${statusClass === 'available' ? '#ffffff' : statusColor}; font-size: 2.8rem; margin: 1rem 0; font-family: monospace; font-weight: bold; text-align: center;">${timerHtml}</div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 0.8rem;">
                             ${detailsHtml}
                         </div>
@@ -171,7 +171,7 @@
                     
                     let statusClass = 'available';
                     let statusLabel = 'Tersedia';
-                    let statusColor = 'var(--secondary-color)'; // Green neon (#2ecc71)
+                    let statusColor = '#2ecc71'; // Green (#2ecc71)
                     let timerHtml = '00:00:00';
                     let detailsHtml = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); font-size: 0.8rem;">🟢 Ruangan Kosong / Siap digunakan</div>';
                     
@@ -230,9 +230,9 @@
                                 <h2>Ruang ${room.name}</h2>
                                 <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">• ${room.description || 'Standard'}</div>
                             </div>
-                            <span class="status-badge" style="background: ${statusColor}; color: var(--bg-dark); font-weight: 800; font-size: 0.7rem;">${statusLabel}</span>
+                            <span class="status-badge" style="background: ${statusColor}; color: ${statusClass === 'available' ? '#ffffff' : 'var(--bg-dark)'}; font-weight: 800; font-size: 0.7rem;">${statusLabel}</span>
                         </div>
-                        <div class="timer-display" style="color: ${statusColor}; font-size: 2.8rem; margin: 1rem 0; font-family: monospace; font-weight: bold; text-align: center;">${timerHtml}</div>
+                        <div class="timer-display" style="color: ${statusClass === 'available' ? '#ffffff' : statusColor}; font-size: 2.8rem; margin: 1rem 0; font-family: monospace; font-weight: bold; text-align: center;">${timerHtml}</div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 0.8rem;">
                             ${detailsHtml}
                         </div>
