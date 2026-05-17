@@ -90,7 +90,13 @@
 
             <!-- Right: List -->
             <div class="list-card">
-                <h2 id="list-title" style="font-family: var(--font-heading); margin-bottom: 1.5rem;">Daftar Reservasi Hari Ini</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h2 id="list-title" style="font-family: var(--font-heading); margin: 0;">Daftar Reservasi Hari Ini</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-outline" id="btn-history-bookings" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--accent-gold); border-color: rgba(240,192,64,0.3); font-weight: bold;" onclick="openHistoryModal()">📜 Histori</button>
+                        <button class="btn btn-outline" id="btn-reset-bookings" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231,76,60,0.3); font-weight: bold;" onclick="resetBookings()">🗑️ Reset</button>
+                    </div>
+                </div>
                 
                 <!-- Admin Filter Tabs (Hanya Muncul di Dashboard Admin) -->
                 <div id="admin-filter-container" style="display: none; margin-bottom: 1.5rem; gap: 0.5rem; flex-wrap: wrap; align-items: center; width: 100%;">
@@ -98,10 +104,6 @@
                     <button class="btn btn-outline filter-btn" data-range="week" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">1 Minggu</button>
                     <button class="btn btn-outline filter-btn" data-range="month" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">1 Bulan</button>
                     <button class="btn btn-outline filter-btn" data-range="all" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Semua</button>
-                    
-                    <!-- Action Buttons for Admin -->
-                    <button class="btn btn-outline" id="btn-history-bookings" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--accent-gold); border-color: rgba(240,192,64,0.3); font-weight: bold; margin-left: auto;" onclick="openHistoryModal()">📜 Histori</button>
-                    <button class="btn btn-outline" id="btn-reset-bookings" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231,76,60,0.3); font-weight: bold;" onclick="resetBookings()">🗑️ Reset</button>
                 </div>
 
                 <div id="booking-list">
