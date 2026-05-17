@@ -30,11 +30,7 @@ async function syncFromMongoDB() {
         return;
     }
     try {
-        console.log('[MongoDB Sync] Menghubungkan ke Database Cloud MongoDB Railway...');
-        await mongoose.connect(process.env.MONGO_URL, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        });
+        await mongoose.connect(process.env.MONGO_URL);
         isMongoConnected = true;
         console.log('[MongoDB Sync] Sukses Terhubung ke Database Cloud MongoDB!');
 
