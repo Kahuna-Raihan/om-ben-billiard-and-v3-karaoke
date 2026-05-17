@@ -1,5 +1,19 @@
 const API_BASE = '/api';
 
+// --- SESSION PERSISTENCE GUARD ---
+// Enforce session-only login credentials (wipe from localStorage on fresh session startup)
+if (!sessionStorage.getItem('session_active_flag')) {
+    if (document.referrer && document.referrer.includes('login.html')) {
+        sessionStorage.setItem('session_active_flag', 'true');
+    } else {
+        localStorage.removeItem('auth_role');
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_name');
+        localStorage.removeItem('auth_profile_pic');
+        sessionStorage.setItem('session_active_flag', 'true');
+    }
+}
+
 // --- TIME SYNC SYSTEM ---
 let serverTimeOffset = 0;
 async function syncTime() {
