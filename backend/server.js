@@ -91,9 +91,9 @@ function writeDB(data) {
             });
     }
     
-    // Auto rolling backup every 15 minutes of write activity
+    // Auto rolling backup every 5 minutes of write activity
     const now = Date.now();
-    if (now - lastBackupTime > 15 * 60 * 1000) {
+    if (now - lastBackupTime > 5 * 60 * 1000) {
         lastBackupTime = now;
         try {
             const backupDir = path.join(__dirname, 'data', 'backups');
