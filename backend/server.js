@@ -80,6 +80,16 @@ function logStock(db, itemName, type, delta, reason, user, category = 'Uncategor
     db.stockLogs.push(log);
 }
 
+// Get local date string YYYY-MM-DD in UTC+7 (Indonesian WIB timezone)
+function getWIBDateString(date = new Date()) {
+    const wibOffset = 7 * 60 * 60 * 1000; // WIB is UTC+7
+    const wibDate = new Date(date.getTime() + wibOffset);
+    const yyyy = wibDate.getUTCFullYear();
+    const mm = String(wibDate.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(wibDate.getUTCDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 // Root redirect
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'frontend', 'login.html'));
@@ -117,11 +127,7 @@ app.get('/api/tables', (req, res) => {
         }
         
         // 2. Check if there is a pending booking today
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const todayStr = `${yyyy}-${mm}-${dd}`; // local date string YYYY-MM-DD
+        const todayStr = getWIBDateString(); // timezone-safe local date string YYYY-MM-DD
         
         const hasBookingToday = (db.bookings || []).some(b => 
             b.targetType === 'table' && 
@@ -173,11 +179,7 @@ app.get('/api/rooms', (req, res) => {
         }
         
         // 2. Check if there is a pending booking today
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const todayStr = `${yyyy}-${mm}-${dd}`; // local date string YYYY-MM-DD
+        const todayStr = getWIBDateString(); // timezone-safe local date string YYYY-MM-DD
         
         const hasBookingToday = (db.bookings || []).some(b => 
             b.targetType === 'room' && 
@@ -540,7 +542,7 @@ app.post('/api/sessions/:id/stop', (req, res) => {
     const tableAmount = (durationMs <= 5 * 60 * 1000) ? 0 : durationHours * session.hourlyRate;
     const ordersTotal = session.orders ? session.orders.reduce((acc, o) => acc + o.subtotal, 0) : 0;
     const transaction = {
-        id: Date.now(), ...session, endTime: stopTime, durationMinutes: Math.round(durationMs / 60000), tableAmount, ordersAmount: ordersTotal, amount: tableAmount + ordersTotal, date: stopTime.toISOString().split('T')[0], isArchived: false
+        id: Date.now(), ...session, endTime: stopTime, durationMinutes: Math.round(durationMs / 60000), tableAmount, ordersAmount: ordersTotal, amount: tableAmount + ordersTotal, date: getWIBDateString(stopTime), isArchived: false
     };
     db.transactions.push(transaction);
     
@@ -566,7 +568,7 @@ app.post('/api/sessions/:id/stop', (req, res) => {
 app.get('/api/transactions', (req, res) => res.json(readDB().transactions));
 app.delete('/api/transactions/reset-today', (req, res) => {
     const db = readDB();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getWIBDateString();
     const initialCount = db.transactions.length;
     db.transactions = db.transactions.filter(t => t.date !== today);
     const deletedCount = initialCount - db.transactions.length;
@@ -595,7 +597,7 @@ app.post('/api/transactions/pos', (req, res) => {
         type: 'pos',
         amount: totalAmount,
         orders: orders.map(o => ({ name: o.name, qty: o.quantity, price: o.price, subtotal: o.subtotal })),
-        date: new Date().toISOString().split('T')[0],
+        date: getWIBDateString(),
         timestamp: new Date(),
         isArchived: false
     };
@@ -659,7 +661,7 @@ app.post('/api/attendance', (req, res) => {
 });
 app.post('/api/attendance/close-shift', (req, res) => {
     const db = readDB();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getWIBDateString();
     // This was only for today, user wants GLOBAL reset too.
     db.attendance = db.attendance.filter(a => !a.timestamp.startsWith(today));
     writeDB(db);

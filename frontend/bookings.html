@@ -43,6 +43,25 @@
         }
         .type-table { background: rgba(52, 152, 219, 0.2); color: #3498db; }
         .type-room { background: rgba(155, 89, 182, 0.2); color: #9b59b2; }
+
+        /* --- Interactive Summary Cards --- */
+        .summary-card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .summary-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+        }
+        .summary-card.active {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        @media (max-width: 768px) {
+            .booking-summary-cards {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -98,12 +117,26 @@
                     </div>
                 </div>
                 
-                <!-- Admin Filter Tabs (Hanya Muncul di Dashboard Admin) -->
-                <div id="admin-filter-container" style="display: none; margin-bottom: 1.5rem; gap: 0.5rem; flex-wrap: wrap; align-items: center; width: 100%;">
-                    <button class="btn btn-primary filter-btn" data-range="today" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Hari Ini</button>
-                    <button class="btn btn-outline filter-btn" data-range="week" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">1 Minggu</button>
-                    <button class="btn btn-outline filter-btn" data-range="month" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">1 Bulan</button>
-                    <button class="btn btn-outline filter-btn" data-range="all" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Semua</button>
+                <!-- Rekap & Filter Booking (Bisa Diakses Admin & Kasir) -->
+                <div id="booking-recap-container" style="margin-bottom: 1.5rem; width: 100%;">
+                    <div class="booking-summary-cards" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="summary-card active" id="summary-today" onclick="setFilterRange('today')" style="cursor: pointer; background: rgba(0, 243, 255, 0.05); border: 1.5px solid var(--primary-color); border-radius: 16px; padding: 1rem; text-align: center; transition: all 0.3s;">
+                            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: bold;">Hari Ini</div>
+                            <div id="count-today" style="font-size: 1.8rem; font-weight: 800; color: var(--primary-color); margin-top: 0.3rem;">0</div>
+                        </div>
+                        <div class="summary-card" id="summary-week" onclick="setFilterRange('week')" style="cursor: pointer; background: rgba(255, 255, 255, 0.02); border: 1.5px solid var(--glass-border); border-radius: 16px; padding: 1rem; text-align: center; transition: all 0.3s;">
+                            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: bold;">1 Minggu</div>
+                            <div id="count-week" style="font-size: 1.8rem; font-weight: 800; color: var(--accent-gold); margin-top: 0.3rem;">0</div>
+                        </div>
+                        <div class="summary-card" id="summary-month" onclick="setFilterRange('month')" style="cursor: pointer; background: rgba(255, 255, 255, 0.02); border: 1.5px solid var(--glass-border); border-radius: 16px; padding: 1rem; text-align: center; transition: all 0.3s;">
+                            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: bold;">1 Bulan</div>
+                            <div id="count-month" style="font-size: 1.8rem; font-weight: 800; color: #bd93f9; margin-top: 0.3rem;">0</div>
+                        </div>
+                        <div class="summary-card" id="summary-all" onclick="setFilterRange('all')" style="cursor: pointer; background: rgba(255, 255, 255, 0.02); border: 1.5px solid var(--glass-border); border-radius: 16px; padding: 1rem; text-align: center; transition: all 0.3s;">
+                            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: bold;">Semua</div>
+                            <div id="count-all" style="font-size: 1.8rem; font-weight: 800; color: #2ecc71; margin-top: 0.3rem;">0</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="booking-list">
@@ -125,25 +158,9 @@
             allRooms = await fetchData('/rooms');
             loadTargets();
             
-            // Configure Admin filters if role is admin
+            // Configure Admin actions
             const isAdmin = localStorage.getItem('auth_role') === 'admin';
             if (isAdmin) {
-                const filterContainer = document.getElementById('admin-filter-container');
-                if (filterContainer) {
-                    filterContainer.style.display = 'flex';
-                    const buttons = filterContainer.querySelectorAll('.filter-btn');
-                    buttons.forEach(btn => {
-                        btn.onclick = () => {
-                            buttons.forEach(b => {
-                                b.className = 'btn btn-outline filter-btn';
-                            });
-                            btn.className = 'btn btn-primary filter-btn';
-                            currentFilterRange = btn.getAttribute('data-range');
-                            loadBookings();
-                        };
-                    });
-                }
-                
                 // Show Admin-only reset button
                 const btnReset = document.getElementById('btn-reset-bookings');
                 if (btnReset) btnReset.style.display = 'inline-block';
@@ -173,6 +190,34 @@
             });
         }
 
+        function setFilterRange(range) {
+            currentFilterRange = range;
+            
+            const cards = {
+                'today': { el: document.getElementById('summary-today'), color: 'var(--primary-color)', bg: 'rgba(0, 243, 255, 0.05)' },
+                'week': { el: document.getElementById('summary-week'), color: 'var(--accent-gold)', bg: 'rgba(250, 204, 21, 0.05)' },
+                'month': { el: document.getElementById('summary-month'), color: '#bd93f9', bg: 'rgba(189, 147, 249, 0.05)' },
+                'all': { el: document.getElementById('summary-all'), color: '#2ecc71', bg: 'rgba(46, 204, 113, 0.05)' }
+            };
+
+            Object.keys(cards).forEach(key => {
+                const card = cards[key];
+                if (card.el) {
+                    if (key === range) {
+                        card.el.classList.add('active');
+                        card.el.style.borderColor = card.color;
+                        card.el.style.background = card.bg;
+                    } else {
+                        card.el.classList.remove('active');
+                        card.el.style.borderColor = 'var(--glass-border)';
+                        card.el.style.background = 'rgba(255, 255, 255, 0.02)';
+                    }
+                }
+            });
+
+            loadBookings();
+        }
+
         async function loadBookings() {
             const bookings = await fetchData('/bookings');
             const container = document.getElementById('booking-list');
@@ -184,10 +229,38 @@
             const dd = String(now.getDate()).padStart(2, '0');
             const todayStr = `${yyyy}-${mm}-${dd}`;
 
-            const isAdmin = localStorage.getItem('auth_role') === 'admin';
-            const range = isAdmin ? currentFilterRange : 'today';
+            const range = currentFilterRange;
             
             const todayStart = new Date(yyyy, now.getMonth(), now.getDate(), 0, 0, 0);
+            const oneWeekLater = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+            const oneMonthLater = new Date(todayStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+            // Update dynamic counts for recap cards
+            const countToday = bookings.filter(b => b.bookingTime && b.bookingTime.substring(0, 10) === todayStr).length;
+            const countWeek = bookings.filter(b => {
+                if (!b.bookingTime) return false;
+                const bDate = new Date(b.bookingTime);
+                return bDate >= todayStart && bDate <= oneWeekLater;
+            }).length;
+            const countMonth = bookings.filter(b => {
+                if (!b.bookingTime) return false;
+                const bDate = new Date(b.bookingTime);
+                return bDate >= todayStart && bDate <= oneMonthLater;
+            }).length;
+            const countAll = bookings.filter(b => {
+                if (!b.bookingTime) return false;
+                return new Date(b.bookingTime) >= todayStart;
+            }).length;
+
+            const elToday = document.getElementById('count-today');
+            const elWeek = document.getElementById('count-week');
+            const elMonth = document.getElementById('count-month');
+            const elAll = document.getElementById('count-all');
+
+            if (elToday) elToday.textContent = countToday;
+            if (elWeek) elWeek.textContent = countWeek;
+            if (elMonth) elMonth.textContent = countMonth;
+            if (elAll) elAll.textContent = countAll;
             
             let filteredBookings = [];
             
@@ -195,7 +268,6 @@
                 filteredBookings = bookings.filter(b => b.bookingTime && b.bookingTime.substring(0, 10) === todayStr);
                 document.getElementById('list-title').textContent = "Daftar Reservasi Hari Ini";
             } else if (range === 'week') {
-                const oneWeekLater = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
                 filteredBookings = bookings.filter(b => {
                     if (!b.bookingTime) return false;
                     const bDate = new Date(b.bookingTime);
@@ -203,7 +275,6 @@
                 });
                 document.getElementById('list-title').textContent = "Daftar Reservasi 7 Hari Ke Depan";
             } else if (range === 'month') {
-                const oneMonthLater = new Date(todayStart.getTime() + 30 * 24 * 60 * 60 * 1000);
                 filteredBookings = bookings.filter(b => {
                     if (!b.bookingTime) return false;
                     const bDate = new Date(b.bookingTime);
@@ -252,8 +323,8 @@
                         ${b.notes ? `<div style="font-size: 0.75rem; color: var(--accent-gold); margin-top: 0.4rem;">📝 ${b.notes}</div>` : ''}
                     </div>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="checkInBooking(${b.id}, '${b.targetType}', ${b.targetId}, '${b.customerName}')">Mulai Sewa</button>
-                        <button class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231,76,60,0.2);" onclick="cancelBooking(${b.id})">Batal</button>
+                        <button class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="checkInBooking('${b.id}', '${b.targetType}', '${b.targetId}', '${b.customerName.replace(/'/g, "\\'")}')">Mulai Sewa</button>
+                        <button class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--danger); border-color: rgba(231,76,60,0.2);" onclick="cancelBooking('${b.id}')">Batal</button>
                     </div>
                 `;
                 container.appendChild(item);
