@@ -88,63 +88,41 @@
         <section>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
                 <h2 style="font-family: var(--font-heading); margin: 0;">Monitoring Area</h2>
-                <button class="btn btn-outline" style="width: auto;" onclick="setupCCTV()">⚙️ Pengaturan IP Camera</button>
+                <button class="btn btn-outline" style="width: auto;" onclick="openModal()">⚙️ Pengaturan CCTV</button>
             </div>
 
-            <div class="cctv-grid">
-                <!-- Camera 1 -->
-                <div class="cctv-card" id="cam-1">
-                    <div class="cctv-overlay">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
-                            <div class="rec-dot"></div> LIVE - AREA BILLIARD
-                        </div>
-                        <button onclick="toggleFullscreen('cam-1')" style="background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 1rem;">⛶</button>
-                    </div>
-                    <div class="cctv-placeholder">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
-                        <p id="cam1-status">Kamera Belum Terhubung</p>
-                        <small id="cam1-url" style="font-size: 0.7rem; opacity: 0.5;"></small>
-                    </div>
-                </div>
-
-                <!-- Camera 2 -->
-                <div class="cctv-card" id="cam-2">
-                    <div class="cctv-overlay">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
-                            <div class="rec-dot"></div> LIVE - AREA KASIR
-                        </div>
-                        <button onclick="toggleFullscreen('cam-2')" style="background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 1rem;">⛶</button>
-                    </div>
-                    <div class="cctv-placeholder">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
-                        <p id="cam2-status">Kamera Belum Terhubung</p>
-                        <small id="cam2-url" style="font-size: 0.7rem; opacity: 0.5;"></small>
-                    </div>
-                </div>
-
-                <!-- Camera 3 -->
-                <div class="cctv-card" id="cam-3">
-                    <div class="cctv-overlay">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
-                            <div class="rec-dot"></div> LIVE - AREA KARAOKE
-                        </div>
-                        <button onclick="toggleFullscreen('cam-3')" style="background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 1rem;">⛶</button>
-                    </div>
-                    <div class="cctv-placeholder">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
-                        <p id="cam3-status">Kamera Belum Terhubung</p>
-                        <small id="cam3-url" style="font-size: 0.7rem; opacity: 0.5;"></small>
-                    </div>
-                </div>
-            </div>
+            <!-- DYNAMIC CAMERA GRID -->
+            <div class="cctv-grid"></div>
 
             <div style="margin-top: 2rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 15px; border: 1px dashed var(--glass-border);">
-                <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Info CCTV</h3>
+                <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Panduan Koneksi CCTV</h3>
+                <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 0.5rem;">
+                    1. **IP Camera (MJPEG Stream)**: Hubungkan IP camera ke WiFi/LAN yang sama. Masukkan URL stream HTTP (misalnya: <code style="color:var(--primary-color);">http://192.168.1.15:8080/video</code>).
+                </p>
                 <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.6;">
-                    Untuk menghubungkan CCTV, pastikan IP Camera berada di jaringan (WiFi/LAN) yang sama dengan perangkat ini. Masukkan URL MJPEG stream dari aplikasi CCTV (misal: iVMS, HikVision, atau IP Cam Adapter).
+                    2. **USB Webcam Lokal**: Hubungkan kamera USB langsung ke laptop kasir, atau gunakan kamera HP/Tablet bawaan dengan memilih opsi **"USB Webcam Lokal"**. Sistem akan otomatis meminta izin webcam browser.
                 </p>
             </div>
         </section>
+    </div>
+
+    <!-- DYNAMIC SETTINGS MODAL -->
+    <div id="cctv-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: rgba(20, 20, 35, 0.95); border: 1.5px solid var(--primary-color); border-radius: 20px; padding: 2rem; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 0 30px rgba(0, 243, 255, 0.25);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="font-family: var(--font-heading); color: var(--primary-color); font-size: 1.4rem; margin: 0;">⚙️ Pengaturan CCTV</h3>
+                <button onclick="closeModal()" style="background: none; border: none; color: var(--text-dim); font-size: 1.8rem; cursor: pointer; transition: color 0.2s; line-height: 1;">&times;</button>
+            </div>
+            
+            <form id="cctv-form" onsubmit="handleSaveCCTV(event)">
+                <div id="camera-settings-container"></div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn" style="background: var(--primary-color); color: var(--bg-dark); font-weight: bold; flex: 1; border: none; border-radius: 10px; padding: 0.6rem; cursor: pointer;">Simpan</button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal()" style="flex: 1; border-radius: 10px; padding: 0.6rem; cursor: pointer;">Batal</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -152,13 +130,89 @@
             window.location.href = 'index.html';
         }
 
-        function setupCCTV() {
-            const url = prompt("Masukkan URL Stream IP Camera (contoh: http://192.168.1.10:8080/video):");
-            if (url) {
-                localStorage.setItem('cctv_url_1', url);
-                alert("URL Berhasil disimpan. Sistem akan mencoba menghubungkan...");
-                location.reload();
-            }
+        const defaultCameras = [
+            { id: 1, name: "AREA BILLIARD", url: "", type: "mjpeg" },
+            { id: 2, name: "AREA KASIR", url: "", type: "mjpeg" },
+            { id: 3, name: "AREA KARAOKE", url: "", type: "mjpeg" }
+        ];
+
+        function getCameras() {
+            const saved = localStorage.getItem('cctv_cameras');
+            return saved ? JSON.parse(saved) : defaultCameras;
+        }
+
+        function saveCameras(cameras) {
+            localStorage.setItem('cctv_cameras', JSON.stringify(cameras));
+        }
+
+        function openModal() {
+            renderSettingsForm();
+            document.getElementById('cctv-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('cctv-modal').style.display = 'none';
+        }
+
+        function renderSettingsForm() {
+            const cameras = getCameras();
+            const container = document.getElementById('camera-settings-container');
+            container.innerHTML = '';
+            
+            cameras.forEach(cam => {
+                const div = document.createElement('div');
+                div.style.marginBottom = '1.2rem';
+                div.style.paddingBottom = '1.2rem';
+                div.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+                
+                div.innerHTML = `
+                    <h4 style="color: var(--accent-gold); font-size: 0.9rem; margin-bottom: 0.6rem;">Saluran Kamera #${cam.id}</h4>
+                    
+                    <div style="margin-bottom: 0.5rem;">
+                        <label style="display: block; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 0.2rem;">Nama Area / Lokasi</label>
+                        <input type="text" id="cam-name-${cam.id}" value="${cam.name}" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:0.4rem 0.6rem; color:#fff; font-size:0.8rem;" required>
+                    </div>
+                    
+                    <div style="margin-bottom: 0.5rem; display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 0.2rem;">Tipe Feed</label>
+                            <select id="cam-type-${cam.id}" onchange="toggleUrlInput(${cam.id})" style="width:100%; background:rgba(20,20,35,1); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:0.4rem 0.6rem; color:#fff; font-size:0.8rem;">
+                                <option value="mjpeg" ${cam.type === 'mjpeg' ? 'selected' : ''}>IP Camera (MJPEG Stream)</option>
+                                <option value="webcam" ${cam.type === 'webcam' ? 'selected' : ''}>USB Webcam Lokal</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="url-container-${cam.id}" style="display: ${cam.type === 'webcam' ? 'none' : 'block'};">
+                        <label style="display: block; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 0.2rem;">URL Stream IP Cam</label>
+                        <input type="url" id="cam-url-${cam.id}" value="${cam.url || ''}" placeholder="http://192.168.1.10:8080/video" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:0.4rem 0.6rem; color:#fff; font-size:0.8rem;">
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function toggleUrlInput(id) {
+            const type = document.getElementById(`cam-type-${id}`).value;
+            const container = document.getElementById(`url-container-${id}`);
+            container.style.display = type === 'webcam' ? 'none' : 'block';
+        }
+
+        function handleSaveCCTV(e) {
+            e.preventDefault();
+            const cameras = getCameras();
+            const updated = cameras.map(cam => {
+                return {
+                    id: cam.id,
+                    name: document.getElementById(`cam-name-${cam.id}`).value,
+                    type: document.getElementById(`cam-type-${cam.id}`).value,
+                    url: document.getElementById(`cam-url-${cam.id}`).value
+                };
+            });
+            saveCameras(updated);
+            alert("Konfigurasi CCTV berhasil disimpan!");
+            closeModal();
+            renderLiveFeeds();
         }
 
         function toggleFullscreen(id) {
@@ -172,14 +226,75 @@
             }
         }
 
-        // Try to load stream
-        window.onload = () => {
-            const savedUrl = localStorage.getItem('cctv_url_1');
-            if (savedUrl) {
-                document.getElementById('cam1-status').innerHTML = `<img src="${savedUrl}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML='Stream Gagal: Cek Koneksi IP Camera'">`;
-                document.getElementById('cam1-url').textContent = savedUrl;
+        function handleFeedError(id, url) {
+            const container = document.getElementById(`feed-container-${id}`);
+            if (container) {
+                container.innerHTML = `
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⚠️</div>
+                    <p style="font-size:0.85rem; font-weight:bold;">Stream Gagal Terhubung</p>
+                    <small style="font-size: 0.65rem; opacity: 0.5; padding: 0 1rem; text-align: center; word-break: break-all; margin-top:0.2rem;">${url}</small>
+                `;
             }
         }
+
+        function renderLiveFeeds() {
+            const cameras = getCameras();
+            const grid = document.querySelector('.cctv-grid');
+            grid.innerHTML = '';
+            
+            cameras.forEach(cam => {
+                const card = document.createElement('div');
+                card.className = 'cctv-card';
+                card.id = `cam-${cam.id}`;
+                
+                card.innerHTML = `
+                    <div class="cctv-overlay">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+                            <div class="rec-dot"></div> LIVE - ${cam.name.toUpperCase()}
+                        </div>
+                        <button onclick="toggleFullscreen('cam-${cam.id}')" style="background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 1rem;">⛶</button>
+                    </div>
+                    <div class="cctv-placeholder" id="feed-container-${cam.id}"></div>
+                `;
+                grid.appendChild(card);
+                
+                const container = document.getElementById(`feed-container-${cam.id}`);
+                if (cam.type === 'webcam') {
+                    container.innerHTML = `
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000;">
+                            <video id="video-stream-${cam.id}" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+                        </div>
+                    `;
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => {
+                            const video = document.getElementById(`video-stream-${cam.id}`);
+                            if (video) video.srcObject = stream;
+                        })
+                        .catch(err => {
+                            console.error("Gagal memuat webcam lokal:", err);
+                            container.innerHTML = `
+                                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">❌</div>
+                                <p style="font-size:0.85rem; font-weight:bold;">Webcam Offline</p>
+                                <small style="font-size: 0.65rem; opacity: 0.5; color: var(--danger); margin-top:0.2rem;">${err.message}</small>
+                            `;
+                        });
+                } else if (cam.type === 'mjpeg' && cam.url) {
+                    container.innerHTML = `
+                        <img src="${cam.url}" style="width:100%; height:100%; object-fit:cover;" onerror="handleFeedError(${cam.id}, '${cam.url}')">
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📹</div>
+                        <p style="font-size:0.85rem; font-weight:bold;">Kamera Belum Terhubung</p>
+                        <small style="font-size: 0.65rem; opacity: 0.5; padding: 0 1rem; text-align: center; margin-top:0.2rem;">Klik tombol "Pengaturan CCTV" di atas untuk menghubungkan saluran ini.</small>
+                    `;
+                }
+            });
+        }
+
+        window.onload = () => {
+            renderLiveFeeds();
+        };
     </script>
 </body>
 </html>
