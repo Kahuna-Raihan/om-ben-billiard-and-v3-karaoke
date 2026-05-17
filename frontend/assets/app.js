@@ -235,7 +235,7 @@ function renderNavbar(active) {
                     letter-spacing: 0.1px;
                     transition: all 0.3s ease;
                 }
-                @media (max-width: 768px) {
+                @media (max-width: 1366px) {
                     .cloud-indicator {
                         padding: 0.25rem 0.45rem;
                         margin-right: 0.3rem;
