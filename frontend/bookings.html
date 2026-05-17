@@ -152,6 +152,11 @@
     </div>
 
     <script>
+        window.onerror = function(msg, url, line, col, err) {
+            alert(`⚠️ JS ERROR: ${msg}\nLine: ${line}:${col}\nURL: ${url}`);
+            return false;
+        };
+
         let allTables = [];
         let allRooms = [];
 
