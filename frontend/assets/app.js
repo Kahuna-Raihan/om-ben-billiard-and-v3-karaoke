@@ -1,5 +1,23 @@
 const API_BASE = '/api';
 
+// ===== THEME (DARK / LIGHT MODE) =====
+(function initTheme() {
+    const saved = localStorage.getItem('app_theme');
+    if (saved === 'light') {
+        document.body.classList.add('light-mode');
+    }
+})();
+
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('app_theme', isLight ? 'light' : 'dark');
+    // Update all toggle buttons on the page
+    const icons = document.querySelectorAll('.theme-toggle-icon');
+    const labels = document.querySelectorAll('.theme-toggle-label');
+    icons.forEach(el => { el.textContent = isLight ? '☀️' : '🌙'; });
+    labels.forEach(el => { el.textContent = isLight ? 'Mode Terang' : 'Mode Gelap'; });
+}
+
 // --- SESSION PERSISTENCE GUARD ---
 // Enforce session-only login credentials (wipe from localStorage on fresh session startup)
 if (!sessionStorage.getItem('session_active_flag')) {
@@ -217,6 +235,7 @@ function renderNavbar(active) {
     }
     
     const profilePic = localStorage.getItem('auth_profile_pic') || 'assets/logo.png';
+    const isLightNow = document.body.classList.contains('light-mode');
     html += `
         <li class="nav-user-section">
             <style>
@@ -252,6 +271,13 @@ function renderNavbar(active) {
                     }
                 }
             </style>
+
+            <!-- THEME TOGGLE BUTTON -->
+            <button class="theme-toggle-btn" onclick="toggleTheme()" title="Ganti tema terang/gelap" id="theme-toggle-btn">
+                <span class="theme-toggle-icon">${isLightNow ? '☀️' : '🌙'}</span>
+                <span class="theme-toggle-label">${isLightNow ? 'Mode Terang' : 'Mode Gelap'}</span>
+            </button>
+
             <div class="cloud-indicator" title="Data terhubung & tersimpan secara otomatis di Database Cloud MongoDB.">
                 <span class="cloud-dot" style="display: inline-block; width: 5px; height: 5px; background: #2ecc71; border-radius: 50%; animation: navCloudPulse 2s infinite;"></span>
                 <span>☁️ <span class="cloud-text">Tersimpan Otomatis</span></span>

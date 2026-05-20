@@ -15,6 +15,199 @@
     --font-body: 'Inter', sans-serif;
 }
 
+/* ===== LIGHT MODE THEME ===== */
+body.light-mode {
+    --bg-dark: #f0f4f8;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --primary-color: #0099cc;
+    --primary-glow: #00bfff;
+    --accent-gold: #d4a017;
+    --text-light: #1a1a2e;
+    --text-dim: #555570;
+    --danger: #c0392b;
+    --success: #0099cc;
+    --glass-border: rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode {
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    background-image:
+        radial-gradient(circle at 0% 0%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(100, 0, 200, 0.08) 0%, transparent 50%);
+}
+
+body.light-mode .logo-section h1 {
+    background: linear-gradient(to right, #1a1a2e, var(--accent-gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+body.light-mode nav ul {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode nav a {
+    color: var(--text-dim);
+}
+
+body.light-mode nav a:hover {
+    color: var(--text-light);
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-mode nav a.active {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+body.light-mode .stat-card,
+body.light-mode .table-card,
+body.light-mode .modal-content,
+body.light-mode .form-card,
+body.light-mode .list-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.10);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    color: var(--text-light);
+}
+
+body.light-mode .form-group input,
+body.light-mode .form-group select,
+body.light-mode .form-group textarea,
+body.light-mode input[type="text"],
+body.light-mode input[type="number"],
+body.light-mode input[type="datetime-local"],
+body.light-mode textarea,
+body.light-mode select {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    color: var(--text-light) !important;
+}
+
+body.light-mode .form-group select option {
+    background-color: #fff;
+    color: #1a1a2e;
+}
+
+body.light-mode .btn-outline {
+    border-color: rgba(0, 0, 0, 0.2);
+    color: var(--text-light);
+}
+
+body.light-mode .btn-outline:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-mode .booking-item,
+body.light-mode .summary-card {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.10) !important;
+    color: var(--text-light);
+}
+
+body.light-mode .booking-item:hover {
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-mode .modal {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+body.light-mode .modal-content {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode .nav-divider {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode .nav-label {
+    color: #666;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+body.light-mode .logout-btn {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: var(--text-light);
+}
+
+body.light-mode .cloud-indicator {
+    background: rgba(0, 153, 80, 0.08) !important;
+    border-color: rgba(0, 153, 80, 0.25) !important;
+    color: #1a7a40 !important;
+}
+
+/* Smooth transition for all elements */
+body, body *,
+.stat-card, .table-card, .modal-content, nav, nav ul, nav a,
+.form-card, .list-card, .booking-item, .summary-card,
+.form-group input, .form-group select, .btn, .btn-outline {
+    transition: background-color 0.3s ease, color 0.3s ease,
+                border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+/* ===== THEME TOGGLE BUTTON ===== */
+.theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    border-radius: 30px;
+    padding: 0.28rem 0.65rem;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-dim);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    transition: all 0.3s ease !important;
+    line-height: 1;
+    margin-right: 0.3rem;
+}
+
+.theme-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-light);
+    transform: scale(1.05);
+}
+
+body.light-mode .theme-toggle-btn {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: var(--text-dim);
+}
+
+body.light-mode .theme-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.10);
+    border-color: rgba(0, 0, 0, 0.25);
+    color: var(--text-light);
+}
+
+.theme-toggle-icon {
+    font-size: 0.9rem;
+    transition: transform 0.5s ease !important;
+}
+
+.theme-toggle-btn:hover .theme-toggle-icon {
+    transform: rotate(20deg);
+}
+
+@media (max-width: 1366px) {
+    .theme-toggle-label {
+        display: none;
+    }
+    .theme-toggle-btn {
+        padding: 0.28rem 0.45rem;
+    }
+}
+
 * {
     margin: 0;
     padding: 0;
