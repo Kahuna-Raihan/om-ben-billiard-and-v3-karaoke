@@ -199,6 +199,21 @@ app.post('/api/login', (req, res) => {
     }
 });
 
+app.post('/api/verify-admin', (req, res) => {
+    try {
+        const { password } = req.body;
+        const db = readDB();
+        // Check if there is an admin user with that password, or if it matches the username (case-insensitive) of any admin
+        const isMatched = db.users.some(u => 
+            u.role === 'admin' && 
+            (u.password === password || u.username.toLowerCase() === password.toLowerCase())
+        );
+        res.json({ success: isMatched });
+    } catch (err) {
+        res.status(500).json({ success: false });
+    }
+});
+
 // --- TABLES API (Billiard) ---
 app.get('/api/tables', (req, res) => {
     const db = readDB();
@@ -790,11 +805,6 @@ app.put('/api/users/update', (req, res) => {
         return res.status(400).json({ success: false, message: 'Password tidak boleh sama dengan yg kemarin' });
     }
 
-    // Protect 'om ben' username from being changed in self-profile update
-    if (oldUsername === 'om ben' && newUsername && newUsername !== 'om ben') {
-        return res.status(403).json({ success: false, message: 'Username admin utama "om ben" tidak bisa diubah.' });
-    }
-
     // Update the username in the list
     if (newUsername && newUsername !== oldUsername) {
         // Check if new username already taken by another user
@@ -817,13 +827,10 @@ app.put('/api/users/:id', (req, res) => {
     const user = db.users.find(u => String(u.id) === String(req.params.id));
     if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
 
-    // Lock main admin account 'om ben' from being renamed or role changed
-    if (user.username === 'om ben') {
-        if (username && username !== 'om ben') {
-            return res.status(403).json({ success: false, message: 'Username admin utama "om ben" tidak bisa diubah.' });
-        }
+    // Lock main admin account from role change (must remain admin)
+    if (user.id === 1 || String(user.id) === '1') {
         if (role && role !== 'admin') {
-            return res.status(403).json({ success: false, message: 'Role admin utama "om ben" tidak bisa diubah.' });
+            return res.status(403).json({ success: false, message: 'Role admin utama tidak bisa diubah.' });
         }
     }
 
@@ -859,7 +866,7 @@ app.put('/api/users/:id/password', (req, res) => {
 app.delete('/api/users/:id', (req, res) => {
     const db = readDB();
     const user = db.users.find(u => String(u.id) === String(req.params.id));
-    if (user && user.username === 'om ben') return res.status(403).json({ message: 'User utama tidak bisa dihapus' });
+    if (user && (user.id === 1 || String(user.id) === '1')) return res.status(403).json({ message: 'User utama tidak bisa dihapus' });
     db.users = db.users.filter(u => String(u.id) !== String(req.params.id));
     writeDB(db);
     res.json({ success: true });

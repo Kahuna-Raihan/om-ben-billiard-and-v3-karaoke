@@ -910,3 +910,214 @@ if (!isAdminPage && !window.location.href.includes('reservasi.html') && !window.
     startGlobalAlarmPoller();
 }
 
+// --- PREMIUM CUSTOM SECURE PASSWORD PROMPT ---
+async function promptAdminPassword(message) {
+    return new Promise((resolve) => {
+        // Create modal overlay element
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 10, 20, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000000;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        `;
+
+        // Create modal content container
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: linear-gradient(135deg, #1e1e32 0%, #151528 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2.2rem;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,255,255,0.02);
+            text-align: center;
+            color: #ffffff;
+            transform: scale(0.9);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        `;
+
+        // Safe message format
+        const cleanMessage = (message || '').replace(/\\n/g, '<br>');
+
+        modal.innerHTML = `
+            <div style="font-size: 2.5rem; margin-bottom: 1rem; filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.4));">🔑</div>
+            <h3 style="margin: 0 0 1.2rem 0; font-size: 1.15rem; font-weight: 700; line-height: 1.5; color: #eceff1;">${cleanMessage}</h3>
+            
+            <div style="position: relative; margin-bottom: 1.8rem; text-align: left;">
+                <input type="password" id="secure-prompt-input" placeholder="Masukkan kata sandi..." autocomplete="off" style="
+                    width: 100%;
+                    padding: 0.9rem 3rem 0.9rem 1.1rem;
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1.5px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 14px;
+                    color: #ffffff;
+                    font-size: 1.05rem;
+                    outline: none;
+                    box-sizing: border-box;
+                    transition: all 0.3s ease;
+                ">
+                <button type="button" id="secure-prompt-toggle" style="
+                    position: absolute;
+                    right: 12px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    color: rgba(255, 255, 255, 0.4);
+                    cursor: pointer;
+                    font-size: 1.25rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 4px;
+                    transition: color 0.2s;
+                " title="Tampilkan/Sembunyikan password">👁️</button>
+            </div>
+            
+            <div style="display: flex; gap: 0.8rem; justify-content: flex-end;">
+                <button type="button" id="secure-prompt-cancel" style="
+                    flex: 1;
+                    padding: 0.8rem 1.2rem;
+                    border: 1.5px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 12px;
+                    background: transparent;
+                    color: #eceff1;
+                    font-weight: 700;
+                    font-size: 0.95rem;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">Batal</button>
+                <button type="button" id="secure-prompt-confirm" style="
+                    flex: 1;
+                    padding: 0.8rem 1.2rem;
+                    border: none;
+                    border-radius: 12px;
+                    background: linear-gradient(135deg, #00f3ff 0%, #4facfe 100%);
+                    color: #0d0d1b;
+                    font-weight: 800;
+                    font-size: 0.95rem;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(0, 243, 255, 0.35);
+                    transition: all 0.2s ease;
+                ">Konfirmasi</button>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Focus input field immediately
+        const input = modal.querySelector('#secure-prompt-input');
+        const confirmBtn = modal.querySelector('#secure-prompt-confirm');
+        const cancelBtn = modal.querySelector('#secure-prompt-cancel');
+        const toggleBtn = modal.querySelector('#secure-prompt-toggle');
+
+        // Style hover & focus states via JS
+        input.addEventListener('focus', () => {
+            input.style.borderColor = '#00f3ff';
+            input.style.boxShadow = '0 0 10px rgba(0, 243, 255, 0.2)';
+            input.style.background = 'rgba(255, 255, 255, 0.08)';
+        });
+        input.addEventListener('blur', () => {
+            input.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            input.style.boxShadow = 'none';
+            input.style.background = 'rgba(255, 255, 255, 0.04)';
+        });
+
+        cancelBtn.addEventListener('mouseenter', () => {
+            cancelBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+            cancelBtn.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+        });
+        cancelBtn.addEventListener('mouseleave', () => {
+            cancelBtn.style.background = 'transparent';
+            cancelBtn.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        });
+
+        confirmBtn.addEventListener('mouseenter', () => {
+            confirmBtn.style.transform = 'translateY(-1px)';
+            confirmBtn.style.boxShadow = '0 6px 20px rgba(0, 243, 255, 0.55)';
+        });
+        confirmBtn.addEventListener('mouseleave', () => {
+            confirmBtn.style.transform = 'translateY(0)';
+            confirmBtn.style.boxShadow = '0 4px 15px rgba(0, 243, 255, 0.35)';
+        });
+
+        toggleBtn.addEventListener('mouseenter', () => {
+            toggleBtn.style.color = 'rgba(255, 255, 255, 0.8)';
+        });
+        toggleBtn.addEventListener('mouseleave', () => {
+            toggleBtn.style.color = 'rgba(255, 255, 255, 0.4)';
+        });
+
+        // Toggle visibility action
+        let isPasswordHidden = true;
+        toggleBtn.addEventListener('click', () => {
+            isPasswordHidden = !isPasswordHidden;
+            if (isPasswordHidden) {
+                input.type = 'password';
+                toggleBtn.textContent = '👁️';
+            } else {
+                input.type = 'text';
+                toggleBtn.textContent = '🔒';
+            }
+            input.focus();
+        });
+
+        // Trigger animations
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+            modal.style.transform = 'scale(1)';
+            input.focus();
+        }, 20);
+
+        // Helper to close and resolve
+        const closePrompt = (val) => {
+            overlay.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                overlay.remove();
+                resolve(val);
+            }, 250);
+        };
+
+        // Actions
+        confirmBtn.addEventListener('click', () => {
+            closePrompt(input.value);
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            closePrompt(null);
+        });
+
+        // Escape and Enter key binding
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                closePrompt(input.value);
+            } else if (e.key === 'Escape') {
+                closePrompt(null);
+            }
+        });
+
+        // Allow closing when clicking the overlay itself (background)
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closePrompt(null);
+            }
+        });
+    });
+}
+
+

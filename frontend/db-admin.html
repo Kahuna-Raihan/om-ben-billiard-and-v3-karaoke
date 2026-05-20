@@ -431,13 +431,19 @@
 
             // Double security password check for closing bookings (premium!)
             if (!isOpen) {
-                const pass = prompt("🔑 VERIFIKASI ADMIN:\n\nMasukkan kata sandi Admin Anda untuk mengonfirmasi penutupan booking online:");
+                const pass = await promptAdminPassword("Masukkan kata sandi Admin Anda untuk mengonfirmasi penutupan booking online:");
                 if (pass === null) return;
                 if (pass.trim() === "") {
                     alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
                     return;
                 }
-                if (pass !== "1231" && pass.toLowerCase() !== "om ben") {
+                const verifyRes = await fetch('/api/verify-admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pass })
+                });
+                const verifyData = await verifyRes.json();
+                if (!verifyData.success) {
                     alert("❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!");
                     return;
                 }
@@ -507,13 +513,19 @@
 
             // Double security password check for closing the store (premium!)
             if (!isOpen) {
-                const pass = prompt("🔑 VERIFIKASI ADMIN:\n\nMasukkan kata sandi Admin Anda untuk mengonfirmasi penutupan toko:");
+                const pass = await promptAdminPassword("Masukkan kata sandi Admin Anda untuk mengonfirmasi penutupan toko:");
                 if (pass === null) return;
                 if (pass.trim() === "") {
                     alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
                     return;
                 }
-                if (pass !== "1231" && pass.toLowerCase() !== "om ben") {
+                const verifyRes = await fetch('/api/verify-admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pass })
+                });
+                const verifyData = await verifyRes.json();
+                if (!verifyData.success) {
                     alert("❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!");
                     return;
                 }

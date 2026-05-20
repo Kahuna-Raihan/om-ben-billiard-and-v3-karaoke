@@ -104,20 +104,6 @@
             userInput.parentNode.appendChild(userNotice);
         }
 
-        // Restriction for main admin "om ben"
-        if (oldUser === 'om ben') {
-            const userInput = document.getElementById('new-username');
-            userInput.disabled = true;
-            userInput.style.opacity = '0.7';
-            
-            const userNotice = document.createElement('p');
-            userNotice.style.fontSize = '0.75rem';
-            userNotice.style.color = 'var(--accent-gold)';
-            userNotice.style.marginTop = '0.5rem';
-            userNotice.textContent = '* Username utama "om ben" tidak dapat diubah demi keamanan integrasi sistem.';
-            userInput.parentNode.appendChild(userNotice);
-        }
-
         let base64Photo = null;
 
         // Load existing photo if any

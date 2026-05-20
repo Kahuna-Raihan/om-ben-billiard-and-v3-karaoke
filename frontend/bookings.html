@@ -280,13 +280,19 @@
             if (!confirm(confirmMsg)) return;
 
             if (!isOpen) {
-                const pass = prompt("🔑 VERIFIKASI ADMIN:\n\nMasukkan kata sandi Admin Anda untuk mengonfirmasi penutupan booking online:");
+                const pass = await promptAdminPassword("Masukkan kata sandi Admin Anda untuk mengonfirmasi penutupan booking online:");
                 if (pass === null) return;
                 if (pass.trim() === "") {
                     alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
                     return;
                 }
-                if (pass !== "1231" && pass.toLowerCase() !== "om ben") {
+                const verifyRes = await fetch('/api/verify-admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pass })
+                });
+                const verifyData = await verifyRes.json();
+                if (!verifyData.success) {
                     alert("❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!");
                     return;
                 }
@@ -587,13 +593,19 @@
         async function resetBookings() {
             if (!confirm("⚠️ KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MENGHAPUS SEMUA DATA RESERVASI AKTIF?\n\nTindakan ini bersifat permanen dan tidak dapat dibatalkan!")) return;
             
-            const pass = prompt("🔑 VERIFIKASI ADMIN:\n\nMasukkan kata sandi Admin Anda untuk menghapus seluruh data reservasi:");
+            const pass = await promptAdminPassword("Masukkan kata sandi Admin Anda untuk menghapus seluruh data reservasi:");
             if (pass === null) return;
             if (pass.trim() === "") {
                 alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
                 return;
             }
-            if (pass !== "1231" && pass.toLowerCase() !== "om ben") {
+            const verifyRes = await fetch('/api/verify-admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pass })
+            });
+            const verifyData = await verifyRes.json();
+            if (!verifyData.success) {
                 alert("❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!");
                 return;
             }
@@ -646,13 +658,19 @@
         async function resetHistory() {
             if (!confirm('⚠️ KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MENGHAPUS SELURUH RIWAYAT RESERVASI?\n\nTindakan ini bersifat permanen dan tidak dapat dibatalkan!')) return;
             
-            const pass = prompt('🔑 VERIFIKASI ADMIN:\n\nMasukkan kata sandi Admin Anda untuk menghapus seluruh riwayat:');
+            const pass = await promptAdminPassword("Masukkan kata sandi Admin Anda untuk menghapus seluruh riwayat:");
             if (pass === null) return;
             if (pass.trim() === '') {
                 alert('Gagal: Kata sandi verifikasi tidak boleh kosong!');
                 return;
             }
-            if (pass !== '1231' && pass.toLowerCase() !== 'om ben') {
+            const verifyRes = await fetch('/api/verify-admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pass })
+            });
+            const verifyData = await verifyRes.json();
+            if (!verifyData.success) {
                 alert('❌ VERIFIKASI GAGAL: Kata sandi Admin salah!');
                 return;
             }
