@@ -211,7 +211,7 @@ function renderNavbar(active) {
             <li class="nav-label">KASIR:</li>
             <li><a href="index.html" class="${active === 'billiard' ? 'active' : ''}">🎱 Billiard</a></li>
             <li><a href="karaoke.html" class="${active === 'karaoke' ? 'active' : ''}">🎤 Karaoke</a></li>
-            <li><a href="pos.html" class="${active === 'pos' ? 'active' : ''}">🍔 F&B</a></li>
+            <li><a href="pos.html" class="${active === 'pos' ? 'active' : ''}">🍔 Menu</a></li>
             <li><a href="bookings.html" class="nav-booking ${active === 'bookings' ? 'active' : ''}">📅 Booking</a></li>
         `;
     }
