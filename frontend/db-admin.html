@@ -1,267 +1,580 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Backup & Database | Admin Om Ben</title>
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/style.css" />
     <style>
-        .db-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2.5rem;
-        }
-        .stat-box {
-            background: var(--card-bg);
-            border: 1px solid var(--glass-border);
-            padding: 1.5rem;
-            border-radius: 20px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .stat-box h3 { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-box .val { font-size: 1.8rem; font-weight: 800; }
-        
-        .action-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2.5rem;
-        }
+      .db-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+      }
+      .stat-box {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        padding: 1.5rem;
+        border-radius: 20px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .stat-box h3 {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .stat-box .val {
+        font-size: 1.8rem;
+        font-weight: 800;
+      }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--card-bg);
-            border-radius: 15px;
-            overflow: hidden;
-            margin-top: 1rem;
-        }
-        th, td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--glass-border);
-        }
-        th {
-            background: rgba(255,255,255,0.05);
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-        }
-        
-        .alert-box {
-            background: rgba(243, 156, 18, 0.1);
-            border: 1px solid rgba(243, 156, 18, 0.3);
-            color: #f39c12;
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            font-size: 0.85rem;
-            line-height: 1.5;
-        }
+      .action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+      }
 
-        .badge-auto { background: rgba(52, 152, 219, 0.1); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
-        .badge-manual { background: rgba(46, 204, 113, 0.1); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card-bg);
+        border-radius: 15px;
+        overflow: hidden;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--glass-border);
+      }
+      th {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+      }
+
+      .alert-box {
+        background: rgba(243, 156, 18, 0.1);
+        border: 1px solid rgba(243, 156, 18, 0.3);
+        color: #f39c12;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+
+      .badge-auto {
+        background: rgba(52, 152, 219, 0.1);
+        color: #3498db;
+        border: 1px solid rgba(52, 152, 219, 0.3);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+      }
+      .badge-manual {
+        background: rgba(46, 204, 113, 0.1);
+        color: #2ecc71;
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <header>
-            <div class="logo-section">
-                <img src="assets/logo.png" alt="Logo" class="main-logo">
-                <div>
-                    <h1>OM BEN BILLIARD</h1>
-                    <p>X V3 KARAOKE Database Control Center</p>
-                </div>
+      <header>
+        <div class="logo-section">
+          <img src="assets/logo.png" alt="Logo" class="main-logo" />
+          <div>
+            <h1>OM BEN BILLIARD</h1>
+            <p>X V3 KARAOKE Database Control Center</p>
+          </div>
+        </div>
+        <nav></nav>
+      </header>
+
+      <script src="assets/app.js"></script>
+      <script>
+        renderNavbar("db-admin");
+      </script>
+
+      <section>
+        <div class="alert-box">
+          <strong>⚠️ INFORMASI PENTING KEAMANAN DATA:</strong><br />
+          Sistem database POS disimpan lokal dalam file server
+          <code>db.json</code>. Agar data transaksi harian Anda 100% aman dari
+          resiko kehilangan akibat eror sistem, pembaruan aplikasi, atau reset
+          server, pastikan untuk
+          <strong
+            >secara berkala mengunduh backup database ke komputer Anda</strong
+          >
+          menggunakan tombol di bawah ini.
+        </div>
+
+        <!-- KONTROL OPERASIONAL TOKO CARD -->
+        <div
+          class="stat-box"
+          style="
+            text-align: left;
+            margin-bottom: 2rem;
+            border-color: rgba(0, 243, 255, 0.2);
+            background: rgba(20, 20, 35, 0.9);
+            padding: 1.5rem 2rem;
+            border-radius: 24px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 1rem;
+            "
+          >
+            <div>
+              <h3
+                style="
+                  color: var(--primary-color);
+                  font-size: 1.1rem;
+                  margin-bottom: 0.3rem;
+                "
+              >
+                ⚙️ KONTROL OPERASIONAL TOKO
+              </h3>
+              <p
+                style="
+                  font-size: 0.8rem;
+                  color: var(--text-dim);
+                  margin-bottom: 0;
+                "
+              >
+                Atur status operasional toko untuk membuka atau menutup layanan
+                booking online pelanggan.
+              </p>
             </div>
-            <nav></nav>
-        </header>
-
-        <script src="assets/app.js"></script>
-        <script>renderNavbar('db-admin');</script>
-
-        <section>
-            <div class="alert-box">
-                <strong>⚠️ INFORMASI PENTING KEAMANAN DATA:</strong><br>
-                Sistem database POS disimpan lokal dalam file server <code>db.json</code>. Agar data transaksi harian Anda 100% aman dari resiko kehilangan akibat eror sistem, pembaruan aplikasi, atau reset server, pastikan untuk <strong>secara berkala mengunduh backup database ke komputer Anda</strong> menggunakan tombol di bawah ini.
+            <div style="display: flex; align-items: center; gap: 1.5rem">
+              <div
+                id="shop-status-badge"
+                style="
+                  font-weight: 800;
+                  font-size: 1rem;
+                  padding: 0.5rem 1.2rem;
+                  border-radius: 12px;
+                  transition: all 0.3s;
+                "
+              >
+                ... LOADING ...
+              </div>
+              <div style="display: flex; gap: 0.5rem">
+                <button
+                  id="btn-open-shop"
+                  class="btn"
+                  style="
+                    width: auto;
+                    padding: 0.5rem 1.2rem;
+                    font-size: 0.85rem;
+                    font-weight: bold;
+                    background: #2ecc71;
+                    border-color: #2ecc71;
+                    color: white;
+                  "
+                  onclick="toggleShopStatus(true)"
+                >
+                  BUKA TOKO
+                </button>
+                <button
+                  id="btn-close-shop"
+                  class="btn"
+                  style="
+                    width: auto;
+                    padding: 0.5rem 1.2rem;
+                    font-size: 0.85rem;
+                    font-weight: bold;
+                    background: #e74c3c;
+                    border-color: #e74c3c;
+                    color: white;
+                  "
+                  onclick="toggleShopStatus(false)"
+                >
+                  TUTUP TOKO
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
 
-            <!-- KONTROL OPERASIONAL TOKO CARD -->
-            <div class="stat-box" style="text-align: left; margin-bottom: 2rem; border-color: rgba(0, 243, 255, 0.2); background: rgba(20, 20, 35, 0.9); padding: 1.5rem 2rem; border-radius: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                    <div>
-                        <h3 style="color: var(--primary-color); font-size: 1.1rem; margin-bottom: 0.3rem;">⚙️ KONTROL OPERASIONAL TOKO</h3>
-                        <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0;">Atur status operasional toko untuk membuka atau menutup layanan booking online pelanggan.</p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 1.5rem;">
-                        <div id="shop-status-badge" style="font-weight: 800; font-size: 1rem; padding: 0.5rem 1.2rem; border-radius: 12px; transition: all 0.3s;">
-                            ... LOADING ...
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button id="btn-open-shop" class="btn" style="width: auto; padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: bold; background: #2ecc71; border-color: #2ecc71; color: white;" onclick="toggleShopStatus(true)">BUKA TOKO</button>
-                            <button id="btn-close-shop" class="btn" style="width: auto; padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: bold; background: #e74c3c; border-color: #e74c3c; color: white;" onclick="toggleShopStatus(false)">TUTUP TOKO</button>
-                        </div>
-                    </div>
-                </div>
+        <!-- KONTROL RESERVASI ONLINE CARD -->
+        <div
+          class="stat-box"
+          style="
+            text-align: left;
+            margin-bottom: 2rem;
+            border-color: rgba(189, 147, 249, 0.2);
+            background: rgba(20, 20, 35, 0.9);
+            padding: 1.5rem 2rem;
+            border-radius: 24px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 1rem;
+            "
+          >
+            <div>
+              <h3
+                style="color: #bd93f9; font-size: 1.1rem; margin-bottom: 0.3rem"
+              >
+                ⚙️ KONTROL RESERVASI ONLINE
+              </h3>
+              <p
+                style="
+                  font-size: 0.8rem;
+                  color: var(--text-dim);
+                  margin-bottom: 0;
+                "
+              >
+                Buka atau tutup akses bagi pelanggan untuk memesan meja /
+                ruangan karaoke secara online.
+              </p>
             </div>
-
-            <!-- KONTROL RESERVASI ONLINE CARD -->
-            <div class="stat-box" style="text-align: left; margin-bottom: 2rem; border-color: rgba(189, 147, 249, 0.2); background: rgba(20, 20, 35, 0.9); padding: 1.5rem 2rem; border-radius: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                    <div>
-                        <h3 style="color: #bd93f9; font-size: 1.1rem; margin-bottom: 0.3rem;">⚙️ KONTROL RESERVASI ONLINE</h3>
-                        <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0;">Buka atau tutup akses bagi pelanggan untuk memesan meja / ruangan karaoke secara online.</p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 1.5rem;">
-                        <div id="booking-status-badge" style="font-weight: 800; font-size: 1rem; padding: 0.5rem 1.2rem; border-radius: 12px; transition: all 0.3s;">
-                            ... LOADING ...
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button id="btn-open-booking" class="btn" style="width: auto; padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: bold; background: #2ecc71; border-color: #2ecc71; color: white;" onclick="toggleBookingStatus(true)">BUKA BOOKING</button>
-                            <button id="btn-close-booking" class="btn" style="width: auto; padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: bold; background: #e74c3c; border-color: #e74c3c; color: white;" onclick="toggleBookingStatus(false)">TUTUP BOOKING</button>
-                        </div>
-                    </div>
-                </div>
+            <div style="display: flex; align-items: center; gap: 1.5rem">
+              <div
+                id="booking-status-badge"
+                style="
+                  font-weight: 800;
+                  font-size: 1rem;
+                  padding: 0.5rem 1.2rem;
+                  border-radius: 12px;
+                  transition: all 0.3s;
+                "
+              >
+                ... LOADING ...
+              </div>
+              <div style="display: flex; gap: 0.5rem">
+                <button
+                  id="btn-open-booking"
+                  class="btn"
+                  style="
+                    width: auto;
+                    padding: 0.5rem 1.2rem;
+                    font-size: 0.85rem;
+                    font-weight: bold;
+                    background: #2ecc71;
+                    border-color: #2ecc71;
+                    color: white;
+                  "
+                  onclick="toggleBookingStatus(true)"
+                >
+                  BUKA BOOKING
+                </button>
+                <button
+                  id="btn-close-booking"
+                  class="btn"
+                  style="
+                    width: auto;
+                    padding: 0.5rem 1.2rem;
+                    font-size: 0.85rem;
+                    font-weight: bold;
+                    background: #e74c3c;
+                    border-color: #e74c3c;
+                    color: white;
+                  "
+                  onclick="toggleBookingStatus(false)"
+                >
+                  TUTUP BOOKING
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-                <h2 style="font-family: var(--font-heading); margin: 0;">SISTEM BACKUP & PEMULIHAN</h2>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <button class="btn btn-primary" style="width: auto; background: #2ecc71; border-color: #2ecc71;" onclick="createBackup()">💾 BUAT BACKUP DI SERVER</button>
-                    <button class="btn btn-outline" style="width: auto;" onclick="loadData()">↻ REFRESH</button>
-                </div>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+          "
+        >
+          <h2 style="font-family: var(--font-heading); margin: 0">
+            SISTEM BACKUP & PEMULIHAN
+          </h2>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+            <button
+              class="btn btn-primary"
+              style="width: auto; background: #2ecc71; border-color: #2ecc71"
+              onclick="createBackup()"
+            >
+              💾 BUAT BACKUP DI SERVER
+            </button>
+            <button
+              class="btn btn-outline"
+              style="width: auto"
+              onclick="loadData()"
+            >
+              ↻ REFRESH
+            </button>
+          </div>
+        </div>
+
+        <!-- STATS GRID -->
+        <div class="db-stats">
+          <div class="stat-box">
+            <h3>Ukuran Database</h3>
+            <div class="val" id="db-size" style="color: var(--primary-color)">
+              0 KB
             </div>
-
-            <!-- STATS GRID -->
-            <div class="db-stats">
-                <div class="stat-box">
-                    <h3>Ukuran Database</h3>
-                    <div class="val" id="db-size" style="color: var(--primary-color);">0 KB</div>
-                </div>
-                <div class="stat-box">
-                    <h3>Total Menu F&B</h3>
-                    <div class="val" id="count-menu" style="color: var(--accent-gold);">0</div>
-                </div>
-                <div class="stat-box">
-                    <h3>Transaksi Selesai</h3>
-                    <div class="val" id="count-transactions" style="color: #2ecc71;">0</div>
-                </div>
-                <div class="stat-box">
-                    <h3>Total Booking</h3>
-                    <div class="val" id="count-bookings" style="color: #3498db;">0</div>
-                </div>
+          </div>
+          <div class="stat-box">
+            <h3>Total Menu F&B</h3>
+            <div class="val" id="count-menu" style="color: var(--accent-gold)">
+              0
             </div>
-
-            <!-- ACTION PANEL -->
-            <div class="action-grid">
-                <div class="stat-box" style="text-align: left;">
-                    <h3 style="color: var(--primary-color); font-size: 1rem; margin-bottom: 0.5rem;">1. Backup Mandiri (Ekspor Data)</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1.5rem; min-height: 40px;">Unduh salinan file database asli POS langsung ke folder komputer lokal Anda untuk disimpan di flashdisk atau drive pribadi.</p>
-                    <a href="/api/db/download" target="_blank" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none; padding: 0.6rem 0; width: 100%;">📥 Unduh db.json Sekarang</a>
-                </div>
-
-                <div class="stat-box" style="text-align: left;">
-                    <h3 style="color: #e74c3c; font-size: 1rem; margin-bottom: 0.5rem;">2. Restore Manual (Impor Data)</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1.5rem; min-height: 40px;">Punya file backup di komputer? Unggah file tersebut untuk memulihkan seluruh data POS ke kondisi semula.</p>
-                    <input type="file" id="upload-db-file" accept=".json" style="display: none;" onchange="handleFileUpload(event)">
-                    <button class="btn btn-outline" onclick="document.getElementById('upload-db-file').click()" style="width: 100%; border-color: #e74c3c; color: #e74c3c;">📁 Pilih File & Impor</button>
-                </div>
-
-                <div class="stat-box" style="text-align: left;">
-                    <h3 style="color: var(--accent-gold); font-size: 1rem; margin-bottom: 0.5rem;">3. Mirror Browser Cache</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1.5rem; min-height: 40px;">Sistem menyimpan bayangan data terakhir secara rahasia di browser Anda. Sangat membantu jika server tiba-tiba ter-reset kosong.</p>
-                    <button class="btn btn-outline" onclick="restoreFromCache()" style="width: 100%; border-color: var(--accent-gold); color: var(--accent-gold);">⚡ Pulihkan Dari Cache Browser</button>
-                </div>
+          </div>
+          <div class="stat-box">
+            <h3>Transaksi Selesai</h3>
+            <div class="val" id="count-transactions" style="color: #2ecc71">
+              0
             </div>
+          </div>
+          <div class="stat-box">
+            <h3>Total Booking</h3>
+            <div class="val" id="count-bookings" style="color: #3498db">0</div>
+          </div>
+        </div>
 
-            <!-- BACKUPS TABLE -->
-            <div style="margin-top: 2rem;">
-                <h3 style="font-family: var(--font-heading); margin-bottom: 1rem; color: var(--primary-color);">Daftar Backup di Server</h3>
-                <div style="background: var(--card-bg); border-radius: 15px; overflow-x: auto; border: 1px solid var(--glass-border);">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: rgba(255,255,255,0.02);">
-                                <th>Hari & Waktu Pembuatan</th>
-                                <th>Nama File</th>
-                                <th>Jenis</th>
-                                <th>Ukuran File</th>
-                                <th style="text-align: right;">Aksi Tindakan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="backup-list-body">
-                            <!-- Injected here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+        <!-- ACTION PANEL -->
+        <div class="action-grid">
+          <div class="stat-box" style="text-align: left">
+            <h3
+              style="
+                color: var(--primary-color);
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+              "
+            >
+              1. Backup Mandiri (Ekspor Data)
+            </h3>
+            <p
+              style="
+                font-size: 0.8rem;
+                color: var(--text-dim);
+                margin-bottom: 1.5rem;
+                min-height: 40px;
+              "
+            >
+              Unduh salinan file database asli POS langsung ke folder komputer
+              lokal Anda untuk disimpan di flashdisk atau drive pribadi.
+            </p>
+            <a
+              href="/api/db/download"
+              target="_blank"
+              class="btn btn-primary"
+              style="
+                display: block;
+                text-align: center;
+                text-decoration: none;
+                padding: 0.6rem 0;
+                width: 100%;
+              "
+              >📥 Unduh db.json Sekarang</a
+            >
+          </div>
+
+          <div class="stat-box" style="text-align: left">
+            <h3 style="color: #e74c3c; font-size: 1rem; margin-bottom: 0.5rem">
+              2. Restore Manual (Impor Data)
+            </h3>
+            <p
+              style="
+                font-size: 0.8rem;
+                color: var(--text-dim);
+                margin-bottom: 1.5rem;
+                min-height: 40px;
+              "
+            >
+              Punya file backup di komputer? Unggah file tersebut untuk
+              memulihkan seluruh data POS ke kondisi semula.
+            </p>
+            <input
+              type="file"
+              id="upload-db-file"
+              accept=".json"
+              style="display: none"
+              onchange="handleFileUpload(event)"
+            />
+            <button
+              class="btn btn-outline"
+              onclick="document.getElementById('upload-db-file').click()"
+              style="width: 100%; border-color: #e74c3c; color: #e74c3c"
+            >
+              📁 Pilih File & Impor
+            </button>
+          </div>
+
+          <div class="stat-box" style="text-align: left">
+            <h3
+              style="
+                color: var(--accent-gold);
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+              "
+            >
+              3. Mirror Browser Cache
+            </h3>
+            <p
+              style="
+                font-size: 0.8rem;
+                color: var(--text-dim);
+                margin-bottom: 1.5rem;
+                min-height: 40px;
+              "
+            >
+              Sistem menyimpan bayangan data terakhir secara rahasia di browser
+              Anda. Sangat membantu jika server tiba-tiba ter-reset kosong.
+            </p>
+            <button
+              class="btn btn-outline"
+              onclick="restoreFromCache()"
+              style="
+                width: 100%;
+                border-color: var(--accent-gold);
+                color: var(--accent-gold);
+              "
+            >
+              ⚡ Pulihkan Dari Cache Browser
+            </button>
+          </div>
+        </div>
+
+        <!-- BACKUPS TABLE -->
+        <div style="margin-top: 2rem">
+          <h3
+            style="
+              font-family: var(--font-heading);
+              margin-bottom: 1rem;
+              color: var(--primary-color);
+            "
+          >
+            Daftar Backup di Server
+          </h3>
+          <div
+            style="
+              background: var(--card-bg);
+              border-radius: 15px;
+              overflow-x: auto;
+              border: 1px solid var(--glass-border);
+            "
+          >
+            <table style="width: 100%; border-collapse: collapse">
+              <thead>
+                <tr style="background: rgba(255, 255, 255, 0.02)">
+                  <th>Hari & Waktu Pembuatan</th>
+                  <th>Nama File</th>
+                  <th>Jenis</th>
+                  <th>Ukuran File</th>
+                  <th style="text-align: right">Aksi Tindakan</th>
+                </tr>
+              </thead>
+              <tbody id="backup-list-body">
+                <!-- Injected here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </div>
 
     <script>
-        if (localStorage.getItem('auth_role') !== 'admin') {
-            window.location.href = 'index.html';
-        }
+      const roleNow = localStorage.getItem("auth_role");
+      if (roleNow !== "admin" && roleNow !== "engineer") {
+        window.location.href = "index.html";
+      }
 
-        async function loadData() {
+      async function loadData() {
+        try {
+          // Fetch stats
+          const statsRes = await fetch("/api/db/stats");
+          const stats = await statsRes.json();
+
+          document.getElementById("db-size").textContent =
+            (stats.sizeBytes / 1024).toFixed(2) + " KB";
+          document.getElementById("count-menu").textContent = stats.counts.menu;
+          document.getElementById("count-transactions").textContent =
+            stats.counts.transactions;
+          document.getElementById("count-bookings").textContent =
+            stats.counts.bookings;
+
+          // Load shop status
+          fetchShopStatus();
+
+          // Sync current state as a backup mirror in browser cache (if not empty)
+          if (stats.counts.menu > 0 || stats.counts.transactions > 0) {
             try {
-                // Fetch stats
-                const statsRes = await fetch('/api/db/stats');
-                const stats = await statsRes.json();
-                
-                document.getElementById('db-size').textContent = (stats.sizeBytes / 1024).toFixed(2) + ' KB';
-                document.getElementById('count-menu').textContent = stats.counts.menu;
-                document.getElementById('count-transactions').textContent = stats.counts.transactions;
-                document.getElementById('count-bookings').textContent = stats.counts.bookings;
+              const rawRes = await fetch("/api/db/download");
+              if (rawRes.ok) {
+                const dbData = await rawRes.text();
+                localStorage.setItem("offline_db_mirror", dbData);
+                localStorage.setItem(
+                  "offline_db_mirror_time",
+                  new Date().toISOString(),
+                );
+              }
+            } catch (e) {
+              console.error("Cache sync failed:", e);
+            }
+          }
 
-                // Load shop status
-                fetchShopStatus();
+          // Fetch backups
+          const backupsRes = await fetch("/api/backups");
+          const backups = await backupsRes.json();
 
-                // Sync current state as a backup mirror in browser cache (if not empty)
-                if (stats.counts.menu > 0 || stats.counts.transactions > 0) {
-                    try {
-                        const rawRes = await fetch('/api/db/download');
-                        if (rawRes.ok) {
-                            const dbData = await rawRes.text();
-                            localStorage.setItem('offline_db_mirror', dbData);
-                            localStorage.setItem('offline_db_mirror_time', new Date().toISOString());
-                        }
-                    } catch(e) { console.error("Cache sync failed:", e); }
-                }
+          const tbody = document.getElementById("backup-list-body");
+          tbody.innerHTML = "";
 
-                // Fetch backups
-                const backupsRes = await fetch('/api/backups');
-                const backups = await backupsRes.json();
-                
-                const tbody = document.getElementById('backup-list-body');
-                tbody.innerHTML = '';
-                
-                if (backups.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 3rem; color: var(--text-dim);">Belum ada file backup di server. Silakan klik "BUAT BACKUP DI SERVER".</td></tr>`;
-                    return;
-                }
-                
-                backups.forEach(b => {
-                    const row = document.createElement('tr');
-                    const date = new Date(b.createdAt);
-                    const isAuto = b.filename.includes('_auto_');
-                    const isPreImport = b.filename.includes('_preimport_');
-                    const isPreRestore = b.filename.includes('_prerestore_');
-                    
-                    let typeBadge = '';
-                    if (isAuto) {
-                        typeBadge = '<span class="badge-auto">Otomatis (15m)</span>';
-                    } else if (isPreImport || isPreRestore) {
-                        typeBadge = '<span class="badge-auto" style="background:rgba(155, 89, 182, 0.1); color:#9b59b6; border-color:rgba(155, 89, 182, 0.3);">Proteksi Sistem</span>';
-                    } else {
-                        typeBadge = '<span class="badge-manual">Manual (Admin)</span>';
-                    }
+          if (backups.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 3rem; color: var(--text-dim);">Belum ada file backup di server. Silakan klik "BUAT BACKUP DI SERVER".</td></tr>`;
+            return;
+          }
 
-                    row.innerHTML = `
+          backups.forEach((b) => {
+            const row = document.createElement("tr");
+            const date = new Date(b.createdAt);
+            const isAuto = b.filename.includes("_auto_");
+            const isPreImport = b.filename.includes("_preimport_");
+            const isPreRestore = b.filename.includes("_prerestore_");
+
+            let typeBadge = "";
+            if (isAuto) {
+              typeBadge = '<span class="badge-auto">Otomatis (15m)</span>';
+            } else if (isPreImport || isPreRestore) {
+              typeBadge =
+                '<span class="badge-auto" style="background:rgba(155, 89, 182, 0.1); color:#9b59b6; border-color:rgba(155, 89, 182, 0.3);">Proteksi Sistem</span>';
+            } else {
+              typeBadge = '<span class="badge-manual">Manual (Admin)</span>';
+            }
+
+            row.innerHTML = `
                         <td>
-                            <small style="color:var(--text-dim);">${date.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</small><br>
-                            <strong>${date.toLocaleTimeString('id-ID')}</strong>
+                            <small style="color:var(--text-dim);">${date.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</small><br>
+                            <strong>${date.toLocaleTimeString("id-ID")}</strong>
                         </td>
                         <td style="font-family:monospace; font-size:0.8rem; color:var(--text-dim);">${b.filename}</td>
                         <td>${typeBadge}</td>
@@ -271,283 +584,319 @@
                             <button class="btn btn-outline" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem; border-color: rgba(231, 76, 60, 0.3); color: #e74c3c;" onclick="deleteBackup('${b.filename}')">Hapus</button>
                         </td>
                     `;
-                    tbody.appendChild(row);
-                });
-            } catch (err) {
-                console.error("Load failed:", err);
-            }
+            tbody.appendChild(row);
+          });
+        } catch (err) {
+          console.error("Load failed:", err);
         }
+      }
 
-        async function createBackup() {
-            const res = await postData('/backups/create', {});
-            if (res && res.success) {
-                alert('Backup database berhasil dibuat di server:\n' + res.filename);
+      async function createBackup() {
+        const res = await postData("/backups/create", {});
+        if (res && res.success) {
+          alert("Backup database berhasil dibuat di server:\n" + res.filename);
+          loadData();
+        } else {
+          alert("Gagal membuat backup di server.");
+        }
+      }
+
+      async function restoreBackup(filename) {
+        if (
+          confirm(
+            `!!! PERINGATAN KERAS !!!\n\nAnda akan memulihkan data database dari file: ${filename}\n\nSeluruh data POS saat ini akan ditimpa dengan data backup ini.\nSistem akan mencadangkan database saat ini terlebih dahulu demi keamanan.\n\nApakah Anda yakin ingin memulihkan data?`,
+          )
+        ) {
+          const res = await postData(`/backups/${filename}/restore`, {});
+          if (res && res.success) {
+            alert("BERHASIL: Database berhasil dikembalikan ke titik backup!");
+            loadData();
+          } else {
+            alert("Gagal memulihkan database.");
+          }
+        }
+      }
+
+      async function deleteBackup(filename) {
+        if (
+          confirm(
+            `Hapus file backup "${filename}" dari server secara permanen?`,
+          )
+        ) {
+          const res = await deleteData(`/backups/${filename}`);
+          if (res && res.success) {
+            loadData();
+          } else {
+            alert("Gagal menghapus file backup.");
+          }
+        }
+      }
+
+      async function handleFileUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async function (evt) {
+          try {
+            const parsed = JSON.parse(evt.target.result);
+            if (
+              confirm(
+                "!!! KONFIRMASI IMPOR DATA !!!\n\nFile database lokal yang Anda pilih valid.\nApakah Anda yakin ingin mengunggah file ini untuk MENIMPA SELURUH DATA POS saat ini?",
+              )
+            ) {
+              const res = await fetch("/api/db/import", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(parsed),
+              });
+              const result = await res.json();
+              if (result.success) {
+                alert(
+                  "BERHASIL: Database POS berhasil dipulihkan dari file lokal Anda!",
+                );
                 loadData();
+              } else {
+                alert("Gagal mengimpor database: " + result.message);
+              }
+            }
+          } catch (err) {
+            alert(
+              "File tidak valid: Format JSON rusak atau bukan file database db.json yang benar.",
+            );
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = ""; // reset input
+      }
+
+      async function restoreFromCache() {
+        const cache = localStorage.getItem("offline_db_mirror");
+        const time = localStorage.getItem("offline_db_mirror_time");
+        if (!cache) {
+          return alert(
+            "Cache mirror browser kosong atau belum pernah tersinkron.",
+          );
+        }
+
+        const formattedTime = new Date(time).toLocaleString("id-ID");
+        if (
+          confirm(
+            `!!! PEMULIHAN CACHE BROWSER !!!\n\nMenemukan data bayangan yang tersinkron otomatis pada:\n📅 ${formattedTime}\n\nApakah Anda yakin ingin memulihkan database server menggunakan data cache browser ini?`,
+          )
+        ) {
+          try {
+            const parsed = JSON.parse(cache);
+            const res = await fetch("/api/db/import", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(parsed),
+            });
+            const result = await res.json();
+            if (result.success) {
+              alert(
+                "BERHASIL: Database berhasil dipulihkan dari Cache Browser!",
+              );
+              loadData();
             } else {
-                alert('Gagal membuat backup di server.');
+              alert("Gagal memulihkan dari cache browser: " + result.message);
             }
+          } catch (err) {
+            alert("Gagal memproses data cache browser.");
+          }
+        }
+      }
+
+      async function fetchShopStatus() {
+        try {
+          const res = await fetch("/api/settings");
+          const settings = await res.json();
+          updateShopUI(settings.shopOpen);
+          updateBookingUI(settings.onlineBookingOpen);
+        } catch (err) {
+          console.error("Failed to load shop status:", err);
+        }
+      }
+
+      function updateBookingUI(isOpen) {
+        const badge = document.getElementById("booking-status-badge");
+        const btnOpen = document.getElementById("btn-open-booking");
+        const btnClose = document.getElementById("btn-close-booking");
+
+        if (!badge || !btnOpen || !btnClose) return;
+
+        if (isOpen) {
+          badge.style.background = "rgba(46, 204, 113, 0.15)";
+          badge.style.color = "#2ecc71";
+          badge.style.border = "1px solid rgba(46, 204, 113, 0.4)";
+          badge.style.boxShadow = "0 0 15px rgba(46, 204, 113, 0.2)";
+          badge.textContent = "🟢 BOOKING BUKA";
+
+          // Styling active Buka button, inactive Tutup button
+          btnOpen.style.opacity = "1";
+          btnOpen.style.boxShadow = "0 0 15px rgba(46, 204, 113, 0.4)";
+          btnClose.style.opacity = "0.4";
+          btnClose.style.background = "transparent";
+          btnClose.style.color = "#e74c3c";
+          btnClose.style.borderColor = "rgba(231, 76, 60, 0.4)";
+          btnClose.style.boxShadow = "none";
+        } else {
+          badge.style.background = "rgba(231, 76, 60, 0.15)";
+          badge.style.color = "#e74c3c";
+          badge.style.border = "1px solid rgba(231, 76, 60, 0.4)";
+          badge.style.boxShadow = "0 0 15px rgba(231, 76, 60, 0.2)";
+          badge.textContent = "🔴 BOOKING TUTUP";
+
+          // Styling active Tutup button, inactive Buka button
+          btnClose.style.opacity = "1";
+          btnClose.style.boxShadow = "0 0 15px rgba(231, 76, 60, 0.4)";
+          btnOpen.style.opacity = "0.4";
+          btnOpen.style.background = "transparent";
+          btnOpen.style.color = "#2ecc71";
+          btnOpen.style.borderColor = "rgba(46, 204, 113, 0.4)";
+          btnOpen.style.boxShadow = "none";
+        }
+      }
+
+      async function toggleBookingStatus(isOpen) {
+        // Keamanan Ganda: Konfirmasi berlapis
+        const confirmMsg = isOpen
+          ? "🔒 KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MEMBUKA layanan booking online?\n\nPelanggan akan dapat membuat reservasi online baru secara instan."
+          : "⚠️ KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MENUTUP layanan booking online?\n\nPelanggan tidak akan bisa melakukan reservasi online baru hari ini!";
+
+        if (!confirm(confirmMsg)) return;
+
+        // Double security password check for closing bookings (premium!)
+        if (!isOpen) {
+          const pass = await promptAdminPassword(
+            "Masukkan kata sandi Admin Anda untuk mengonfirmasi penutupan booking online:",
+          );
+          if (pass === null) return;
+          if (pass.trim() === "") {
+            alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
+            return;
+          }
+          const verifyRes = await fetch("/api/verify-admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: pass }),
+          });
+          const verifyData = await verifyRes.json();
+          if (!verifyData.success) {
+            alert(
+              "❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!",
+            );
+            return;
+          }
         }
 
-        async function restoreBackup(filename) {
-            if (confirm(`!!! PERINGATAN KERAS !!!\n\nAnda akan memulihkan data database dari file: ${filename}\n\nSeluruh data POS saat ini akan ditimpa dengan data backup ini.\nSistem akan mencadangkan database saat ini terlebih dahulu demi keamanan.\n\nApakah Anda yakin ingin memulihkan data?`)) {
-                const res = await postData(`/backups/${filename}/restore`, {});
-                if (res && res.success) {
-                    alert('BERHASIL: Database berhasil dikembalikan ke titik backup!');
-                    loadData();
-                } else {
-                    alert('Gagal memulihkan database.');
-                }
-            }
+        try {
+          const res = await fetch("/api/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ onlineBookingOpen: isOpen }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            updateBookingUI(data.settings.onlineBookingOpen);
+            alert(
+              `Layanan booking online berhasil: ${isOpen ? "DIBUKA" : "DITUTUP"}`,
+            );
+          }
+        } catch (err) {
+          alert("Gagal mengubah status layanan booking online.");
+        }
+      }
+
+      function updateShopUI(isOpen) {
+        const badge = document.getElementById("shop-status-badge");
+        const btnOpen = document.getElementById("btn-open-shop");
+        const btnClose = document.getElementById("btn-close-shop");
+
+        if (isOpen) {
+          badge.style.background = "rgba(46, 204, 113, 0.15)";
+          badge.style.color = "#2ecc71";
+          badge.style.border = "1px solid rgba(46, 204, 113, 0.4)";
+          badge.style.boxShadow = "0 0 15px rgba(46, 204, 113, 0.2)";
+          badge.textContent = "🟢 TOKO BUKA";
+
+          // Styling active Buka button, inactive Tutup button
+          btnOpen.style.opacity = "1";
+          btnOpen.style.boxShadow = "0 0 15px rgba(46, 204, 113, 0.4)";
+          btnClose.style.opacity = "0.4";
+          btnClose.style.background = "transparent";
+          btnClose.style.color = "#e74c3c";
+          btnClose.style.borderColor = "rgba(231, 76, 60, 0.4)";
+          btnClose.style.boxShadow = "none";
+        } else {
+          badge.style.background = "rgba(231, 76, 60, 0.15)";
+          badge.style.color = "#e74c3c";
+          badge.style.border = "1px solid rgba(231, 76, 60, 0.4)";
+          badge.style.boxShadow = "0 0 15px rgba(231, 76, 60, 0.2)";
+          badge.textContent = "🔴 TOKO TUTUP";
+
+          // Styling active Tutup button, inactive Buka button
+          btnClose.style.opacity = "1";
+          btnClose.style.boxShadow = "0 0 15px rgba(231, 76, 60, 0.4)";
+          btnOpen.style.opacity = "0.4";
+          btnOpen.style.background = "transparent";
+          btnOpen.style.color = "#2ecc71";
+          btnOpen.style.borderColor = "rgba(46, 204, 113, 0.4)";
+          btnOpen.style.boxShadow = "none";
+        }
+      }
+
+      async function toggleShopStatus(isOpen) {
+        // Keamanan Ganda: Konfirmasi berlapis
+        const confirmMsg = isOpen
+          ? "🔒 KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MEMBUKA operasional toko?\n\nSistem kasir dan formulir reservasi online pelanggan akan diaktifkan kembali."
+          : "⚠️ KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MENUTUP operasional toko?\n\nSistem kasir POS billiard & karaoke akan langsung dikunci/dinonaktifkan secara otomatis, dan pelanggan tidak akan bisa melakukan reservasi online baru hari ini!";
+
+        if (!confirm(confirmMsg)) return;
+
+        // Double security password check for closing the store (premium!)
+        if (!isOpen) {
+          const pass = await promptAdminPassword(
+            "Masukkan kata sandi Admin Anda untuk mengonfirmasi penutupan toko:",
+          );
+          if (pass === null) return;
+          if (pass.trim() === "") {
+            alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
+            return;
+          }
+          const verifyRes = await fetch("/api/verify-admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: pass }),
+          });
+          const verifyData = await verifyRes.json();
+          if (!verifyData.success) {
+            alert(
+              "❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!",
+            );
+            return;
+          }
         }
 
-        async function deleteBackup(filename) {
-            if (confirm(`Hapus file backup "${filename}" dari server secara permanen?`)) {
-                const res = await deleteData(`/backups/${filename}`);
-                if (res && res.success) {
-                    loadData();
-                } else {
-                    alert('Gagal menghapus file backup.');
-                }
-            }
+        try {
+          const res = await fetch("/api/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ shopOpen: isOpen }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            updateShopUI(data.settings.shopOpen);
+            alert(
+              `Status toko berhasil diubah menjadi: ${isOpen ? "BUKA" : "TUTUP"}`,
+            );
+          }
+        } catch (err) {
+          alert("Gagal mengubah status operasional toko.");
         }
+      }
 
-        async function handleFileUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(evt) {
-                try {
-                    const parsed = JSON.parse(evt.target.result);
-                    if (confirm('!!! KONFIRMASI IMPOR DATA !!!\n\nFile database lokal yang Anda pilih valid.\nApakah Anda yakin ingin mengunggah file ini untuk MENIMPA SELURUH DATA POS saat ini?')) {
-                        const res = await fetch('/api/db/import', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(parsed)
-                        });
-                        const result = await res.json();
-                        if (result.success) {
-                            alert('BERHASIL: Database POS berhasil dipulihkan dari file lokal Anda!');
-                            loadData();
-                        } else {
-                            alert('Gagal mengimpor database: ' + result.message);
-                        }
-                    }
-                } catch(err) {
-                    alert('File tidak valid: Format JSON rusak atau bukan file database db.json yang benar.');
-                }
-            };
-            reader.readAsText(file);
-            e.target.value = ''; // reset input
-        }
-
-        async function restoreFromCache() {
-            const cache = localStorage.getItem('offline_db_mirror');
-            const time = localStorage.getItem('offline_db_mirror_time');
-            if (!cache) {
-                return alert('Cache mirror browser kosong atau belum pernah tersinkron.');
-            }
-
-            const formattedTime = new Date(time).toLocaleString('id-ID');
-            if (confirm(`!!! PEMULIHAN CACHE BROWSER !!!\n\nMenemukan data bayangan yang tersinkron otomatis pada:\n📅 ${formattedTime}\n\nApakah Anda yakin ingin memulihkan database server menggunakan data cache browser ini?`)) {
-                try {
-                    const parsed = JSON.parse(cache);
-                    const res = await fetch('/api/db/import', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(parsed)
-                    });
-                    const result = await res.json();
-                    if (result.success) {
-                        alert('BERHASIL: Database berhasil dipulihkan dari Cache Browser!');
-                        loadData();
-                    } else {
-                        alert('Gagal memulihkan dari cache browser: ' + result.message);
-                    }
-                } catch(err) {
-                    alert('Gagal memproses data cache browser.');
-                }
-            }
-        }
-
-        async function fetchShopStatus() {
-            try {
-                const res = await fetch('/api/settings');
-                const settings = await res.json();
-                updateShopUI(settings.shopOpen);
-                updateBookingUI(settings.onlineBookingOpen);
-            } catch (err) {
-                console.error("Failed to load shop status:", err);
-            }
-        }
-
-        function updateBookingUI(isOpen) {
-            const badge = document.getElementById('booking-status-badge');
-            const btnOpen = document.getElementById('btn-open-booking');
-            const btnClose = document.getElementById('btn-close-booking');
-            
-            if (!badge || !btnOpen || !btnClose) return;
-
-            if (isOpen) {
-                badge.style.background = 'rgba(46, 204, 113, 0.15)';
-                badge.style.color = '#2ecc71';
-                badge.style.border = '1px solid rgba(46, 204, 113, 0.4)';
-                badge.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.2)';
-                badge.textContent = '🟢 BOOKING BUKA';
-                
-                // Styling active Buka button, inactive Tutup button
-                btnOpen.style.opacity = '1';
-                btnOpen.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.4)';
-                btnClose.style.opacity = '0.4';
-                btnClose.style.background = 'transparent';
-                btnClose.style.color = '#e74c3c';
-                btnClose.style.borderColor = 'rgba(231, 76, 60, 0.4)';
-                btnClose.style.boxShadow = 'none';
-            } else {
-                badge.style.background = 'rgba(231, 76, 60, 0.15)';
-                badge.style.color = '#e74c3c';
-                badge.style.border = '1px solid rgba(231, 76, 60, 0.4)';
-                badge.style.boxShadow = '0 0 15px rgba(231, 76, 60, 0.2)';
-                badge.textContent = '🔴 BOOKING TUTUP';
-                
-                // Styling active Tutup button, inactive Buka button
-                btnClose.style.opacity = '1';
-                btnClose.style.boxShadow = '0 0 15px rgba(231, 76, 60, 0.4)';
-                btnOpen.style.opacity = '0.4';
-                btnOpen.style.background = 'transparent';
-                btnOpen.style.color = '#2ecc71';
-                btnOpen.style.borderColor = 'rgba(46, 204, 113, 0.4)';
-                btnOpen.style.boxShadow = 'none';
-            }
-        }
-
-        async function toggleBookingStatus(isOpen) {
-            // Keamanan Ganda: Konfirmasi berlapis
-            const confirmMsg = isOpen 
-                ? "🔒 KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MEMBUKA layanan booking online?\n\nPelanggan akan dapat membuat reservasi online baru secara instan."
-                : "⚠️ KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MENUTUP layanan booking online?\n\nPelanggan tidak akan bisa melakukan reservasi online baru hari ini!";
-                
-            if (!confirm(confirmMsg)) return;
-
-            // Double security password check for closing bookings (premium!)
-            if (!isOpen) {
-                const pass = await promptAdminPassword("Masukkan kata sandi Admin Anda untuk mengonfirmasi penutupan booking online:");
-                if (pass === null) return;
-                if (pass.trim() === "") {
-                    alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
-                    return;
-                }
-                const verifyRes = await fetch('/api/verify-admin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: pass })
-                });
-                const verifyData = await verifyRes.json();
-                if (!verifyData.success) {
-                    alert("❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!");
-                    return;
-                }
-            }
-
-            try {
-                const res = await fetch('/api/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ onlineBookingOpen: isOpen })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    updateBookingUI(data.settings.onlineBookingOpen);
-                    alert(`Layanan booking online berhasil: ${isOpen ? 'DIBUKA' : 'DITUTUP'}`);
-                }
-            } catch (err) {
-                alert("Gagal mengubah status layanan booking online.");
-            }
-        }
-
-        function updateShopUI(isOpen) {
-            const badge = document.getElementById('shop-status-badge');
-            const btnOpen = document.getElementById('btn-open-shop');
-            const btnClose = document.getElementById('btn-close-shop');
-            
-            if (isOpen) {
-                badge.style.background = 'rgba(46, 204, 113, 0.15)';
-                badge.style.color = '#2ecc71';
-                badge.style.border = '1px solid rgba(46, 204, 113, 0.4)';
-                badge.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.2)';
-                badge.textContent = '🟢 TOKO BUKA';
-                
-                // Styling active Buka button, inactive Tutup button
-                btnOpen.style.opacity = '1';
-                btnOpen.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.4)';
-                btnClose.style.opacity = '0.4';
-                btnClose.style.background = 'transparent';
-                btnClose.style.color = '#e74c3c';
-                btnClose.style.borderColor = 'rgba(231, 76, 60, 0.4)';
-                btnClose.style.boxShadow = 'none';
-            } else {
-                badge.style.background = 'rgba(231, 76, 60, 0.15)';
-                badge.style.color = '#e74c3c';
-                badge.style.border = '1px solid rgba(231, 76, 60, 0.4)';
-                badge.style.boxShadow = '0 0 15px rgba(231, 76, 60, 0.2)';
-                badge.textContent = '🔴 TOKO TUTUP';
-                
-                // Styling active Tutup button, inactive Buka button
-                btnClose.style.opacity = '1';
-                btnClose.style.boxShadow = '0 0 15px rgba(231, 76, 60, 0.4)';
-                btnOpen.style.opacity = '0.4';
-                btnOpen.style.background = 'transparent';
-                btnOpen.style.color = '#2ecc71';
-                btnOpen.style.borderColor = 'rgba(46, 204, 113, 0.4)';
-                btnOpen.style.boxShadow = 'none';
-            }
-        }
-
-        async function toggleShopStatus(isOpen) {
-            // Keamanan Ganda: Konfirmasi berlapis
-            const confirmMsg = isOpen 
-                ? "🔒 KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MEMBUKA operasional toko?\n\nSistem kasir dan formulir reservasi online pelanggan akan diaktifkan kembali."
-                : "⚠️ KONFIRMASI KEAMANAN GANDA:\n\nApakah Anda benar-benar yakin ingin MENUTUP operasional toko?\n\nSistem kasir POS billiard & karaoke akan langsung dikunci/dinonaktifkan secara otomatis, dan pelanggan tidak akan bisa melakukan reservasi online baru hari ini!";
-                
-            if (!confirm(confirmMsg)) return;
-
-            // Double security password check for closing the store (premium!)
-            if (!isOpen) {
-                const pass = await promptAdminPassword("Masukkan kata sandi Admin Anda untuk mengonfirmasi penutupan toko:");
-                if (pass === null) return;
-                if (pass.trim() === "") {
-                    alert("Gagal: Kata sandi verifikasi tidak boleh kosong!");
-                    return;
-                }
-                const verifyRes = await fetch('/api/verify-admin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: pass })
-                });
-                const verifyData = await verifyRes.json();
-                if (!verifyData.success) {
-                    alert("❌ VERIFIKASI GAGAL: Kata sandi Admin yang dimasukkan salah!");
-                    return;
-                }
-            }
-
-            try {
-                const res = await fetch('/api/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shopOpen: isOpen })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    updateShopUI(data.settings.shopOpen);
-                    alert(`Status toko berhasil diubah menjadi: ${isOpen ? 'BUKA' : 'TUTUP'}`);
-                }
-            } catch (err) {
-                alert("Gagal mengubah status operasional toko.");
-            }
-        }
-
-        loadData();
+      loadData();
     </script>
-</body>
+  </body>
 </html>

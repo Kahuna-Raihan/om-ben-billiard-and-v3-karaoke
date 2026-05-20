@@ -84,7 +84,7 @@
     </div>
 
     <script>
-        if (localStorage.getItem('auth_role') !== 'admin') {
+        if (localStorage.getItem('auth_role') !== 'admin' && localStorage.getItem('auth_role') !== 'engineer') {
             document.getElementById('revenue-card').style.display = 'none';
         }
     </script>

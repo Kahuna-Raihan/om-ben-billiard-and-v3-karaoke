@@ -999,7 +999,7 @@ app.put("/api/users/update", (req, res) => {
   const user = db.users[userIndex];
 
   // Enforce role restrictions: Cashiers cannot change their username or password
-  if (user.role !== "admin") {
+  if (user.role !== "admin" && user.role !== "engineer") {
     if (newUsername && newUsername !== oldUsername) {
       return res.status(403).json({
         success: false,

@@ -190,7 +190,7 @@
             loadTargets();
             
             // Configure Admin actions
-            const isAdmin = localStorage.getItem('auth_role') === 'admin';
+            const isAdmin = localStorage.getItem('auth_role') === 'admin' || localStorage.getItem('auth_role') === 'engineer';
             if (isAdmin) {
                 // Show Admin-only reset button
                 const btnReset = document.getElementById('btn-reset-bookings');
@@ -693,7 +693,7 @@
             const tbody = document.getElementById('history-list-body');
             if (!tbody) return;
 
-            const isAdmin = localStorage.getItem('auth_role') === 'admin';
+            const isAdmin = localStorage.getItem('auth_role') === 'admin' || localStorage.getItem('auth_role') === 'engineer';
             
             // Dynamically manage admin history headers
             const headerRow = document.getElementById('history-header-row');

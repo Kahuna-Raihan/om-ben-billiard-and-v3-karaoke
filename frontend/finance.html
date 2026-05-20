@@ -163,8 +163,8 @@
     </div>
 
     <script>
-        if (localStorage.getItem('auth_role') !== 'admin') {
-            alert('Akses Ditolak! Halaman ini khusus Admin.');
+        if (localStorage.getItem('auth_role') !== 'admin' && localStorage.getItem('auth_role') !== 'engineer') {
+            alert('Akses Ditolak! Halaman ini khusus Admin / Engineer.');
             window.location.href = 'index.html';
         }
 

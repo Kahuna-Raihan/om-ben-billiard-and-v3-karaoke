@@ -1,90 +1,105 @@
-const API_BASE = '/api';
+const API_BASE = "/api";
 
 // ===== THEME (DARK / LIGHT MODE) =====
 (function initTheme() {
-    const saved = localStorage.getItem('app_theme');
-    if (saved === 'light') {
-        document.body.classList.add('light-mode');
-    }
+  const saved = localStorage.getItem("app_theme");
+  if (saved === "light") {
+    document.body.classList.add("light-mode");
+  }
 })();
 
 function toggleTheme() {
-    const isLight = document.body.classList.toggle('light-mode');
-    localStorage.setItem('app_theme', isLight ? 'light' : 'dark');
-    // Update all toggle buttons on the page
-    const icons = document.querySelectorAll('.theme-toggle-icon');
-    const labels = document.querySelectorAll('.theme-toggle-label');
-    icons.forEach(el => { el.textContent = isLight ? '☀️' : '🌙'; });
-    labels.forEach(el => { el.textContent = isLight ? 'Mode Terang' : 'Mode Gelap'; });
+  const isLight = document.body.classList.toggle("light-mode");
+  localStorage.setItem("app_theme", isLight ? "light" : "dark");
+  // Update all toggle buttons on the page
+  const icons = document.querySelectorAll(".theme-toggle-icon");
+  const labels = document.querySelectorAll(".theme-toggle-label");
+  icons.forEach((el) => {
+    el.textContent = isLight ? "☀️" : "🌙";
+  });
+  labels.forEach((el) => {
+    el.textContent = isLight ? "Mode Terang" : "Mode Gelap";
+  });
 }
 
 // --- SESSION PERSISTENCE GUARD ---
 // Enforce session-only login credentials (wipe from localStorage on fresh session startup)
-if (!sessionStorage.getItem('session_active_flag')) {
-    if (document.referrer && document.referrer.includes('login.html')) {
-        sessionStorage.setItem('session_active_flag', 'true');
-    } else {
-        localStorage.removeItem('auth_role');
-        localStorage.removeItem('auth_user');
-        localStorage.removeItem('auth_name');
-        localStorage.removeItem('auth_profile_pic');
-        sessionStorage.setItem('session_active_flag', 'true');
-    }
+if (!sessionStorage.getItem("session_active_flag")) {
+  if (document.referrer && document.referrer.includes("login.html")) {
+    sessionStorage.setItem("session_active_flag", "true");
+  } else {
+    localStorage.removeItem("auth_role");
+    localStorage.removeItem("auth_user");
+    localStorage.removeItem("auth_name");
+    localStorage.removeItem("auth_profile_pic");
+    sessionStorage.setItem("session_active_flag", "true");
+  }
 }
 
 // --- TIME SYNC SYSTEM ---
 let serverTimeOffset = 0;
 async function syncTime() {
-    try {
-        const start = Date.now();
-        const response = await fetch(`${API_BASE}/time`);
-        const { serverTime } = await response.json();
-        const end = Date.now();
-        const latency = (end - start) / 2;
-        serverTimeOffset = (serverTime + latency) - end;
-    } catch (e) {}
+  try {
+    const start = Date.now();
+    const response = await fetch(`${API_BASE}/time`);
+    const { serverTime } = await response.json();
+    const end = Date.now();
+    const latency = (end - start) / 2;
+    serverTimeOffset = serverTime + latency - end;
+  } catch (e) {}
 }
 syncTime();
 setInterval(syncTime, 60000);
 
 function getSyncedNow() {
-    return new Date(Date.now() + serverTimeOffset);
+  return new Date(Date.now() + serverTimeOffset);
 }
 
 // --- SHOP SETTINGS LOCK GUARD ---
 async function checkShopStatusLock() {
-    // Only apply shop status lock to CASHIER/OPERATOR dashboards
-    // Admin, db-admin, and public reservasi are exempt or handled separately
-    const isCashierPage = 
-        window.location.href.includes('index.html') || 
-        window.location.href.includes('karaoke.html') ||
-        window.location.href.includes('pos.html');
-        
-    if (isCashierPage) {
-        try {
-            const res = await fetch(`${API_BASE}/settings`);
-            const settings = await res.json();
-            if (settings && (settings.shopOpen === false || settings.shopOpen === 'false')) {
-                // Cashier server/dashboard is turned off / locked!
-                // Create a full page glassmorphic overlay that cannot be closed.
-                const lockOverlay = document.createElement('div');
-                lockOverlay.style.position = 'fixed';
-                lockOverlay.style.top = '0';
-                lockOverlay.style.left = '0';
-                lockOverlay.style.width = '100vw';
-                lockOverlay.style.height = '100vh';
-                lockOverlay.style.background = 'rgba(10, 10, 20, 0.98)';
-                lockOverlay.style.backdropFilter = 'blur(20px)';
-                lockOverlay.style.display = 'flex';
-                lockOverlay.style.flexDirection = 'column';
-                lockOverlay.style.justifyContent = 'center';
-                lockOverlay.style.alignItems = 'center';
-                lockOverlay.style.zIndex = '999999';
-                lockOverlay.style.color = '#ffffff';
-                lockOverlay.style.textAlign = 'center';
-                lockOverlay.style.padding = '2rem';
-                
-                lockOverlay.innerHTML = `
+  // Only apply shop status lock to CASHIER/OPERATOR dashboards
+  // Admin, db-admin, and public reservasi are exempt or handled separately
+  const isCashierPage =
+    window.location.href.includes("index.html") ||
+    window.location.href.includes("karaoke.html") ||
+    window.location.href.includes("pos.html");
+
+  const roleNow = localStorage.getItem("auth_role");
+
+  // Allow engineer to access system even if shop is locked (shopOpen=false)
+  // Engineer bypasses the shop status lock overlay.
+  if (roleNow === "engineer") {
+    return;
+  }
+
+  if (isCashierPage) {
+    try {
+      const res = await fetch(`${API_BASE}/settings`);
+      const settings = await res.json();
+      if (
+        settings &&
+        (settings.shopOpen === false || settings.shopOpen === "false")
+      ) {
+        // Cashier server/dashboard is turned off / locked!
+        // Create a full page glassmorphic overlay that cannot be closed.
+        const lockOverlay = document.createElement("div");
+        lockOverlay.style.position = "fixed";
+        lockOverlay.style.top = "0";
+        lockOverlay.style.left = "0";
+        lockOverlay.style.width = "100vw";
+        lockOverlay.style.height = "100vh";
+        lockOverlay.style.background = "rgba(10, 10, 20, 0.98)";
+        lockOverlay.style.backdropFilter = "blur(20px)";
+        lockOverlay.style.display = "flex";
+        lockOverlay.style.flexDirection = "column";
+        lockOverlay.style.justifyContent = "center";
+        lockOverlay.style.alignItems = "center";
+        lockOverlay.style.zIndex = "999999";
+        lockOverlay.style.color = "#ffffff";
+        lockOverlay.style.textAlign = "center";
+        lockOverlay.style.padding = "2rem";
+
+        lockOverlay.innerHTML = `
                     <div style="max-width: 600px; background: rgba(231, 76, 60, 0.05); border: 2px solid rgba(231, 76, 60, 0.4); border-radius: 24px; padding: 3rem 2rem; box-shadow: 0 0 50px rgba(231,76,60,0.25);">
                         <div style="font-size: 5rem; margin-bottom: 1.5rem; animation: pulse 2s infinite;">🔒</div>
                         <h1 style="color: #e74c3c; font-family: var(--font-heading); margin-bottom: 1.5rem; font-weight: 900; letter-spacing: 1px; font-size: 2rem; text-shadow: 0 0 20px rgba(231,76,60,0.3);">
@@ -106,137 +121,210 @@ async function checkShopStatusLock() {
                         </div>
                     </div>
                 `;
-                document.body.appendChild(lockOverlay);
-            }
-        } catch (e) {
-            console.error("Failed to verify store operational lock status:", e);
-        }
+        document.body.appendChild(lockOverlay);
+      }
+    } catch (e) {
+      console.error("Failed to verify store operational lock status:", e);
     }
+  }
 }
 checkShopStatusLock();
 
 // --- AUTO-SAVE DATABASE MIRROR TO BROWSER LOCALSTORAGE ---
 async function startAutoDatabaseMirrorSync() {
-    // Only run this on cashier or admin dashboards, not on the public reservasi portal
-    const isDashboardPage = 
-        window.location.href.includes('index.html') || 
-        window.location.href.includes('karaoke.html') ||
-        window.location.href.includes('pos.html') ||
-        window.location.href.includes('admin.html') ||
-        window.location.href.includes('db-admin.html');
-        
-    if (isDashboardPage) {
-        // Sync immediately on load, then every 10 seconds
-        const syncMirror = async () => {
-            try {
-                const statsRes = await fetch(`${API_BASE}/db/stats`);
-                if (statsRes.ok) {
-                    const stats = await statsRes.json();
-                    if (stats.counts.menu > 0 || stats.counts.transactions > 0) {
-                        const rawRes = await fetch(`${API_BASE}/db/download`);
-                        if (rawRes.ok) {
-                            const dbData = await rawRes.text();
-                            localStorage.setItem('offline_db_mirror', dbData);
-                            localStorage.setItem('offline_db_mirror_time', new Date().toISOString());
-                            console.log("[Auto-Save] Database mirrored successfully in browser storage.");
-                        }
-                    }
-                }
-            } catch(e) {
-                console.error("[Auto-Save] Local mirror sync failed:", e);
+  // Only run this on cashier or admin dashboards, not on the public reservasi portal
+  const isDashboardPage =
+    window.location.href.includes("index.html") ||
+    window.location.href.includes("karaoke.html") ||
+    window.location.href.includes("pos.html") ||
+    window.location.href.includes("admin.html") ||
+    window.location.href.includes("db-admin.html");
+
+  if (isDashboardPage) {
+    // Sync immediately on load, then every 10 seconds
+    const syncMirror = async () => {
+      try {
+        const statsRes = await fetch(`${API_BASE}/db/stats`);
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          if (stats.counts.menu > 0 || stats.counts.transactions > 0) {
+            const rawRes = await fetch(`${API_BASE}/db/download`);
+            if (rawRes.ok) {
+              const dbData = await rawRes.text();
+              localStorage.setItem("offline_db_mirror", dbData);
+              localStorage.setItem(
+                "offline_db_mirror_time",
+                new Date().toISOString(),
+              );
+              console.log(
+                "[Auto-Save] Database mirrored successfully in browser storage.",
+              );
             }
-        };
-        
-        // Run first sync after 2 seconds, then every 10 seconds
-        setTimeout(syncMirror, 2000);
-        setInterval(syncMirror, 10000);
-    }
+          }
+        }
+      } catch (e) {
+        console.error("[Auto-Save] Local mirror sync failed:", e);
+      }
+    };
+
+    // Run first sync after 2 seconds, then every 10 seconds
+    setTimeout(syncMirror, 2000);
+    setInterval(syncMirror, 10000);
+  }
 }
 startAutoDatabaseMirrorSync();
 
 // --- AUTH GUARD ---
-if (!window.location.href.includes('login.html') && 
-    !window.location.href.includes('attendance.html') && 
-    !window.location.href.includes('absen') && 
-    !window.location.href.includes('presensi') && 
-    !window.location.href.includes('reservasi.html')) {
-    if (!localStorage.getItem('auth_role')) window.location.href = 'login.html';
+if (
+  !window.location.href.includes("login.html") &&
+  !window.location.href.includes("attendance.html") &&
+  !window.location.href.includes("absen") &&
+  !window.location.href.includes("presensi") &&
+  !window.location.href.includes("reservasi.html")
+) {
+  if (!localStorage.getItem("auth_role")) window.location.href = "login.html";
 }
 
 function logout() {
-    localStorage.removeItem('auth_role');
-    localStorage.removeItem('auth_user');
-    localStorage.removeItem('auth_name');
-    window.location.href = 'login.html';
+  localStorage.removeItem("auth_role");
+  localStorage.removeItem("auth_user");
+  localStorage.removeItem("auth_name");
+  window.location.href = "login.html";
 }
 
 const formatRupiah = (n) => {
-    if (n === undefined || n === null) return 'Rp -';
-    const formatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
-    // Replace non-breaking spaces (\u00A0) with standard space (\u0020) to prevent thermal printer character glitched outputs (e.g. printing 'a' or 'â')
-    return formatted.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
+  if (n === undefined || n === null) return "Rp -";
+  const formatted = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(n);
+  // Replace non-breaking spaces (\u00A0) with standard space (\u0020) to prevent thermal printer character glitched outputs (e.g. printing 'a' or 'â')
+  return formatted.replace(/\u00a0/g, " ").replace(/\s+/g, " ");
 };
 
 const formatTime = (iso) => {
-    if (!iso) return '--:--';
-    const d = new Date(iso);
-    return isNaN(d.getTime()) ? '--:--' : d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  if (!iso) return "--:--";
+  const d = new Date(iso);
+  return isNaN(d.getTime())
+    ? "--:--"
+    : d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 };
 
 const calculateTimeDiff = (startISO) => {
-    const start = new Date(startISO);
-    const diff = Math.max(0, getSyncedNow() - start);
-    const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
-    return { h, m, s, formatted: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` };
+  const start = new Date(startISO);
+  const diff = Math.max(0, getSyncedNow() - start);
+  const h = Math.floor(diff / 3600000),
+    m = Math.floor((diff % 3600000) / 60000),
+    s = Math.floor((diff % 60000) / 1000);
+  return {
+    h,
+    m,
+    s,
+    formatted: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`,
+  };
 };
 
 const calculateCountdown = (endISO) => {
-    const end = new Date(endISO);
-    const diff = Math.max(0, end - getSyncedNow());
-    const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
-    return { h, m, s, isExpired: diff <= 0, formatted: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` };
+  const end = new Date(endISO);
+  const diff = Math.max(0, end - getSyncedNow());
+  const h = Math.floor(diff / 3600000),
+    m = Math.floor((diff % 3600000) / 60000),
+    s = Math.floor((diff % 60000) / 1000);
+  return {
+    h,
+    m,
+    s,
+    isExpired: diff <= 0,
+    formatted: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`,
+  };
 };
 
-async function fetchData(ep) { try { return await (await fetch(`${API_BASE}${ep}`)).json(); } catch(e){ return []; } }
-async function postData(ep, data) { try { return await (await fetch(`${API_BASE}${ep}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })).json(); } catch(e){ return null; } }
-async function putData(ep, data) { try { return await (await fetch(`${API_BASE}${ep}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })).json(); } catch(e){ return null; } }
-async function deleteData(ep) { try { return await (await fetch(`${API_BASE}${ep}`, { method: 'DELETE' })).json(); } catch(e){ return null; } }
+async function fetchData(ep) {
+  try {
+    return await (await fetch(`${API_BASE}${ep}`)).json();
+  } catch (e) {
+    return [];
+  }
+}
+async function postData(ep, data) {
+  try {
+    return await (
+      await fetch(`${API_BASE}${ep}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+    ).json();
+  } catch (e) {
+    return null;
+  }
+}
+async function putData(ep, data) {
+  try {
+    return await (
+      await fetch(`${API_BASE}${ep}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+    ).json();
+  } catch (e) {
+    return null;
+  }
+}
+async function deleteData(ep) {
+  try {
+    return await (await fetch(`${API_BASE}${ep}`, { method: "DELETE" })).json();
+  } catch (e) {
+    return null;
+  }
+}
 
 function renderNavbar(active) {
-    const role = localStorage.getItem('auth_role');
-    const user = localStorage.getItem('auth_user') || 'User';
-    const nav = document.querySelector('nav');
-    if (!nav) return;
+  const role = localStorage.getItem("auth_role");
+  const user = localStorage.getItem("auth_user") || "User";
+  const nav = document.querySelector("nav");
+  if (!nav) return;
 
-    let html = '<ul>';
-    if (role === 'admin') {
-        html += `
-            <li class="nav-label">ADMIN PANEL:</li>
-            <li><a href="admin.html" class="${active === 'admin' ? 'active-admin' : ''}">🍔 Menu</a></li>
-            <li><a href="karaoke-settings.html" class="${active === 'karaoke-settings' ? 'active-admin' : ''}">🎤 Ruang</a></li>
-            <li><a href="rental.html" class="${active === 'rental' ? 'active-admin' : ''}">🎱 Meja</a></li>
-            <li class="nav-divider"></li>
-            <li><a href="monitoring.html" class="${active === 'monitoring' ? 'active-admin' : ''}" style="color:var(--primary-color)">📡 LIVE</a></li>
-            <li><a href="cctv.html" class="${active === 'cctv' ? 'active-admin' : ''}" style="color:var(--primary-color)">📹 CCTV</a></li>
-            <li><a href="stock-history.html" class="${active === 'stock-history' ? 'active-admin' : ''}" style="color:var(--secondary-color)">📦 STOK</a></li>
-            <li><a href="finance.html" class="${active === 'finance' ? 'active-admin' : ''}">📊 LAPORAN</a></li>
-            <li><a href="attendance-admin.html" class="${active === 'attendance-admin' ? 'active-admin' : ''}">👥 STAF</a></li>
-            <li><a href="bookings.html" class="nav-booking ${active === 'bookings' ? 'active-admin' : ''}">📅 BOOKING</a></li>
-            <li><a href="db-admin.html" class="${active === 'db-admin' ? 'active-admin' : ''}" style="color: #00f3ff">💾 BACKUP</a></li>
-        `;
-    } else {
-        html += `
-            <li class="nav-label">KASIR:</li>
-            <li><a href="index.html" class="${active === 'billiard' ? 'active' : ''}">🎱 Billiard</a></li>
-            <li><a href="karaoke.html" class="${active === 'karaoke' ? 'active' : ''}">🎤 Karaoke</a></li>
-            <li><a href="pos.html" class="${active === 'pos' ? 'active' : ''}">🍔 Menu</a></li>
-            <li><a href="bookings.html" class="nav-booking ${active === 'bookings' ? 'active' : ''}">📅 Booking</a></li>
-        `;
-    }
-    
-    const profilePic = localStorage.getItem('auth_profile_pic') || 'assets/logo.png';
-    const isLightNow = document.body.classList.contains('light-mode');
+  let html = "<ul>";
+  if (role === "admin" || role === "engineer") {
     html += `
+            <li class="nav-label">ADMIN PANEL:</li>
+            <li><a href="admin.html" class="${active === "admin" ? "active-admin" : ""}">🍔 Menu</a></li>
+            <li><a href="karaoke-settings.html" class="${active === "karaoke-settings" ? "active-admin" : ""}">🎤 Ruang</a></li>
+            <li><a href="rental.html" class="${active === "rental" ? "active-admin" : ""}">🎱 Meja</a></li>
+            <li class="nav-divider"></li>
+            <li><a href="monitoring.html" class="${active === "monitoring" ? "active-admin" : ""}" style="color:var(--primary-color)">📡 LIVE</a></li>
+            <li><a href="cctv.html" class="${active === "cctv" ? "active-admin" : ""}" style="color:var(--primary-color)">📹 CCTV</a></li>
+            <li><a href="stock-history.html" class="${active === "stock-history" ? "active-admin" : ""}" style="color:var(--secondary-color)">📦 STOK</a></li>
+            <li><a href="finance.html" class="${active === "finance" ? "active-admin" : ""}">📊 LAPORAN</a></li>
+            <li><a href="attendance-admin.html" class="${active === "attendance-admin" ? "active-admin" : ""}">👥 STAF</a></li>
+            <li><a href="bookings.html" class="nav-booking ${active === "bookings" ? "active-admin" : ""}">📅 BOOKING</a></li>
+            <li><a href="db-admin.html" class="${active === "db-admin" ? "active-admin" : ""}" style="color: #00f3ff">💾 BACKUP</a></li>
+            
+            <li class="nav-divider"></li>
+            <li class="nav-label" style="color: var(--accent-gold);">AKSES KASIR:</li>
+            <li><a href="index.html" class="${active === "billiard" ? "active" : ""}">🎱 Billiard</a></li>
+            <li><a href="karaoke.html" class="${active === "karaoke" ? "active" : ""}">🎤 Karaoke</a></li>
+            <li><a href="pos.html" class="${active === "pos" ? "active" : ""}">🍔 Menu Kasir</a></li>
+        `;
+  } else {
+    html += `
+            <li class="nav-label">KASIR:</li>
+            <li><a href="index.html" class="${active === "billiard" ? "active" : ""}">🎱 Billiard</a></li>
+            <li><a href="karaoke.html" class="${active === "karaoke" ? "active" : ""}">🎤 Karaoke</a></li>
+            <li><a href="pos.html" class="${active === "pos" ? "active" : ""}">🍔 Menu</a></li>
+            <li><a href="bookings.html" class="nav-booking ${active === "bookings" ? "active" : ""}">📅 Booking</a></li>
+        `;
+  }
+
+  const profilePic =
+    localStorage.getItem("auth_profile_pic") || "assets/logo.png";
+
+  // Keep engineer role active and transparent for full administrative and cashier dashboard access.
+  const isLightNow = document.body.classList.contains("light-mode");
+  html += `
         <li class="nav-user-section">
             <style>
                 @keyframes navCloudPulse {
@@ -274,8 +362,8 @@ function renderNavbar(active) {
 
             <!-- THEME TOGGLE BUTTON -->
             <button class="theme-toggle-btn" onclick="toggleTheme()" title="Ganti tema terang/gelap" id="theme-toggle-btn">
-                <span class="theme-toggle-icon">${isLightNow ? '☀️' : '🌙'}</span>
-                <span class="theme-toggle-label">${isLightNow ? 'Mode Terang' : 'Mode Gelap'}</span>
+                <span class="theme-toggle-icon">${isLightNow ? "☀️" : "🌙"}</span>
+                <span class="theme-toggle-label">${isLightNow ? "Mode Terang" : "Mode Gelap"}</span>
             </button>
 
             <div class="cloud-indicator" title="Data terhubung & tersimpan secara otomatis di Database Cloud MongoDB.">
@@ -285,23 +373,23 @@ function renderNavbar(active) {
             
             <!-- DIRECT BLUETOOTH PRINTER BUTTON -->
             <button id="btn-connect-bluetooth" onclick="connectBluetoothPrinter()" style="display: flex; align-items: center; gap: 0.3rem; 
-                background: ${window.bleCharacteristic ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.08)'}; 
-                border: 1.5px solid ${window.bleCharacteristic ? '#2ecc71' : 'rgba(231, 76, 60, 0.3)'}; 
+                background: ${window.bleCharacteristic ? "rgba(46, 204, 113, 0.15)" : "rgba(231, 76, 60, 0.08)"}; 
+                border: 1.5px solid ${window.bleCharacteristic ? "#2ecc71" : "rgba(231, 76, 60, 0.3)"}; 
                 border-radius: 30px; padding: 0.25rem 0.55rem; margin-right: 0.5rem; 
-                color: ${window.bleCharacteristic ? '#2ecc71' : '#e74c3c'}; 
+                color: ${window.bleCharacteristic ? "#2ecc71" : "#e74c3c"}; 
                 font-size: 0.65rem; font-weight: bold; font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.3s ease; white-space: nowrap;">
-                <span>${window.bleCharacteristic ? '🖨️ Printer Konek' : '🔌 Konek Printer'}</span>
+                <span>${window.bleCharacteristic ? "🖨️ Printer Konek" : "🔌 Konek Printer"}</span>
             </button>
             
-            ${role === 'admin' ? `<a href="users-admin.html" class="${active === 'users-admin' ? 'active-admin' : ''}" style="color: var(--primary-color);">⚙️</a>` : ''}
-            <a href="profile.html" class="profile-link ${active === 'profile' ? 'active' : ''}">
+            ${role === "admin" ? `<a href="users-admin.html" class="${active === "users-admin" ? "active-admin" : ""}" style="color: var(--primary-color);">⚙️</a>` : ""}
+            <a href="profile.html" class="profile-link ${active === "profile" ? "active" : ""}">
                 <img src="${profilePic}" class="nav-avatar">
                 <span class="nav-username">${user}</span>
             </a>
             <button onclick="logout()" class="logout-btn">🚪</button>
         </li>
     </ul>`;
-    nav.innerHTML = html;
+  nav.innerHTML = html;
 }
 
 // --- WEB BLUETOOTH DIRECT PRINTING SYSTEM (VANILLA JS) ---
@@ -309,249 +397,310 @@ window.bleDevice = null;
 window.bleCharacteristic = null;
 
 function cleanPrintText(str) {
-    if (!str) return '';
-    // Replace all non-breaking spaces, thin spaces, and special whitespaces with standard space (\u0020)
-    let cleaned = str.replace(/[\u00a0\u200b\u202f\u2007\u2008\u2009\u200a]/g, ' ');
-    // Filter out any non-ASCII characters to keep the byte layout 100% clean and correct for thermal printers
-    return cleaned.replace(/[^\x00-\x7F]/g, '');
+  if (!str) return "";
+  // Replace all non-breaking spaces, thin spaces, and special whitespaces with standard space (\u0020)
+  let cleaned = str.replace(
+    /[\u00a0\u200b\u202f\u2007\u2008\u2009\u200a]/g,
+    " ",
+  );
+  // Filter out any non-ASCII characters to keep the byte layout 100% clean and correct for thermal printers
+  return cleaned.replace(/[^\x00-\x7F]/g, "");
 }
 
 async function connectBluetoothPrinter() {
-    try {
-        // Enforce user click gesture for Web Bluetooth API
-        window.bleDevice = await navigator.bluetooth.requestDevice({
-            acceptAllDevices: true,
-            optionalServices: [
-                '000018f0-0000-1000-8000-00805f9b34fb', // Standard POS BLE UUID
-                '0000e7e1-0000-1000-8000-00805f9b34fb', // generic printer
-                '49535343-fe7d-4ae5-8fa9-9fafd205e455'  // microprinter BLE UUID
-            ]
-        });
+  try {
+    // Enforce user click gesture for Web Bluetooth API
+    window.bleDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        "000018f0-0000-1000-8000-00805f9b34fb", // Standard POS BLE UUID
+        "0000e7e1-0000-1000-8000-00805f9b34fb", // generic printer
+        "49535343-fe7d-4ae5-8fa9-9fafd205e455", // microprinter BLE UUID
+      ],
+    });
 
-        console.log("[WebBluetooth] Printer terpilih:", window.bleDevice.name);
-        const server = await window.bleDevice.gatt.connect();
+    console.log("[WebBluetooth] Printer terpilih:", window.bleDevice.name);
+    const server = await window.bleDevice.gatt.connect();
 
-        let service = null;
-        let characteristic = null;
+    let service = null;
+    let characteristic = null;
 
-        // Common Printer Service UUIDs
-        const uuids = [
-            '000018f0-0000-1000-8000-00805f9b34fb',
-            '0000e7e1-0000-1000-8000-00805f9b34fb',
-            '49535343-fe7d-4ae5-8fa9-9fafd205e455'
-        ];
+    // Common Printer Service UUIDs
+    const uuids = [
+      "000018f0-0000-1000-8000-00805f9b34fb",
+      "0000e7e1-0000-1000-8000-00805f9b34fb",
+      "49535343-fe7d-4ae5-8fa9-9fafd205e455",
+    ];
 
-        for (const uuid of uuids) {
-            try {
-                service = await server.getPrimaryService(uuid);
-                if (service) break;
-            } catch (e) {}
-        }
-
-        if (!service) {
-            // Try getting first available primary service
-            const services = await server.getPrimaryServices();
-            if (services.length > 0) service = services[0];
-        }
-
-        if (service) {
-            const characteristics = await service.getCharacteristics();
-            // Find characteristic with WRITE or WRITE_WITHOUT_RESPONSE property
-            characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
-            if (!characteristic && characteristics.length > 0) {
-                characteristic = characteristics[0];
-            }
-        }
-
-        if (!characteristic) throw new Error("Karakteristik data tulis (GATT Write) tidak ditemukan.");
-
-        window.bleCharacteristic = characteristic;
-        alert(`🎉 Sukses terhubung ke printer: ${window.bleDevice.name}!`);
-        updateBluetoothButtonState(true);
-
-        window.bleDevice.addEventListener('gattserverdisconnected', onBluetoothDisconnected);
-    } catch (err) {
-        console.error("[WebBluetooth] Gagal menghubungkan printer:", err);
-        alert("⚠️ Gagal terhubung: " + err.message);
-        updateBluetoothButtonState(false);
+    for (const uuid of uuids) {
+      try {
+        service = await server.getPrimaryService(uuid);
+        if (service) break;
+      } catch (e) {}
     }
+
+    if (!service) {
+      // Try getting first available primary service
+      const services = await server.getPrimaryServices();
+      if (services.length > 0) service = services[0];
+    }
+
+    if (service) {
+      const characteristics = await service.getCharacteristics();
+      // Find characteristic with WRITE or WRITE_WITHOUT_RESPONSE property
+      characteristic = characteristics.find(
+        (c) => c.properties.write || c.properties.writeWithoutResponse,
+      );
+      if (!characteristic && characteristics.length > 0) {
+        characteristic = characteristics[0];
+      }
+    }
+
+    if (!characteristic)
+      throw new Error("Karakteristik data tulis (GATT Write) tidak ditemukan.");
+
+    window.bleCharacteristic = characteristic;
+    alert(`🎉 Sukses terhubung ke printer: ${window.bleDevice.name}!`);
+    updateBluetoothButtonState(true);
+
+    window.bleDevice.addEventListener(
+      "gattserverdisconnected",
+      onBluetoothDisconnected,
+    );
+  } catch (err) {
+    console.error("[WebBluetooth] Gagal menghubungkan printer:", err);
+    alert("⚠️ Gagal terhubung: " + err.message);
+    updateBluetoothButtonState(false);
+  }
 }
 
 function onBluetoothDisconnected() {
-    alert("🔌 Printer Bluetooth terputus!");
-    window.bleDevice = null;
-    window.bleCharacteristic = null;
-    updateBluetoothButtonState(false);
+  alert("🔌 Printer Bluetooth terputus!");
+  window.bleDevice = null;
+  window.bleCharacteristic = null;
+  updateBluetoothButtonState(false);
 }
 
 function updateBluetoothButtonState(connected) {
-    const btn = document.getElementById('btn-connect-bluetooth');
-    if (!btn) return;
-    if (connected) {
-        btn.innerHTML = '<span>🖨️ Printer Konek</span>';
-        btn.style.background = 'rgba(46, 204, 113, 0.15)';
-        btn.style.borderColor = '#2ecc71';
-        btn.style.color = '#2ecc71';
-    } else {
-        btn.innerHTML = '<span>🔌 Konek Printer</span>';
-        btn.style.background = 'rgba(231, 76, 60, 0.08)';
-        btn.style.borderColor = 'rgba(231, 76, 60, 0.3)';
-        btn.style.color = '#e74c3c';
-    }
+  const btn = document.getElementById("btn-connect-bluetooth");
+  if (!btn) return;
+  if (connected) {
+    btn.innerHTML = "<span>🖨️ Printer Konek</span>";
+    btn.style.background = "rgba(46, 204, 113, 0.15)";
+    btn.style.borderColor = "#2ecc71";
+    btn.style.color = "#2ecc71";
+  } else {
+    btn.innerHTML = "<span>🔌 Konek Printer</span>";
+    btn.style.background = "rgba(231, 76, 60, 0.08)";
+    btn.style.borderColor = "rgba(231, 76, 60, 0.3)";
+    btn.style.color = "#e74c3c";
+  }
 }
 
 async function writeBLEData(dataArray) {
-    const chunkSize = 20; // BLE packets maximum payload is 20 bytes
-    for (let i = 0; i < dataArray.length; i += chunkSize) {
-        const chunk = dataArray.slice(i, i + chunkSize);
-        await window.bleCharacteristic.writeValue(new Uint8Array(chunk));
-        await new Promise(resolve => setTimeout(resolve, 25)); // 25ms delay to prevent buffer overflows
-    }
+  const chunkSize = 20; // BLE packets maximum payload is 20 bytes
+  for (let i = 0; i < dataArray.length; i += chunkSize) {
+    const chunk = dataArray.slice(i, i + chunkSize);
+    await window.bleCharacteristic.writeValue(new Uint8Array(chunk));
+    await new Promise((resolve) => setTimeout(resolve, 25)); // 25ms delay to prevent buffer overflows
+  }
 }
 
 async function printDirectBluetooth(data) {
-    if (!window.bleCharacteristic) return false;
+  if (!window.bleCharacteristic) return false;
 
-    try {
-        const now = getSyncedNow();
-        const encoder = new TextEncoder();
-        let esc = [];
+  try {
+    const now = getSyncedNow();
+    const encoder = new TextEncoder();
+    let esc = [];
 
-        // 1. Initialize printer
-        esc.push(0x1B, 0x40);
+    // 1. Initialize printer
+    esc.push(0x1b, 0x40);
 
-        // 2. Align Center
-        esc.push(0x1B, 0x61, 1);
-        
-        // Double width + height for Title
-        esc.push(0x1B, 0x21, 0x30);
-        esc.push(...encoder.encode(cleanPrintText("OM BEN BILLIARD\n")));
+    // 2. Align Center
+    esc.push(0x1b, 0x61, 1);
 
-        // Standard text size
-        esc.push(0x1B, 0x21, 0x00);
-        esc.push(0x1B, 0x45, 1); // Bold on
-        esc.push(...encoder.encode(cleanPrintText("X V3 KARAOKE\n")));
-        esc.push(0x1B, 0x45, 0); // Bold off
+    // Double width + height for Title
+    esc.push(0x1b, 0x21, 0x30);
+    esc.push(...encoder.encode(cleanPrintText("OM BEN BILLIARD\n")));
 
-        esc.push(...encoder.encode(cleanPrintText(`${now.toLocaleString('id-ID')}\n`)));
-        esc.push(...encoder.encode(cleanPrintText("--------------------------------\n")));
+    // Standard text size
+    esc.push(0x1b, 0x21, 0x00);
+    esc.push(0x1b, 0x45, 1); // Bold on
+    esc.push(...encoder.encode(cleanPrintText("X V3 KARAOKE\n")));
+    esc.push(0x1b, 0x45, 0); // Bold off
 
-        // 3. Align Left
-        esc.push(0x1B, 0x61, 0);
-        esc.push(...encoder.encode(cleanPrintText(`Kasir:      ${(localStorage.getItem('auth_user') || 'Kasir').padEnd(16)}\n`)));
-        esc.push(...encoder.encode(cleanPrintText(`Pelanggan:  ${(data.customerName || 'Customer').padEnd(16)}\n`)));
-        esc.push(...encoder.encode(cleanPrintText("--------------------------------\n")));
+    esc.push(
+      ...encoder.encode(cleanPrintText(`${now.toLocaleString("id-ID")}\n`)),
+    );
+    esc.push(
+      ...encoder.encode(cleanPrintText("--------------------------------\n")),
+    );
 
-        // 4. Print Items
-        if (data.tableName) {
-            esc.push(...encoder.encode(cleanPrintText(`Sewa ${data.tableName}\n`)));
-            const durText = `Durasi: ${data.durationMinutes || 0} Menit`;
-            const priceText = formatRupiah(data.tableAmount || data.amount);
-            esc.push(...encoder.encode(cleanPrintText(`${durText.padEnd(18)} ${priceText.padStart(13)}\n`)));
+    // 3. Align Left
+    esc.push(0x1b, 0x61, 0);
+    esc.push(
+      ...encoder.encode(
+        cleanPrintText(
+          `Kasir:      ${(localStorage.getItem("auth_user") || "Kasir").padEnd(16)}\n`,
+        ),
+      ),
+    );
+    esc.push(
+      ...encoder.encode(
+        cleanPrintText(
+          `Pelanggan:  ${(data.customerName || "Customer").padEnd(16)}\n`,
+        ),
+      ),
+    );
+    esc.push(
+      ...encoder.encode(cleanPrintText("--------------------------------\n")),
+    );
 
-            if (data.orders && data.orders.length > 0) {
-                esc.push(...encoder.encode(cleanPrintText("- - - - - - - - - - - - - - - - \n")));
-                data.orders.forEach(o => {
-                    const nameQty = `${o.name} x${o.qty}`;
-                    const subtotal = formatRupiah(o.subtotal);
-                    if (nameQty.length > 18) {
-                        esc.push(...encoder.encode(cleanPrintText(`${nameQty}\n`)));
-                        esc.push(...encoder.encode(cleanPrintText(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`)));
-                    } else {
-                        esc.push(...encoder.encode(cleanPrintText(`${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`)));
-                    }
-                });
-            }
-        } else if (data.orders) {
-            data.orders.forEach(o => {
-                const nameQty = `${o.name} x${o.qty || o.quantity}`;
-                const subtotal = formatRupiah(o.subtotal);
-                if (nameQty.length > 18) {
-                    esc.push(...encoder.encode(cleanPrintText(`${nameQty}\n`)));
-                    esc.push(...encoder.encode(cleanPrintText(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`)));
-                } else {
-                    esc.push(...encoder.encode(cleanPrintText(`${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`)));
-                }
-            });
+    // 4. Print Items
+    if (data.tableName) {
+      esc.push(...encoder.encode(cleanPrintText(`Sewa ${data.tableName}\n`)));
+      const durText = `Durasi: ${data.durationMinutes || 0} Menit`;
+      const priceText = formatRupiah(data.tableAmount || data.amount);
+      esc.push(
+        ...encoder.encode(
+          cleanPrintText(`${durText.padEnd(18)} ${priceText.padStart(13)}\n`),
+        ),
+      );
+
+      if (data.orders && data.orders.length > 0) {
+        esc.push(
+          ...encoder.encode(
+            cleanPrintText("- - - - - - - - - - - - - - - - \n"),
+          ),
+        );
+        data.orders.forEach((o) => {
+          const nameQty = `${o.name} x${o.qty}`;
+          const subtotal = formatRupiah(o.subtotal);
+          if (nameQty.length > 18) {
+            esc.push(...encoder.encode(cleanPrintText(`${nameQty}\n`)));
+            esc.push(
+              ...encoder.encode(
+                cleanPrintText(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`),
+              ),
+            );
+          } else {
+            esc.push(
+              ...encoder.encode(
+                cleanPrintText(
+                  `${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`,
+                ),
+              ),
+            );
+          }
+        });
+      }
+    } else if (data.orders) {
+      data.orders.forEach((o) => {
+        const nameQty = `${o.name} x${o.qty || o.quantity}`;
+        const subtotal = formatRupiah(o.subtotal);
+        if (nameQty.length > 18) {
+          esc.push(...encoder.encode(cleanPrintText(`${nameQty}\n`)));
+          esc.push(
+            ...encoder.encode(
+              cleanPrintText(`${"".padEnd(18)} ${subtotal.padStart(13)}\n`),
+            ),
+          );
+        } else {
+          esc.push(
+            ...encoder.encode(
+              cleanPrintText(
+                `${nameQty.padEnd(18)} ${subtotal.padStart(13)}\n`,
+              ),
+            ),
+          );
         }
-
-        esc.push(...encoder.encode(cleanPrintText("--------------------------------\n")));
-
-        // 5. Total
-        esc.push(0x1B, 0x45, 1); // Bold on
-        const totVal = formatRupiah(data.amount || data.totalAmount);
-        esc.push(...encoder.encode(cleanPrintText(`TOTAL: ${(totVal).padStart(25)}\n`)));
-        esc.push(0x1B, 0x45, 0); // Bold off
-
-        esc.push(...encoder.encode(cleanPrintText("--------------------------------\n")));
-
-        // 6. Footer Center
-        esc.push(0x1B, 0x61, 1);
-        esc.push(0x1B, 0x45, 1);
-        esc.push(...encoder.encode(cleanPrintText("Terima Kasih!\n")));
-        esc.push(0x1B, 0x45, 0);
-        esc.push(...encoder.encode(cleanPrintText("Selamat Datang Kembali\n\n")));
-
-        // 7. Paper Feed lines
-        esc.push(0x1B, 0x64, 4);
-
-        // Send raw ESC/POS bytes over BLE
-        await writeBLEData(esc);
-        return true;
-    } catch (e) {
-        console.error("[WebBluetooth] Gagal mengirim data cetak:", e);
-        alert("⚠️ Gagal cetak Bluetooth: " + e.message);
-        return false;
+      });
     }
+
+    esc.push(
+      ...encoder.encode(cleanPrintText("--------------------------------\n")),
+    );
+
+    // 5. Total
+    esc.push(0x1b, 0x45, 1); // Bold on
+    const totVal = formatRupiah(data.amount || data.totalAmount);
+    esc.push(
+      ...encoder.encode(cleanPrintText(`TOTAL: ${totVal.padStart(25)}\n`)),
+    );
+    esc.push(0x1b, 0x45, 0); // Bold off
+
+    esc.push(
+      ...encoder.encode(cleanPrintText("--------------------------------\n")),
+    );
+
+    // 6. Footer Center
+    esc.push(0x1b, 0x61, 1);
+    esc.push(0x1b, 0x45, 1);
+    esc.push(...encoder.encode(cleanPrintText("Terima Kasih!\n")));
+    esc.push(0x1b, 0x45, 0);
+    esc.push(...encoder.encode(cleanPrintText("Selamat Datang Kembali\n\n")));
+
+    // 7. Paper Feed lines
+    esc.push(0x1b, 0x64, 4);
+
+    // Send raw ESC/POS bytes over BLE
+    await writeBLEData(esc);
+    return true;
+  } catch (e) {
+    console.error("[WebBluetooth] Gagal mengirim data cetak:", e);
+    alert("⚠️ Gagal cetak Bluetooth: " + e.message);
+    return false;
+  }
 }
 
 // --- NEW ROBUST PRINT SYSTEM ---
 async function printReceipt(data) {
-    if (!data) return alert('Data struk tidak tersedia!');
-    
-    // Check if direct Web Bluetooth printer is connected and active
-    if (window.bleCharacteristic) {
-        const directSuccess = await printDirectBluetooth(data);
-        if (directSuccess) return; // Print complete, exit cleanly!
-    }
-    
-    const now = getSyncedNow();
-    let itemsHtml = '';
-    
-    if (data.tableName) {
-        itemsHtml = `
+  if (!data) return alert("Data struk tidak tersedia!");
+
+  // Check if direct Web Bluetooth printer is connected and active
+  if (window.bleCharacteristic) {
+    const directSuccess = await printDirectBluetooth(data);
+    if (directSuccess) return; // Print complete, exit cleanly!
+  }
+
+  const now = getSyncedNow();
+  let itemsHtml = "";
+
+  if (data.tableName) {
+    itemsHtml = `
             <div class="row"><span>Sewa ${data.tableName}</span> <span>${formatRupiah(data.tableAmount || data.amount)}</span></div>
             <div class="row"><small>Durasi: ${data.durationMinutes || 0} Menit</small></div>
         `;
-        if (data.orders && data.orders.length > 0) {
-            itemsHtml += '<div class="divider"></div>';
-            data.orders.forEach(o => {
-                itemsHtml += `<div class="row"><span>${o.name} x${o.qty}</span> <span>${formatRupiah(o.subtotal)}</span></div>`;
-            });
-        }
-    } else if (data.orders) {
-        data.orders.forEach(o => {
-            itemsHtml += `<div class="row"><span>${o.name} x${o.qty || o.quantity}</span> <span>${formatRupiah(o.subtotal)}</span></div>`;
-        });
+    if (data.orders && data.orders.length > 0) {
+      itemsHtml += '<div class="divider"></div>';
+      data.orders.forEach((o) => {
+        itemsHtml += `<div class="row"><span>${o.name} x${o.qty}</span> <span>${formatRupiah(o.subtotal)}</span></div>`;
+      });
     }
+  } else if (data.orders) {
+    data.orders.forEach((o) => {
+      itemsHtml += `<div class="row"><span>${o.name} x${o.qty || o.quantity}</span> <span>${formatRupiah(o.subtotal)}</span></div>`;
+    });
+  }
 
-    // Create an invisible iframe to bypass popup blockers 100% on both HP and PC
-    let iframe = document.getElementById('receipt-print-iframe');
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'receipt-print-iframe';
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        document.body.appendChild(iframe);
-    }
+  // Create an invisible iframe to bypass popup blockers 100% on both HP and PC
+  let iframe = document.getElementById("receipt-print-iframe");
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.id = "receipt-print-iframe";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+  }
 
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
         <!DOCTYPE html>
         <html>
         <head>
@@ -610,13 +759,13 @@ async function printReceipt(data) {
             <div class="text-center">
                 <div class="logo-title">OM BEN BILLIARD</div>
                 <div style="font-size: 10px; font-weight: bold; margin-top: 1px;">X V3 KARAOKE</div>
-                <div style="font-size: 8px; color: #555; margin-top: 2px;">${now.toLocaleString('id-ID')}</div>
+                <div style="font-size: 8px; color: #555; margin-top: 2px;">${now.toLocaleString("id-ID")}</div>
             </div>
             
             <div class="divider"></div>
             
-            <div class="row"><span>Kasir:</span> <span>${localStorage.getItem('auth_user') || 'Kasir'}</span></div>
-            <div class="row"><span>Pelanggan:</span> <span>${data.customerName || 'Pelanggan'}</span></div>
+            <div class="row"><span>Kasir:</span> <span>${localStorage.getItem("auth_user") || "Kasir"}</span></div>
+            <div class="row"><span>Pelanggan:</span> <span>${data.customerName || "Pelanggan"}</span></div>
             
             <div class="divider"></div>
             
@@ -642,29 +791,29 @@ async function printReceipt(data) {
         </body>
         </html>
     `);
-    doc.close();
+  doc.close();
 }
 
 // --- CROSS-TAB ALARM SYSTEM & BROADCAST CHANNEL ---
 
 // Define admin pages to bypass the alarm system completely
-const isAdminPage = 
-    window.location.href.includes('db-admin.html') || 
-    window.location.href.includes('admin.html') || 
-    window.location.href.includes('users-admin.html') || 
-    window.location.href.includes('attendance-admin.html') || 
-    window.location.href.includes('finance.html') || 
-    window.location.href.includes('karaoke-settings.html') || 
-    window.location.href.includes('rental.html') ||
-    window.location.href.includes('stock-history.html') ||
-    window.location.href.includes('monitoring.html') ||
-    window.location.href.includes('cctv.html') ||
-    window.location.href.includes('bookings.html');
+const isAdminPage =
+  window.location.href.includes("db-admin.html") ||
+  window.location.href.includes("admin.html") ||
+  window.location.href.includes("users-admin.html") ||
+  window.location.href.includes("attendance-admin.html") ||
+  window.location.href.includes("finance.html") ||
+  window.location.href.includes("karaoke-settings.html") ||
+  window.location.href.includes("rental.html") ||
+  window.location.href.includes("stock-history.html") ||
+  window.location.href.includes("monitoring.html") ||
+  window.location.href.includes("cctv.html") ||
+  window.location.href.includes("bookings.html");
 
 if (!isAdminPage) {
-    // Injection of Alarm Alert CSS
-    const alarmStyle = document.createElement('style');
-    alarmStyle.textContent = `
+  // Injection of Alarm Alert CSS
+  const alarmStyle = document.createElement("style");
+  alarmStyle.textContent = `
         @keyframes pulseAlarm {
             0% { transform: translate(-50%, 0) scale(1); box-shadow: 0 10px 30px rgba(255,0,0,0.5); }
             50% { transform: translate(-50%, 0) scale(1.05); box-shadow: 0 10px 50px rgba(255,0,0,0.8); }
@@ -678,7 +827,7 @@ if (!isAdminPage) {
             to { background-color: rgba(255, 0, 0, 0.6); }
         }
     `;
-    document.head.appendChild(alarmStyle);
+  document.head.appendChild(alarmStyle);
 }
 
 let alarmAudioCtx = null;
@@ -686,91 +835,99 @@ let alarmInterval = null;
 
 // Unlocking Web Audio API on mobile devices on first user gesture
 function unlockAudioContext() {
-    if (isAdminPage) return;
-    if (!alarmAudioCtx) {
-        alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (alarmAudioCtx && alarmAudioCtx.state === 'suspended') {
-        alarmAudioCtx.resume().then(() => {
-            console.log("AudioContext successfully unlocked!");
-        }).catch(e => console.error("AudioContext unlock failed:", e));
-    }
-    // Remove listeners once successfully initialized
-    document.removeEventListener('click', unlockAudioContext);
-    document.removeEventListener('touchstart', unlockAudioContext);
+  if (isAdminPage) return;
+  if (!alarmAudioCtx) {
+    alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (alarmAudioCtx && alarmAudioCtx.state === "suspended") {
+    alarmAudioCtx
+      .resume()
+      .then(() => {
+        console.log("AudioContext successfully unlocked!");
+      })
+      .catch((e) => console.error("AudioContext unlock failed:", e));
+  }
+  // Remove listeners once successfully initialized
+  document.removeEventListener("click", unlockAudioContext);
+  document.removeEventListener("touchstart", unlockAudioContext);
 }
 
 if (!isAdminPage) {
-    document.addEventListener('click', unlockAudioContext, { passive: true });
-    document.addEventListener('touchstart', unlockAudioContext, { passive: true });
+  document.addEventListener("click", unlockAudioContext, { passive: true });
+  document.addEventListener("touchstart", unlockAudioContext, {
+    passive: true,
+  });
 }
 
 function startAlarmSound() {
-    if (isAdminPage) return;
-    if (alarmInterval) return; // already running
-    
-    if (!alarmAudioCtx) {
-        alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (isAdminPage) return;
+  if (alarmInterval) return; // already running
+
+  if (!alarmAudioCtx) {
+    alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  if (alarmAudioCtx.state === "suspended") {
+    alarmAudioCtx.resume();
+  }
+
+  const playBeep = (timeOffset, duration) => {
+    const osc1 = alarmAudioCtx.createOscillator();
+    const osc2 = alarmAudioCtx.createOscillator();
+    const gainNode = alarmAudioCtx.createGain();
+
+    osc1.type = "sawtooth";
+    osc1.frequency.setValueAtTime(880, alarmAudioCtx.currentTime + timeOffset); // A5 note (piercing)
+
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(1320, alarmAudioCtx.currentTime + timeOffset); // E6 note (Fifth harmonic, sharp)
+
+    gainNode.gain.setValueAtTime(0.85, alarmAudioCtx.currentTime + timeOffset); // Very loud
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      alarmAudioCtx.currentTime + timeOffset + duration - 0.02,
+    );
+
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(alarmAudioCtx.destination);
+
+    osc1.start(alarmAudioCtx.currentTime + timeOffset);
+    osc1.stop(alarmAudioCtx.currentTime + timeOffset + duration);
+
+    osc2.start(alarmAudioCtx.currentTime + timeOffset);
+    osc2.stop(alarmAudioCtx.currentTime + timeOffset + duration);
+  };
+
+  // Rhythmic double-beep: Beep 1 at 0s, Beep 2 at 0.22s, repeats every 1.0s
+  alarmInterval = setInterval(() => {
+    try {
+      playBeep(0, 0.18);
+      playBeep(0.22, 0.18);
+    } catch (e) {
+      console.error("Audio alarm play error:", e);
     }
-    
-    if (alarmAudioCtx.state === 'suspended') {
-        alarmAudioCtx.resume();
-    }
-
-    const playBeep = (timeOffset, duration) => {
-        const osc1 = alarmAudioCtx.createOscillator();
-        const osc2 = alarmAudioCtx.createOscillator();
-        const gainNode = alarmAudioCtx.createGain();
-
-        osc1.type = 'sawtooth';
-        osc1.frequency.setValueAtTime(880, alarmAudioCtx.currentTime + timeOffset); // A5 note (piercing)
-        
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1320, alarmAudioCtx.currentTime + timeOffset); // E6 note (Fifth harmonic, sharp)
-
-        gainNode.gain.setValueAtTime(0.85, alarmAudioCtx.currentTime + timeOffset); // Very loud
-        gainNode.gain.exponentialRampToValueAtTime(0.01, alarmAudioCtx.currentTime + timeOffset + duration - 0.02);
-
-        osc1.connect(gainNode);
-        osc2.connect(gainNode);
-        gainNode.connect(alarmAudioCtx.destination);
-
-        osc1.start(alarmAudioCtx.currentTime + timeOffset);
-        osc1.stop(alarmAudioCtx.currentTime + timeOffset + duration);
-        
-        osc2.start(alarmAudioCtx.currentTime + timeOffset);
-        osc2.stop(alarmAudioCtx.currentTime + timeOffset + duration);
-    };
-
-    // Rhythmic double-beep: Beep 1 at 0s, Beep 2 at 0.22s, repeats every 1.0s
-    alarmInterval = setInterval(() => {
-        try {
-            playBeep(0, 0.18);
-            playBeep(0.22, 0.18);
-        } catch (e) {
-            console.error("Audio alarm play error:", e);
-        }
-    }, 1000);
+  }, 1000);
 }
 
 function stopAlarmSound() {
-    if (alarmInterval) {
-        clearInterval(alarmInterval);
-        alarmInterval = null;
-    }
+  if (alarmInterval) {
+    clearInterval(alarmInterval);
+    alarmInterval = null;
+  }
 }
 
 // Global cross-tab tracking
 const alarmedSessions = new Set();
-const alarmChannel = new BroadcastChannel('v3-billiard-karaoke-alarms');
+const alarmChannel = new BroadcastChannel("v3-billiard-karaoke-alarms");
 
 // Inject the custom notification banner UI
 function injectAlarmBanner() {
-    if (isAdminPage) return;
-    if (document.getElementById('alarm-notification-banner')) return;
-    const banner = document.createElement('div');
-    banner.id = 'alarm-notification-banner';
-    banner.style.cssText = `
+  if (isAdminPage) return;
+  if (document.getElementById("alarm-notification-banner")) return;
+  const banner = document.createElement("div");
+  banner.id = "alarm-notification-banner";
+  banner.style.cssText = `
         display: none;
         position: fixed;
         top: 20px;
@@ -789,91 +946,96 @@ function injectAlarmBanner() {
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         animation: pulseAlarm 1.2s infinite;
     `;
-    
-    banner.innerHTML = `
+
+  banner.innerHTML = `
         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🚨</div>
         <h2 style="margin: 0 0 0.5rem 0; font-size: 1.6rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Waktu Habis!</h2>
         <p id="alarm-banner-message" style="margin: 0 0 1.5rem 0; font-size: 1.2rem; font-weight: bold; line-height: 1.4; background: rgba(0,0,0,0.15); padding: 0.8rem; border-radius: 10px;"></p>
         <button id="dismiss-alarm-btn" style="background: white; color: #ff0844; border: none; padding: 0.8rem 2.5rem; border-radius: 50px; font-weight: 900; cursor: pointer; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px;">MATIKAN ALARM 🔕</button>
     `;
-    
-    document.body.appendChild(banner);
-    
-    document.getElementById('dismiss-alarm-btn').onclick = () => {
-        dismissActiveAlarm();
-    };
+
+  document.body.appendChild(banner);
+
+  document.getElementById("dismiss-alarm-btn").onclick = () => {
+    dismissActiveAlarm();
+  };
 }
 
 if (!isAdminPage) {
-    if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', injectAlarmBanner);
-    } else {
-        injectAlarmBanner();
-    }
+  if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", injectAlarmBanner);
+  } else {
+    injectAlarmBanner();
+  }
 }
 
 function showExpirationAlert(tableName, customerName, targetType, sessionId) {
-    if (isAdminPage) return;
-    const banner = document.getElementById('alarm-notification-banner');
-    const msgEl = document.getElementById('alarm-banner-message');
-    if (banner && msgEl) {
-        const typeLabel = (targetType === 'room') ? '🎤 KARAOKE' : '🎱 BILLIARD';
-        msgEl.innerHTML = `<span style="color: #ffeb3b; font-weight: 900;">[${typeLabel}]</span><br>Sewa <strong style="font-size: 1.3rem;">${tableName}</strong> oleh <strong>${customerName || 'Pelanggan'}</strong> telah selesai!`;
-        banner.style.display = 'block';
-    }
-    
-    if (sessionId) alarmedSessions.add(sessionId);
-    startAlarmSound();
+  if (isAdminPage) return;
+  const banner = document.getElementById("alarm-notification-banner");
+  const msgEl = document.getElementById("alarm-banner-message");
+  if (banner && msgEl) {
+    const typeLabel = targetType === "room" ? "🎤 KARAOKE" : "🎱 BILLIARD";
+    msgEl.innerHTML = `<span style="color: #ffeb3b; font-weight: 900;">[${typeLabel}]</span><br>Sewa <strong style="font-size: 1.3rem;">${tableName}</strong> oleh <strong>${customerName || "Pelanggan"}</strong> telah selesai!`;
+    banner.style.display = "block";
+  }
+
+  if (sessionId) alarmedSessions.add(sessionId);
+  startAlarmSound();
 }
 
 function hideExpirationAlert() {
-    const banner = document.getElementById('alarm-notification-banner');
-    if (banner) {
-        banner.style.display = 'none';
-    }
+  const banner = document.getElementById("alarm-notification-banner");
+  if (banner) {
+    banner.style.display = "none";
+  }
 }
 
 // Public global triggers called by individual timers
 function triggerSessionExpired(session) {
-    if (isAdminPage) return;
-    if (alarmedSessions.has(session.id)) return;
-    
-    // Play locally
-    showExpirationAlert(session.tableName, session.customerName, session.targetType || 'table', session.id);
-    
-    // Broadcast to other tabs
-    alarmChannel.postMessage({
-        type: 'SESSION_EXPIRED',
-        sessionId: session.id,
-        tableName: session.tableName,
-        customerName: session.customerName,
-        targetType: session.targetType || 'table'
-    });
+  if (isAdminPage) return;
+  if (alarmedSessions.has(session.id)) return;
+
+  // Play locally
+  showExpirationAlert(
+    session.tableName,
+    session.customerName,
+    session.targetType || "table",
+    session.id,
+  );
+
+  // Broadcast to other tabs
+  alarmChannel.postMessage({
+    type: "SESSION_EXPIRED",
+    sessionId: session.id,
+    tableName: session.tableName,
+    customerName: session.customerName,
+    targetType: session.targetType || "table",
+  });
 }
 
 function dismissActiveAlarm() {
-    stopAlarmSound();
-    hideExpirationAlert();
-    
-    // Broadcast dismiss to other tabs
-    alarmChannel.postMessage({
-        type: 'DISMISS_ALARM'
-    });
+  stopAlarmSound();
+  hideExpirationAlert();
+
+  // Broadcast dismiss to other tabs
+  alarmChannel.postMessage({
+    type: "DISMISS_ALARM",
+  });
 }
 
 // Listen to other tabs
 if (!isAdminPage) {
-    alarmChannel.onmessage = (event) => {
-        const { type, sessionId, tableName, customerName, targetType } = event.data;
-        if (type === 'SESSION_EXPIRED') {
-            if (!alarmedSessions.has(sessionId)) {
-                showExpirationAlert(tableName, customerName, targetType, sessionId);
-            }
-        } else if (type === 'DISMISS_ALARM') {
-            stopAlarmSound();
-            hideExpirationAlert();
-        }
-    };
+  alarmChannel.onmessage = (event) => {
+    const { type, sessionId, tableName, customerName, targetType } = event.data;
+    if (type === "SESSION_EXPIRED") {
+      if (!alarmedSessions.has(sessionId)) {
+        showExpirationAlert(tableName, customerName, targetType, sessionId);
+      }
+    } else if (type === "DISMISS_ALARM") {
+      stopAlarmSound();
+      hideExpirationAlert();
+    }
+  };
 }
 
 // --- GLOBAL BACKGROUND ALARM POLLER ---
@@ -881,67 +1043,71 @@ if (!isAdminPage) {
 let globalSessionPollInterval = null;
 
 async function startGlobalAlarmPoller() {
-    if (isAdminPage) return;
-    if (globalSessionPollInterval) return;
-    
-    const checkSessions = async () => {
-        try {
-            const response = await fetch(`${API_BASE}/sessions`);
-            if (!response.ok) return;
-            const sessions = await response.json();
-            
-            let hasActiveAlarm = false;
-            let currentExpiredSession = null;
-            let anyExpiredActive = false;
-            
-            (sessions || []).forEach(session => {
-                if (session.type === 'duration' && session.endTime) {
-                    const end = new Date(session.endTime);
-                    const now = new Date(Date.now() + serverTimeOffset);
-                    const diff = end - now;
-                    
-                    if (diff <= 0) {
-                        anyExpiredActive = true;
-                        if (!alarmedSessions.has(session.id)) {
-                            currentExpiredSession = session;
-                            hasActiveAlarm = true;
-                        }
-                    }
-                }
-            });
-            
-            if (hasActiveAlarm && currentExpiredSession) {
-                showExpirationAlert(
-                    currentExpiredSession.tableName, 
-                    currentExpiredSession.customerName, 
-                    currentExpiredSession.targetType || 'table', 
-                    currentExpiredSession.id
-                );
-            } else if (!anyExpiredActive && alarmInterval) {
-                // If no expired sessions exist on backend (e.g. cashier stopped/saved transaction), auto-silence
-                stopAlarmSound();
-                hideExpirationAlert();
+  if (isAdminPage) return;
+  if (globalSessionPollInterval) return;
+
+  const checkSessions = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/sessions`);
+      if (!response.ok) return;
+      const sessions = await response.json();
+
+      let hasActiveAlarm = false;
+      let currentExpiredSession = null;
+      let anyExpiredActive = false;
+
+      (sessions || []).forEach((session) => {
+        if (session.type === "duration" && session.endTime) {
+          const end = new Date(session.endTime);
+          const now = new Date(Date.now() + serverTimeOffset);
+          const diff = end - now;
+
+          if (diff <= 0) {
+            anyExpiredActive = true;
+            if (!alarmedSessions.has(session.id)) {
+              currentExpiredSession = session;
+              hasActiveAlarm = true;
             }
-        } catch (e) {
-            console.error("Global alarm poller error:", e);
+          }
         }
-    };
-    
-    checkSessions();
-    globalSessionPollInterval = setInterval(checkSessions, 5000);
+      });
+
+      if (hasActiveAlarm && currentExpiredSession) {
+        showExpirationAlert(
+          currentExpiredSession.tableName,
+          currentExpiredSession.customerName,
+          currentExpiredSession.targetType || "table",
+          currentExpiredSession.id,
+        );
+      } else if (!anyExpiredActive && alarmInterval) {
+        // If no expired sessions exist on backend (e.g. cashier stopped/saved transaction), auto-silence
+        stopAlarmSound();
+        hideExpirationAlert();
+      }
+    } catch (e) {
+      console.error("Global alarm poller error:", e);
+    }
+  };
+
+  checkSessions();
+  globalSessionPollInterval = setInterval(checkSessions, 5000);
 }
 
 // Only start background poller on non-public, non-login, non-admin screens
-if (!isAdminPage && !window.location.href.includes('reservasi.html') && !window.location.href.includes('login.html')) {
-    startGlobalAlarmPoller();
+if (
+  !isAdminPage &&
+  !window.location.href.includes("reservasi.html") &&
+  !window.location.href.includes("login.html")
+) {
+  startGlobalAlarmPoller();
 }
 
 // --- PREMIUM CUSTOM SECURE PASSWORD PROMPT ---
 async function promptAdminPassword(message) {
-    return new Promise((resolve) => {
-        // Create modal overlay element
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
+  return new Promise((resolve) => {
+    // Create modal overlay element
+    const overlay = document.createElement("div");
+    overlay.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
@@ -958,9 +1124,9 @@ async function promptAdminPassword(message) {
             transition: opacity 0.25s ease;
         `;
 
-        // Create modal content container
-        const modal = document.createElement('div');
-        modal.style.cssText = `
+    // Create modal content container
+    const modal = document.createElement("div");
+    modal.style.cssText = `
             background: linear-gradient(135deg, #1e1e32 0%, #151528 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
@@ -975,10 +1141,10 @@ async function promptAdminPassword(message) {
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         `;
 
-        // Safe message format
-        const cleanMessage = (message || '').replace(/\\n/g, '<br>');
+    // Safe message format
+    const cleanMessage = (message || "").replace(/\\n/g, "<br>");
 
-        modal.innerHTML = `
+    modal.innerHTML = `
             <div style="font-size: 2.5rem; margin-bottom: 1rem; filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.4));">🔑</div>
             <h3 style="margin: 0 0 1.2rem 0; font-size: 1.15rem; font-weight: 700; line-height: 1.5; color: #eceff1;">${cleanMessage}</h3>
             
@@ -1042,108 +1208,106 @@ async function promptAdminPassword(message) {
             </div>
         `;
 
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 
-        // Focus input field immediately
-        const input = modal.querySelector('#secure-prompt-input');
-        const confirmBtn = modal.querySelector('#secure-prompt-confirm');
-        const cancelBtn = modal.querySelector('#secure-prompt-cancel');
-        const toggleBtn = modal.querySelector('#secure-prompt-toggle');
+    // Focus input field immediately
+    const input = modal.querySelector("#secure-prompt-input");
+    const confirmBtn = modal.querySelector("#secure-prompt-confirm");
+    const cancelBtn = modal.querySelector("#secure-prompt-cancel");
+    const toggleBtn = modal.querySelector("#secure-prompt-toggle");
 
-        // Style hover & focus states via JS
-        input.addEventListener('focus', () => {
-            input.style.borderColor = '#00f3ff';
-            input.style.boxShadow = '0 0 10px rgba(0, 243, 255, 0.2)';
-            input.style.background = 'rgba(255, 255, 255, 0.08)';
-        });
-        input.addEventListener('blur', () => {
-            input.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-            input.style.boxShadow = 'none';
-            input.style.background = 'rgba(255, 255, 255, 0.04)';
-        });
-
-        cancelBtn.addEventListener('mouseenter', () => {
-            cancelBtn.style.background = 'rgba(255, 255, 255, 0.05)';
-            cancelBtn.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-        });
-        cancelBtn.addEventListener('mouseleave', () => {
-            cancelBtn.style.background = 'transparent';
-            cancelBtn.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-        });
-
-        confirmBtn.addEventListener('mouseenter', () => {
-            confirmBtn.style.transform = 'translateY(-1px)';
-            confirmBtn.style.boxShadow = '0 6px 20px rgba(0, 243, 255, 0.55)';
-        });
-        confirmBtn.addEventListener('mouseleave', () => {
-            confirmBtn.style.transform = 'translateY(0)';
-            confirmBtn.style.boxShadow = '0 4px 15px rgba(0, 243, 255, 0.35)';
-        });
-
-        toggleBtn.addEventListener('mouseenter', () => {
-            toggleBtn.style.color = 'rgba(255, 255, 255, 0.8)';
-        });
-        toggleBtn.addEventListener('mouseleave', () => {
-            toggleBtn.style.color = 'rgba(255, 255, 255, 0.4)';
-        });
-
-        // Toggle visibility action
-        let isPasswordHidden = true;
-        toggleBtn.addEventListener('click', () => {
-            isPasswordHidden = !isPasswordHidden;
-            if (isPasswordHidden) {
-                input.type = 'password';
-                toggleBtn.textContent = '👁️';
-            } else {
-                input.type = 'text';
-                toggleBtn.textContent = '🔒';
-            }
-            input.focus();
-        });
-
-        // Trigger animations
-        setTimeout(() => {
-            overlay.style.opacity = '1';
-            modal.style.transform = 'scale(1)';
-            input.focus();
-        }, 20);
-
-        // Helper to close and resolve
-        const closePrompt = (val) => {
-            overlay.style.opacity = '0';
-            modal.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                overlay.remove();
-                resolve(val);
-            }, 250);
-        };
-
-        // Actions
-        confirmBtn.addEventListener('click', () => {
-            closePrompt(input.value);
-        });
-
-        cancelBtn.addEventListener('click', () => {
-            closePrompt(null);
-        });
-
-        // Escape and Enter key binding
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                closePrompt(input.value);
-            } else if (e.key === 'Escape') {
-                closePrompt(null);
-            }
-        });
-
-        // Allow closing when clicking the overlay itself (background)
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                closePrompt(null);
-            }
-        });
+    // Style hover & focus states via JS
+    input.addEventListener("focus", () => {
+      input.style.borderColor = "#00f3ff";
+      input.style.boxShadow = "0 0 10px rgba(0, 243, 255, 0.2)";
+      input.style.background = "rgba(255, 255, 255, 0.08)";
     });
+    input.addEventListener("blur", () => {
+      input.style.borderColor = "rgba(255, 255, 255, 0.15)";
+      input.style.boxShadow = "none";
+      input.style.background = "rgba(255, 255, 255, 0.04)";
+    });
+
+    cancelBtn.addEventListener("mouseenter", () => {
+      cancelBtn.style.background = "rgba(255, 255, 255, 0.05)";
+      cancelBtn.style.borderColor = "rgba(255, 255, 255, 0.3)";
+    });
+    cancelBtn.addEventListener("mouseleave", () => {
+      cancelBtn.style.background = "transparent";
+      cancelBtn.style.borderColor = "rgba(255, 255, 255, 0.15)";
+    });
+
+    confirmBtn.addEventListener("mouseenter", () => {
+      confirmBtn.style.transform = "translateY(-1px)";
+      confirmBtn.style.boxShadow = "0 6px 20px rgba(0, 243, 255, 0.55)";
+    });
+    confirmBtn.addEventListener("mouseleave", () => {
+      confirmBtn.style.transform = "translateY(0)";
+      confirmBtn.style.boxShadow = "0 4px 15px rgba(0, 243, 255, 0.35)";
+    });
+
+    toggleBtn.addEventListener("mouseenter", () => {
+      toggleBtn.style.color = "rgba(255, 255, 255, 0.8)";
+    });
+    toggleBtn.addEventListener("mouseleave", () => {
+      toggleBtn.style.color = "rgba(255, 255, 255, 0.4)";
+    });
+
+    // Toggle visibility action
+    let isPasswordHidden = true;
+    toggleBtn.addEventListener("click", () => {
+      isPasswordHidden = !isPasswordHidden;
+      if (isPasswordHidden) {
+        input.type = "password";
+        toggleBtn.textContent = "👁️";
+      } else {
+        input.type = "text";
+        toggleBtn.textContent = "🔒";
+      }
+      input.focus();
+    });
+
+    // Trigger animations
+    setTimeout(() => {
+      overlay.style.opacity = "1";
+      modal.style.transform = "scale(1)";
+      input.focus();
+    }, 20);
+
+    // Helper to close and resolve
+    const closePrompt = (val) => {
+      overlay.style.opacity = "0";
+      modal.style.transform = "scale(0.9)";
+      setTimeout(() => {
+        overlay.remove();
+        resolve(val);
+      }, 250);
+    };
+
+    // Actions
+    confirmBtn.addEventListener("click", () => {
+      closePrompt(input.value);
+    });
+
+    cancelBtn.addEventListener("click", () => {
+      closePrompt(null);
+    });
+
+    // Escape and Enter key binding
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        closePrompt(input.value);
+      } else if (e.key === "Escape") {
+        closePrompt(null);
+      }
+    });
+
+    // Allow closing when clicking the overlay itself (background)
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        closePrompt(null);
+      }
+    });
+  });
 }
-
-
