@@ -1,217 +1,335 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Manajemen User | Admin Om Ben</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="assets/style.css" />
+  </head>
+  <body>
     <div class="container">
-        <header>
-            <div class="logo-section">
-                <img src="assets/logo.png" alt="Logo" class="main-logo">
-                <div>
-                    <h1>OM BEN BILLIARD</h1>
-                    <p>X V3 KARAOKE User Security</p>
-                </div>
-            </div>
-            <nav></nav>
-        </header>
+      <header>
+        <div class="logo-section">
+          <img src="assets/logo.png" alt="Logo" class="main-logo" />
+          <div>
+            <h1>OM BEN BILLIARD</h1>
+            <p>X V3 KARAOKE User Security</p>
+          </div>
+        </div>
+        <nav></nav>
+      </header>
 
-        <script src="assets/app.js"></script>
-        <script>renderNavbar('users-admin');</script>
+      <script src="assets/app.js"></script>
+      <script>
+        renderNavbar("users-admin");
+      </script>
 
-        <section style="margin-top: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 style="font-family: var(--font-heading); margin: 0; font-size: 1.5rem;">Keamanan & Reset Password</h2>
-                <button class="btn btn-primary" style="width: auto;" onclick="openAddUserModal()">+ Tambah User</button>
-            </div>
-            <div class="table-grid" id="user-list">
-                <!-- User cards injected here -->
-            </div>
-        </section>
+      <section style="margin-top: 1rem">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+          "
+        >
+          <h2
+            style="
+              font-family: var(--font-heading);
+              margin: 0;
+              font-size: 1.5rem;
+            "
+          >
+            Keamanan & Reset Password
+          </h2>
+          <button
+            class="btn btn-primary"
+            style="width: auto"
+            onclick="openAddUserModal()"
+          >
+            + Tambah User
+          </button>
+        </div>
+        <div class="table-grid" id="user-list">
+          <!-- User cards injected here -->
+        </div>
+      </section>
     </div>
 
     <!-- Add User Modal -->
     <div class="modal" id="add-user-modal">
-        <div class="modal-content">
-            <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Tambah Akun Baru</h2>
-            <form id="add-user-form">
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="add-username" required placeholder="Contoh: kasir_v3">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="add-password" required placeholder="Masukkan password">
-                </div>
-                <div class="form-group">
-                    <label>Role / Akses</label>
-                    <select id="add-role">
-                        <option value="kasir">Kasir (Terbatas)</option>
-                        <option value="admin">Admin (Akses Penuh)</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                    <button type="button" class="btn btn-outline" onclick="document.getElementById('add-user-modal').style.display='none'">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan Akun</button>
-                </div>
-            </form>
-        </div>
+      <div class="modal-content">
+        <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading)">
+          Tambah Akun Baru
+        </h2>
+        <form id="add-user-form">
+          <div class="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              id="add-username"
+              required
+              placeholder="Contoh: kasir_v3"
+            />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              id="add-password"
+              required
+              placeholder="Masukkan password"
+            />
+          </div>
+          <div class="form-group">
+            <label>Role / Akses</label>
+            <select id="add-role">
+              <option value="kasir">Kasir (Terbatas)</option>
+              <option value="engineer">Engineer (Teknis)</option>
+              <option value="admin">Admin (Akses Penuh)</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 1rem; margin-top: 2rem">
+            <button
+              type="button"
+              class="btn btn-outline"
+              onclick="
+                document.getElementById('add-user-modal').style.display = 'none'
+              "
+            >
+              Batal
+            </button>
+            <button type="submit" class="btn btn-primary">Simpan Akun</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Edit User Modal -->
     <div class="modal" id="edit-user-modal">
-        <div class="modal-content" style="border: 1px solid var(--glass-border); background: #121815; border-radius: 28px; padding: 2.5rem; max-width: 450px;">
-            <h2 style="margin-bottom: 1.5rem; font-family: var(--font-heading); background: linear-gradient(to right, #fff, var(--primary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Edit Akun</h2>
-            <form id="edit-user-form">
-                <input type="hidden" id="edit-user-id">
-                
-                <div class="form-group">
-                    <label style="color: var(--text-dim); font-size: 0.9rem;">Username</label>
-                    <input type="text" id="edit-username" required placeholder="Contoh: kasir_v3" style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 10px; color: white;">
-                </div>
-                
-                <div class="form-group">
-                    <label style="color: var(--text-dim); font-size: 0.9rem;">Password Baru (Kosongkan jika tidak diubah)</label>
-                    <input type="password" id="edit-password" placeholder="Masukkan password baru jika ingin diganti" style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 10px; color: white;">
-                </div>
-                
-                <div class="form-group">
-                    <label style="color: var(--text-dim); font-size: 0.9rem;">Role / Akses</label>
-                    <select id="edit-role" style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 10px; color: white;">
-                        <option value="kasir">Kasir (Terbatas)</option>
-                        <option value="admin">Admin (Akses Penuh)</option>
-                    </select>
-                </div>
-                
-                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                    <button type="button" class="btn btn-outline" onclick="document.getElementById('edit-user-modal').style.display='none'">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                </div>
-            </form>
-        </div>
+      <div
+        class="modal-content"
+        style="
+          border: 1px solid var(--glass-border);
+          background: #121815;
+          border-radius: 28px;
+          padding: 2.5rem;
+          max-width: 450px;
+        "
+      >
+        <h2
+          style="
+            margin-bottom: 1.5rem;
+            font-family: var(--font-heading);
+            background: linear-gradient(to right, #fff, var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          "
+        >
+          Edit Akun
+        </h2>
+        <form id="edit-user-form">
+          <input type="hidden" id="edit-user-id" />
+
+          <div class="form-group">
+            <label style="color: var(--text-dim); font-size: 0.9rem"
+              >Username</label
+            >
+            <input
+              type="text"
+              id="edit-username"
+              required
+              placeholder="Contoh: kasir_v3"
+              style="
+                width: 100%;
+                padding: 0.8rem 1rem;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--glass-border);
+                border-radius: 10px;
+                color: white;
+              "
+            />
+          </div>
+
+          <div class="form-group">
+            <label style="color: var(--text-dim); font-size: 0.9rem"
+              >Password Baru (Kosongkan jika tidak diubah)</label
+            >
+            <input
+              type="password"
+              id="edit-password"
+              placeholder="Masukkan password baru jika ingin diganti"
+              style="
+                width: 100%;
+                padding: 0.8rem 1rem;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--glass-border);
+                border-radius: 10px;
+                color: white;
+              "
+            />
+          </div>
+
+          <div class="form-group">
+            <label style="color: var(--text-dim); font-size: 0.9rem"
+              >Role / Akses</label
+            >
+            <select
+              id="edit-role"
+              style="
+                width: 100%;
+                padding: 0.8rem 1rem;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--glass-border);
+                border-radius: 10px;
+                color: white;
+              "
+            >
+              <option value="kasir">Kasir (Terbatas)</option>
+              <option value="engineer">Engineer (Teknis)</option>
+              <option value="admin">Admin (Akses Penuh)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 2rem">
+            <button
+              type="button"
+              class="btn btn-outline"
+              onclick="
+                document.getElementById('edit-user-modal').style.display =
+                  'none'
+              "
+            >
+              Batal
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Simpan Perubahan
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <script>
-        // Restrict to Admin
-        if (localStorage.getItem('auth_role') !== 'admin') {
-            alert('Akses Ditolak! Halaman ini hanya untuk Admin.');
-            window.location.href = 'index.html';
-        }
+      // Restrict to Admin
+      if (localStorage.getItem("auth_role") !== "admin") {
+        alert("Akses Ditolak! Halaman ini hanya untuk Admin.");
+        window.location.href = "index.html";
+      }
 
-        async function loadUsers() {
-            const users = await fetchData('/users');
-            const container = document.getElementById('user-list');
-            container.innerHTML = '';
-            
-            users.forEach(user => {
-                const card = document.createElement('div');
-                card.className = 'stat-card';
-                card.style.textAlign = 'left';
-                card.style.padding = '1.2rem';
-                card.style.borderRadius = '20px';
-                card.innerHTML = `
+      async function loadUsers() {
+        const users = await fetchData("/users");
+        const container = document.getElementById("user-list");
+        container.innerHTML = "";
+
+        users.forEach((user) => {
+          const card = document.createElement("div");
+          card.className = "stat-card";
+          card.style.textAlign = "left";
+          card.style.padding = "1.2rem";
+          card.style.borderRadius = "20px";
+          card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
                         <span style="font-size: 0.65rem; color: var(--primary-color); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${user.role}</span>
                         <div style="display: flex; gap: 0.5rem;">
-                            ${user.id !== 1 && String(user.id) !== '1' ? `<button onclick="deleteUser(${user.id})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.8rem;">Hapus</button>` : ''}
+                            ${user.id !== 1 && String(user.id) !== "1" ? `<button onclick="deleteUser(${user.id})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.8rem;">Hapus</button>` : ""}
                             <img src="assets/logo.png" style="width: 18px; opacity: 0.4;">
                         </div>
                     </div>
                     <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 1.2rem; color: var(--text-light);">${user.username}</div>
                     <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.6rem; width: 100%; border-radius: 10px;" onclick="openEditUserModal(${user.id}, '${user.username}', '${user.role}')">Edit Akun</button>
                 `;
-                container.appendChild(card);
-            });
-        }
+          container.appendChild(card);
+        });
+      }
 
-        function openAddUserModal() {
-            document.getElementById('add-user-form').reset();
-            document.getElementById('add-user-modal').style.display = 'flex';
-        }
+      function openAddUserModal() {
+        document.getElementById("add-user-form").reset();
+        document.getElementById("add-user-modal").style.display = "flex";
+      }
 
-        document.getElementById('add-user-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const data = {
-                username: document.getElementById('add-username').value,
-                password: document.getElementById('add-password').value,
-                role: document.getElementById('add-role').value
-            };
-            
-            const res = await fetch(`${API_BASE}/users`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            
-            const result = await res.json();
-            if (res.ok) {
-                alert('Akun berhasil dibuat!');
-                document.getElementById('add-user-modal').style.display = 'none';
-                loadUsers();
-            } else {
-                alert(result.message || 'Gagal membuat akun.');
-            }
+      document.getElementById("add-user-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const data = {
+          username: document.getElementById("add-username").value,
+          password: document.getElementById("add-password").value,
+          role: document.getElementById("add-role").value,
         };
 
-        async function deleteUser(id) {
-            if (confirm('Hapus akun ini secara permanen?')) {
-                const res = await fetch(`${API_BASE}/users/${id}`, { method: 'DELETE' });
-                if (res.ok) loadUsers();
-            }
+        const res = await fetch(`${API_BASE}/users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          alert("Akun berhasil dibuat!");
+          document.getElementById("add-user-modal").style.display = "none";
+          loadUsers();
+        } else {
+          alert(result.message || "Gagal membuat akun.");
+        }
+      };
+
+      async function deleteUser(id) {
+        if (confirm("Hapus akun ini secara permanen?")) {
+          const res = await fetch(`${API_BASE}/users/${id}`, {
+            method: "DELETE",
+          });
+          if (res.ok) loadUsers();
+        }
+      }
+
+      function openEditUserModal(id, username, role) {
+        document.getElementById("edit-user-id").value = id;
+        document.getElementById("edit-username").value = username;
+        document.getElementById("edit-password").value = "";
+        document.getElementById("edit-role").value = role;
+
+        // Disallow changing role of the main account (id === 1)
+        if (id === 1 || String(id) === "1") {
+          document.getElementById("edit-username").disabled = false;
+          document.getElementById("edit-username").style.opacity = "1";
+          document.getElementById("edit-role").disabled = true;
+          document.getElementById("edit-role").style.opacity = "0.7";
+        } else {
+          document.getElementById("edit-username").disabled = false;
+          document.getElementById("edit-username").style.opacity = "1";
+          document.getElementById("edit-role").disabled = false;
+          document.getElementById("edit-role").style.opacity = "1";
         }
 
-        function openEditUserModal(id, username, role) {
-            document.getElementById('edit-user-id').value = id;
-            document.getElementById('edit-username').value = username;
-            document.getElementById('edit-password').value = '';
-            document.getElementById('edit-role').value = role;
+        document.getElementById("edit-user-modal").style.display = "flex";
+      }
 
-            // Disallow changing role of the main account (id === 1)
-            if (id === 1 || String(id) === '1') {
-                document.getElementById('edit-username').disabled = false;
-                document.getElementById('edit-username').style.opacity = '1';
-                document.getElementById('edit-role').disabled = true;
-                document.getElementById('edit-role').style.opacity = '0.7';
-            } else {
-                document.getElementById('edit-username').disabled = false;
-                document.getElementById('edit-username').style.opacity = '1';
-                document.getElementById('edit-role').disabled = false;
-                document.getElementById('edit-role').style.opacity = '1';
-            }
+      document.getElementById("edit-user-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById("edit-user-id").value;
+        const username = document.getElementById("edit-username").value;
+        const password = document.getElementById("edit-password").value;
+        const role = document.getElementById("edit-role").value;
 
-            document.getElementById('edit-user-modal').style.display = 'flex';
+        const data = { username, role };
+        if (password) data.password = password;
+
+        const res = await fetch(`${API_BASE}/users/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          alert("Akun berhasil diperbarui!");
+          document.getElementById("edit-user-modal").style.display = "none";
+          loadUsers();
+        } else {
+          alert(result.message || "Gagal memperbarui akun.");
         }
+      };
 
-        document.getElementById('edit-user-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit-user-id').value;
-            const username = document.getElementById('edit-username').value;
-            const password = document.getElementById('edit-password').value;
-            const role = document.getElementById('edit-role').value;
-            
-            const data = { username, role };
-            if (password) data.password = password;
-
-            const res = await fetch(`${API_BASE}/users/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            
-            const result = await res.json();
-            if (res.ok) {
-                alert('Akun berhasil diperbarui!');
-                document.getElementById('edit-user-modal').style.display = 'none';
-                loadUsers();
-            } else {
-                alert(result.message || 'Gagal memperbarui akun.');
-            }
-        };
-
-        loadUsers();
+      loadUsers();
     </script>
-</body>
+  </body>
 </html>
